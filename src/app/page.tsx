@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { getPortfolios } from '@/services/portfolioService'
 import { Portfolio } from '@/types/portfolio'
 import { TrendingUp, Calendar } from 'lucide-react'
+import Link from 'next/link'
 import { CreatePortfolioForm } from './components/CreatePortfolioForm'
 import { Header } from './components/Header'
 
@@ -128,8 +129,9 @@ export default function Home() {
           // Portfolio Grid
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {portfolios.map((portfolio) => (
-              <div
+              <Link
                 key={portfolio.id}
+                href={`/portfolio/${portfolio.id}`}
                 className="group rounded-xl bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg dark:bg-zinc-800"
               >
                 {/* Card Header */}
@@ -185,12 +187,7 @@ export default function Home() {
                     })}
                   </div>
                 </div>
-
-                {/* Hover Action */}
-                <button className="mt-4 w-full rounded-lg bg-zinc-100 py-2 font-medium text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600">
-                  Ver Detalles
-                </button>
-              </div>
+              </Link>
             ))}
           </div>
         )}
