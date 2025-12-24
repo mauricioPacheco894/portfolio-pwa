@@ -44,9 +44,9 @@ export default function AllocationChart({ holdings }: Props) {
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip 
-              formatter={(value: number) => `$${value.toFixed(2)}`}
-              contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
+            <Tooltip
+              formatter={(value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00'}
+              contentStyle={{ backgroundColor: '#333', borderColor: '#333', color: '#fff' }}
             />
             <Legend verticalAlign="bottom" height={36} />
           </PieChart>

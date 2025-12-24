@@ -4,9 +4,10 @@ export interface AssetPosition {
   totalQuantity: number
   averageCost: number
   totalInvested: number
-  currentValue: number // Por ahora usaremos el último precio pagado como referencia
-  plDollars: number // Ganancia/Pérdida en dinero
-  plPercentage: number // Ganancia/Pérdida en %
+  currentValue: number
+  marketPrice?: number // Precio actual en tiempo real
+  plDollars: number
+  plPercentage: number
 }
 
 interface Transaction {
@@ -74,42 +75,48 @@ export function calculateHoldings(transactions: Transaction[]): AssetPosition[] 
     })
 }
 
+// Agrega 'quantity' a la interfaz
 export interface RebalanceSuggestion {
   ticker: string
   currentPct: number
   targetPct: number
   action: 'BUY' | 'SELL' | 'HOLD'
   amount: number
+  quantity: number // <--- NUEVO CAMPO
 }
 
+// Actualiza la función para recibir los precios actuales
 export function calculateRebalancing(
-  holdings: AssetPosition[],
-  targetAllocation: Record<string, number> | null,
-  totalPortfolioValue: number
+  holdings: AssetPosition[], 
+  targetAllocation: Record<string, number>,
+  totalPortfolioValue: number,
+  currentPrices: Record<string, number> // <--- NUEVO ARGUMENTO
 ): RebalanceSuggestion[] {
   if (!targetAllocation || totalPortfolioValue === 0) return []
 
   const suggestions: RebalanceSuggestion[] = []
 
-  // Recorremos todos los objetivos definidos
   Object.entries(targetAllocation).forEach(([ticker, targetPct]) => {
     const existing = holdings.find(h => h.ticker === ticker)
     const currentVal = existing ? existing.currentValue : 0
+    
+    // Obtenemos el precio real (o fallback al histórico si no hay live)
+    const price = currentPrices[ticker] || (existing ? existing.currentValue / existing.totalQuantity : 0)
 
-    const currentPct = totalPortfolioValue > 0 ? (currentVal / totalPortfolioValue) * 100 : 0
+    const currentPct = (currentVal / totalPortfolioValue) * 100
     const targetVal = totalPortfolioValue * (targetPct / 100)
-
     const diffVal = targetVal - currentVal
-
-    // Solo sugerir si se desvía más de $10 USD
-    if (Math.abs(diffVal) < 10) return
+    
+    if (Math.abs(diffVal) < 10) return 
 
     suggestions.push({
       ticker,
       currentPct,
       targetPct,
       action: diffVal > 0 ? 'BUY' : 'SELL',
-      amount: Math.abs(diffVal)
+      amount: Math.abs(diffVal),
+      // Calculamos acciones: Dinero / Precio Unitario
+      quantity: price > 0 ? Math.abs(diffVal) / price : 0 
     })
   })
 

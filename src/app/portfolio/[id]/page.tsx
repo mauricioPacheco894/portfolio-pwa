@@ -6,6 +6,7 @@ import TransactionActions from '@/app/components/TransactionActions'
 import AllocationChart from '@/app/components/AllocationChart'
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor'
 import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
+import { getCurrentPrices } from '@/services/priceService'
 
 interface Transaction {
   id: string
@@ -20,6 +21,8 @@ interface Transaction {
 interface Portfolio {
   id: string
   name: string
+  target_allocation?: Record<string, number>
+  created_at: string
 }
 
 async function getPortfolio(id: string) {
@@ -62,20 +65,45 @@ export default async function Page({ params }: Props) {
   const { id } = await params
 
   const portfolio = await getPortfolio(id)
+  
+  if (!portfolio) {
+    return notFound()
+  }
+
   const transactions = await getTransactions(id)
-  const holdings = calculateHoldings(transactions)
+  let holdings = calculateHoldings(transactions)
+
+  // Obtener precios en tiempo real
+  const tickers = holdings.map(h => h.ticker)
+  const currentPrices = await getCurrentPrices(tickers)
+
+  // Actualizar holdings con precios reales
+  holdings = holdings.map(asset => {
+    const livePrice = currentPrices[asset.ticker]
+
+    if (livePrice) {
+      const newVal = asset.totalQuantity * livePrice
+      return {
+        ...asset,
+        marketPrice: livePrice,
+        currentValue: newVal,
+        plDollars: newVal - asset.totalInvested,
+        plPercentage: asset.totalInvested > 0
+          ? ((newVal - asset.totalInvested) / asset.totalInvested) * 100
+          : 0,
+      }
+    }
+    return asset
+  })
 
   const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0)
   const rebalanceSuggestions = calculateRebalancing(
     holdings,
-    portfolio.target_allocation || null,
-    totalValue
+    portfolio.target_allocation || {},
+    totalValue,
+    currentPrices 
   )
   const uniqueTickers = Array.from(new Set(holdings.map(h => h.ticker)))
-
-  if (!portfolio) {
-    return notFound()
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -167,15 +195,23 @@ export default async function Page({ params }: Props) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-block text-xs font-bold px-3 py-1 rounded mb-1 ${
-                        s.action === 'BUY'
+                      {/* Badge de COMPRAR/VENDER (Sin cambios) */}
+                      <span className={`inline-block text-xs font-bold px-3 py-1 rounded mb-1 ${s.action === 'BUY'
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                           : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      }`}>
+                        }`}>
                         {s.action === 'BUY' ? 'COMPRAR' : 'VENDER'}
                       </span>
+
+                      {/* Monto en dinero (Sin cambios) */}
                       <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-white">
                         ${s.amount.toFixed(2)}
+                      </div>
+
+                      {/* --- NUEVO: Cantidad de acciones --- */}
+                      {/* Usamos Math.abs para que no salga negativo si es venta */}
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        {s.quantity ? Math.abs(s.quantity).toFixed(4) : "0"} títulos
                       </div>
                     </div>
                   </div>
@@ -213,8 +249,13 @@ export default async function Page({ params }: Props) {
                       <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">{asset.ticker}</td>
                       <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">{asset.totalQuantity.toFixed(4)}</td>
                       <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">${asset.averageCost.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">
-                        ${(asset.currentValue / asset.totalQuantity).toFixed(2)}
+                      <td className="px-6 py-4 text-right">
+                        <div className="font-semibold text-zinc-900 dark:text-white">
+                          ${asset.marketPrice ? asset.marketPrice.toFixed(2) : (asset.currentValue / asset.totalQuantity).toFixed(2)}
+                        </div>
+                        {asset.marketPrice && (
+                          <span className="text-[10px] font-bold text-blue-500" title="Precio en tiempo real">LIVE</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                         ${asset.currentValue.toFixed(2)}
