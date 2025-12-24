@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import AddTransactionForm from '@/app/components/AddTransactionForm'
 import TransactionActions from '@/app/components/TransactionActions'
 import AllocationChart from '@/app/components/AllocationChart'
-import { calculateHoldings } from '@/utils/portfolioMath'
+import TargetAllocationEditor from '@/app/components/TargetAllocationEditor'
+import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
 
 interface Transaction {
   id: string
@@ -63,6 +64,14 @@ export default async function Page({ params }: Props) {
   const portfolio = await getPortfolio(id)
   const transactions = await getTransactions(id)
   const holdings = calculateHoldings(transactions)
+
+  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0)
+  const rebalanceSuggestions = calculateRebalancing(
+    holdings,
+    portfolio.target_allocation || null,
+    totalValue
+  )
+  const uniqueTickers = Array.from(new Set(holdings.map(h => h.ticker)))
 
   if (!portfolio) {
     return notFound()
@@ -125,6 +134,54 @@ export default async function Page({ params }: Props) {
           {/* COLUMNA DERECHA: Gráfica */}
           <div className="lg:col-span-2">
             <AllocationChart holdings={holdings} />
+          </div>
+        </section>
+
+        {/* Sección de Rebalanceo */}
+        <section className="mb-8 grid gap-6 lg:grid-cols-2">
+          {/* Editor de Objetivo */}
+          <TargetAllocationEditor
+            portfolioId={id}
+            currentTarget={portfolio.target_allocation || undefined}
+            availableTickers={uniqueTickers}
+          />
+
+          {/* Sugerencias de Rebalanceo */}
+          <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Plan de Rebalanceo</h3>
+
+            {!portfolio.target_allocation ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Define tu objetivo a la izquierda para ver sugerencias.</p>
+            ) : rebalanceSuggestions.length === 0 ? (
+              <div className="flex h-48 items-center justify-center">
+                <p className="text-center text-green-600 font-medium">✨ Tu portafolio está balanceado</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {rebalanceSuggestions.map(s => (
+                  <div key={s.ticker} className="flex items-center justify-between border-b pb-3 last:border-0 dark:border-zinc-700">
+                    <div>
+                      <span className="font-bold text-zinc-900 dark:text-white">{s.ticker}</span>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Actual: {s.currentPct.toFixed(1)}% → Meta: {s.targetPct}%
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block text-xs font-bold px-3 py-1 rounded mb-1 ${
+                        s.action === 'BUY'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                      }`}>
+                        {s.action === 'BUY' ? 'COMPRAR' : 'VENDER'}
+                      </span>
+                      <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-white">
+                        ${s.amount.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

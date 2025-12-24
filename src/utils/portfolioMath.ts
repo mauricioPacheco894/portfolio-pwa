@@ -73,3 +73,45 @@ export function calculateHoldings(transactions: Transaction[]): AssetPosition[] 
       return asset
     })
 }
+
+export interface RebalanceSuggestion {
+  ticker: string
+  currentPct: number
+  targetPct: number
+  action: 'BUY' | 'SELL' | 'HOLD'
+  amount: number
+}
+
+export function calculateRebalancing(
+  holdings: AssetPosition[],
+  targetAllocation: Record<string, number> | null,
+  totalPortfolioValue: number
+): RebalanceSuggestion[] {
+  if (!targetAllocation || totalPortfolioValue === 0) return []
+
+  const suggestions: RebalanceSuggestion[] = []
+
+  // Recorremos todos los objetivos definidos
+  Object.entries(targetAllocation).forEach(([ticker, targetPct]) => {
+    const existing = holdings.find(h => h.ticker === ticker)
+    const currentVal = existing ? existing.currentValue : 0
+
+    const currentPct = totalPortfolioValue > 0 ? (currentVal / totalPortfolioValue) * 100 : 0
+    const targetVal = totalPortfolioValue * (targetPct / 100)
+
+    const diffVal = targetVal - currentVal
+
+    // Solo sugerir si se desvía más de $10 USD
+    if (Math.abs(diffVal) < 10) return
+
+    suggestions.push({
+      ticker,
+      currentPct,
+      targetPct,
+      action: diffVal > 0 ? 'BUY' : 'SELL',
+      amount: Math.abs(diffVal)
+    })
+  })
+
+  return suggestions.sort((a, b) => b.amount - a.amount)
+}
