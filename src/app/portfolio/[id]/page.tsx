@@ -7,6 +7,7 @@ import AllocationChart from '@/app/components/AllocationChart'
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor'
 import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
 import { getCurrentPrices } from '@/services/priceService'
+import { Header } from '@/app/components/Header'
 
 interface Transaction {
   id: string
@@ -27,7 +28,7 @@ interface Portfolio {
 
 async function getPortfolio(id: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('portfolios')
     .select('*')
@@ -38,7 +39,7 @@ async function getPortfolio(id: string) {
     console.error('[getPortfolio] Query error:', error.message)
     return null
   }
-  
+
   return data as Portfolio
 }
 
@@ -65,7 +66,7 @@ export default async function Page({ params }: Props) {
   const { id } = await params
 
   const portfolio = await getPortfolio(id)
-  
+
   if (!portfolio) {
     return notFound()
   }
@@ -101,12 +102,13 @@ export default async function Page({ params }: Props) {
     holdings,
     portfolio.target_allocation || {},
     totalValue,
-    currentPrices 
+    currentPrices
   )
   const uniqueTickers = Array.from(new Set(holdings.map(h => h.ticker)))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
+      <Header />
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link href="/" className="mb-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
@@ -134,22 +136,20 @@ export default async function Page({ params }: Props) {
 
             <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
               <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Ganancia/Pérdida</h3>
-              <p className={`mt-2 text-3xl font-bold ${
-                holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                  ? 'text-green-600'
-                  : 'text-red-600'
-              }`}>
+              <p className={`mt-2 text-3xl font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+                }`}>
                 {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
                 ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
               </p>
               <div className="mt-4 text-sm">
-                <div className={`font-semibold ${
-                  holdings.length > 0 && holdings[0].totalInvested > 0
-                    ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                    : ''
-                }`}>
+                <div className={`font-semibold ${holdings.length > 0 && holdings[0].totalInvested > 0
+                  ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                  : ''
+                  }`}>
                   {holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
                     ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
                     : '0.00'}
@@ -197,8 +197,8 @@ export default async function Page({ params }: Props) {
                     <div className="text-right">
                       {/* Badge de COMPRAR/VENDER (Sin cambios) */}
                       <span className={`inline-block text-xs font-bold px-3 py-1 rounded mb-1 ${s.action === 'BUY'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                         }`}>
                         {s.action === 'BUY' ? 'COMPRAR' : 'VENDER'}
                       </span>

@@ -72,69 +72,71 @@ export default function AddTransactionForm({ portfolioId }: Props) {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-800 dark:border-zinc-700">
+    <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-800 dark:border-zinc-700">
       <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Agregar Transacción</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <input
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value)}
-          placeholder="Ticker (ej: AAPL)"
-          required
-          className="col-span-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        />
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input
+            value={ticker}
+            onChange={(e) => setTicker(e.target.value)}
+            placeholder="Ticker (ej: AAPL)"
+            required
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+          />
 
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as 'BUY' | 'SELL')}
-          className="col-span-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        >
-          <option value="BUY">BUY</option>
-          <option value="SELL">SELL</option>
-        </select>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as 'BUY' | 'SELL')}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+          >
+            <option value="BUY">BUY</option>
+            <option value="SELL">SELL</option>
+          </select>
 
-        <input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-          placeholder="Cantidad"
-          required
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        />
+          <input
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="Cantidad"
+            required
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+          />
 
-        <input
-          type="number"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-          placeholder="Precio unitario"
-          required
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        />
+          <input
+            type="number"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="Precio unitario"
+            required
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+          />
 
-        <input
-          type="number"
-          step="0.01"
-          value={fees}
-          onChange={(e) => setFees(e.target.value === '' ? '' : Number(e.target.value))}
-          placeholder="Comisión (opcional)"
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        />
+          <input
+            type="number"
+            step="0.01"
+            value={fees}
+            onChange={(e) => setFees(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="Comisión (opcional)"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+          />
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-        />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:[color-scheme:dark]"
+          />
+        </div>
 
-        {error && <div className="col-span-2 text-sm text-red-600">{error}</div>}
+        {error && <div className="text-sm text-red-600">{error}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          <PlusCircle />
+          <PlusCircle size={18} />
           {loading ? 'Guardando...' : 'Agregar'}
         </button>
       </form>

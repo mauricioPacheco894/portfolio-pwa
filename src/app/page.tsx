@@ -157,7 +157,7 @@ export default function Home() {
                       <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                         Asignación Objetivo
                       </p>
-                      <div className="mt-2 flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         {Object.entries(portfolio.target_allocation).map(
                           ([asset, allocation]) => (
                             <div
