@@ -4,23 +4,29 @@ import { useEffect, useState } from 'react'
 
 type Theme = 'light' | 'dark'
 
+// Function to get initial theme (only runs on client)
+const getInitialTheme = (): Theme => {
+    if (typeof window === 'undefined') return 'light'
+
+    const savedTheme = localStorage.getItem('theme') as Theme | null
+    if (savedTheme) {
+        return savedTheme
+    }
+
+    // Check system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    return prefersDark ? 'dark' : 'light'
+}
+
 export function useDarkMode() {
-    const [theme, setTheme] = useState<Theme>('light')
+    // Initialize with the actual theme from localStorage or system preference
+    const [theme, setTheme] = useState<Theme>(getInitialTheme)
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        // Check localStorage first
-        const savedTheme = localStorage.getItem('theme') as Theme | null
-
-        if (savedTheme) {
-            setTheme(savedTheme)
-            applyTheme(savedTheme)
-        } else {
-            // Check system preference
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-            const initialTheme = prefersDark ? 'dark' : 'light'
-            setTheme(initialTheme)
-            applyTheme(initialTheme)
-        }
+        setMounted(true)
+        // Apply theme immediately on mount
+        applyTheme(theme)
     }, [])
 
     const applyTheme = (newTheme: Theme) => {
@@ -39,5 +45,5 @@ export function useDarkMode() {
         applyTheme(newTheme)
     }
 
-    return { theme, toggleTheme }
+    return { theme, toggleTheme, mounted }
 }

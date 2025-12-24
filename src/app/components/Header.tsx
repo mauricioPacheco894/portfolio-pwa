@@ -10,7 +10,7 @@ import { LogOut, LogIn, Wallet, Moon, Sun } from 'lucide-react'
 
 export function Header() {
   const router = useRouter()
-  const { theme, toggleTheme } = useDarkMode()
+  const { theme, toggleTheme, mounted } = useDarkMode()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -52,14 +52,16 @@ export function Header() {
 
         {/* Auth Actions */}
         <div className="flex items-center gap-4">
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          {/* Dark Mode Toggle - Only show when mounted to avoid hydration mismatch */}
+          {mounted && (
+            <button
+              onClick={toggleTheme}
+              className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          )}
 
           {!loading && user ? (
             <>
