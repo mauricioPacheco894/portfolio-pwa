@@ -4,8 +4,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getPortfolios } from '@/services/portfolioService'
-import { Portfolio } from '@/types/portfolio'
 import { User } from '@/types/supabase'
 import { TrendingUp, Calendar } from 'lucide-react'
 import Link from 'next/link'
@@ -13,13 +11,15 @@ import toast from 'react-hot-toast'
 import { CreatePortfolioForm } from './components/CreatePortfolioForm'
 import { Header } from './components/Header'
 import { SkeletonCard } from '@/components/ui/SkeletonLoader'
+import { usePortfolios } from '@/hooks/usePortfolios'
 
 export default function Home() {
   const router = useRouter()
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([])
-  const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
+
+  // Use React Query for portfolios
+  const { data: portfolios = [], isLoading, error, refetch } = usePortfolios()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,25 +31,20 @@ export default function Home() {
       setCheckingAuth(false)
 
       if (user) {
-        loadPortfolios()
+        refetch()
       }
     }
 
     checkAuth()
-  }, [])
+  }, [refetch])
 
-  const loadPortfolios = async () => {
-    setLoading(true)
-    try {
-      const data = await getPortfolios()
-      setPortfolios(data)
-    } catch (error) {
+  // Show error toast if query fails
+  useEffect(() => {
+    if (error) {
       toast.error('Error al cargar portafolios')
       console.error('Error loading portfolios:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [error])
 
   if (checkingAuth) {
     return (
@@ -103,11 +98,11 @@ export default function Home() {
               Gestiona y monitorea tus inversiones
             </p>
           </div>
-          <CreatePortfolioForm onPortfolioCreated={loadPortfolios} />
+          <CreatePortfolioForm onPortfolioCreated={refetch} />
         </div>
 
         {/* Content */}
-        {loading ? (
+        {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <SkeletonCard />
             <SkeletonCard />
