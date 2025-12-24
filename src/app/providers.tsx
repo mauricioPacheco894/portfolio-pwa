@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -46,8 +47,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <ToastProvider>
-      {children}
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        {children}
+      </ToastProvider>
+    </ErrorBoundary>
   )
 }
