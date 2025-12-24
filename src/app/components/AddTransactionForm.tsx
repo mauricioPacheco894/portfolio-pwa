@@ -15,6 +15,7 @@ export default function AddTransactionForm({ portfolioId }: Props) {
   const [type, setType] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState<number | ''>('')
   const [price, setPrice] = useState<number | ''>('')
+  const [fees, setFees] = useState<number | ''>('')
   const [date, setDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +43,8 @@ export default function AddTransactionForm({ portfolioId }: Props) {
           ticker: ticker.toUpperCase(),
           type,
           quantity: Number(quantity),
-          price: Number(price),
+          price_per_unit: Number(price),
+          fees: fees ? Number(fees) : 0,
           date: date || new Date().toISOString(),
         },
       ])
@@ -57,6 +59,7 @@ export default function AddTransactionForm({ portfolioId }: Props) {
       setTicker('')
       setQuantity('')
       setPrice('')
+      setFees('')
       setDate('')
 
       router.refresh()
@@ -105,6 +108,15 @@ export default function AddTransactionForm({ portfolioId }: Props) {
           onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
           placeholder="Precio unitario"
           required
+          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+        />
+
+        <input
+          type="number"
+          step="0.01"
+          value={fees}
+          onChange={(e) => setFees(e.target.value === '' ? '' : Number(e.target.value))}
+          placeholder="Comisión (opcional)"
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
         />
 

@@ -1,7 +1,10 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabaseServer'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AddTransactionForm from '@/app/components/AddTransactionForm'
+import TransactionActions from '@/app/components/TransactionActions'
+import AllocationChart from '@/app/components/AllocationChart'
+import { calculateHoldings } from '@/utils/portfolioMath'
 
 interface Transaction {
   id: string
@@ -9,6 +12,7 @@ interface Transaction {
   type: 'BUY' | 'SELL'
   quantity: number
   price_per_unit: number
+  fees?: number
   date: string
 }
 
@@ -18,6 +22,8 @@ interface Portfolio {
 }
 
 async function getPortfolio(id: string) {
+  const supabase = await createClient()
+  
   const { data, error } = await supabase
     .from('portfolios')
     .select('*')
@@ -25,13 +31,15 @@ async function getPortfolio(id: string) {
     .maybeSingle()
 
   if (error) {
-    console.error('Error fetching portfolio:', error.message, error.code)
+    console.error('[getPortfolio] Query error:', error.message)
     return null
   }
+  
   return data as Portfolio
 }
 
 async function getTransactions(portfolioId: string) {
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
@@ -52,17 +60,13 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { id } = await params
 
-  console.log('[Portfolio Detail] Loading with ID:', id)
-
   const portfolio = await getPortfolio(id)
   const transactions = await getTransactions(id)
+  const holdings = calculateHoldings(transactions)
 
   if (!portfolio) {
-    console.error('[Portfolio Detail] Portfolio not found for ID:', id)
     return notFound()
   }
-
-  console.log('[Portfolio Detail] Loaded:', portfolio.name)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -73,6 +77,101 @@ export default async function Page({ params }: Props) {
           </Link>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">{portfolio.name}</h1>
         </div>
+
+        {/* Sección de Resumen y Gráfico */}
+        <section className="mb-8 grid gap-6 lg:grid-cols-3">
+          {/* COLUMNA IZQUIERDA: Métricas Clave */}
+          <div className="space-y-6">
+            <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Valor Total</h3>
+              <p className="mt-2 text-4xl font-bold text-zinc-900 dark:text-white">
+                ${holdings.reduce((sum, h) => sum + h.currentValue, 0).toFixed(2)}
+              </p>
+              <div className="mt-4 text-sm">
+                <div className="text-zinc-600 dark:text-zinc-400">Total Invertido</div>
+                <div className="font-semibold text-zinc-900 dark:text-white">
+                  ${holdings.reduce((sum, h) => sum + h.totalInvested, 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Ganancia/Pérdida</h3>
+              <p className={`mt-2 text-3xl font-bold ${
+                holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}>
+                {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
+                ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
+              </p>
+              <div className="mt-4 text-sm">
+                <div className={`font-semibold ${
+                  holdings.length > 0 && holdings[0].totalInvested > 0
+                    ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                    : ''
+                }`}>
+                  {holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                    ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
+                    : '0.00'}
+                  %
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA: Gráfica */}
+          <div className="lg:col-span-2">
+            <AllocationChart holdings={holdings} />
+          </div>
+        </section>
+
+        {/* Sección de Posiciones */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-xl font-semibold text-zinc-800 dark:text-zinc-100">Mis Posiciones</h2>
+          <div className="overflow-x-auto rounded-lg border bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+                <tr>
+                  <th className="px-6 py-3">Activo</th>
+                  <th className="px-6 py-3 text-right">Cantidad</th>
+                  <th className="px-6 py-3 text-right">Costo Prom.</th>
+                  <th className="px-6 py-3 text-right">Último Precio</th>
+                  <th className="px-6 py-3 text-right">Valor Total</th>
+                  <th className="px-6 py-3 text-right">Ganancia/Pérdida</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                {holdings.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-zinc-500 dark:text-zinc-400">
+                      Agrega transacciones para ver tus posiciones.
+                    </td>
+                  </tr>
+                ) : (
+                  holdings.map((asset) => (
+                    <tr key={asset.ticker}>
+                      <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">{asset.ticker}</td>
+                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">{asset.totalQuantity.toFixed(4)}</td>
+                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">${asset.averageCost.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">
+                        ${(asset.currentValue / asset.totalQuantity).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
+                        ${asset.currentValue.toFixed(2)}
+                      </td>
+                      <td className={`px-6 py-4 text-right font-medium ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {asset.plDollars >= 0 ? '+' : ''}{asset.plDollars.toFixed(2)} ({asset.plPercentage.toFixed(2)}%)
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <section className="mb-8">
           <h2 className="mb-4 text-xl font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
@@ -86,13 +185,15 @@ export default async function Page({ params }: Props) {
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Cantidad</th>
                   <th className="px-4 py-3">Precio Unit.</th>
+                  <th className="px-4 py-3">Comisión</th>
                   <th className="px-4 py-3">Total</th>
+                  <th className="px-4 py-3">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400">
+                    <td colSpan={8} className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400">
                       No hay transacciones registradas aún
                     </td>
                   </tr>
@@ -100,7 +201,8 @@ export default async function Page({ params }: Props) {
                   transactions.map((t) => {
                     const qty = Number(t.quantity)
                     const price = Number(t.price_per_unit)
-                    const total = (qty * price).toFixed(2)
+                    const fees = t.fees ? Number(t.fees) : 0
+                    const total = (qty * price + fees).toFixed(2)
 
                     return (
                       <tr key={t.id}>
@@ -121,7 +223,11 @@ export default async function Page({ params }: Props) {
                         </td>
                         <td className="px-4 py-3">{qty}</td>
                         <td className="px-4 py-3">${price.toFixed(2)}</td>
+                        <td className="px-4 py-3">${fees.toFixed(2)}</td>
                         <td className="px-4 py-3 font-medium">${total}</td>
+                        <td className="px-4 py-3">
+                          <TransactionActions transactionId={t.id} />
+                        </td>
                       </tr>
                     )
                   })
