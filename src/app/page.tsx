@@ -6,16 +6,19 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getPortfolios } from '@/services/portfolioService'
 import { Portfolio } from '@/types/portfolio'
+import { User } from '@/types/supabase'
 import { TrendingUp, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { CreatePortfolioForm } from './components/CreatePortfolioForm'
 import { Header } from './components/Header'
+import { SkeletonCard } from '@/components/ui/SkeletonLoader'
 
 export default function Home() {
   const router = useRouter()
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
   useEffect(() => {
@@ -37,9 +40,15 @@ export default function Home() {
 
   const loadPortfolios = async () => {
     setLoading(true)
-    const data = await getPortfolios()
-    setPortfolios(data)
-    setLoading(false)
+    try {
+      const data = await getPortfolios()
+      setPortfolios(data)
+    } catch (error) {
+      toast.error('Error al cargar portafolios')
+      console.error('Error loading portfolios:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (checkingAuth) {
@@ -99,13 +108,10 @@ export default function Home() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex min-h-96 items-center justify-center">
-            <div className="text-center">
-              <div className="mb-4 flex justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500"></div>
-              </div>
-              <p className="text-zinc-600 dark:text-zinc-400">Cargando portafolios...</p>
-            </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : portfolios.length === 0 ? (
           // Empty State

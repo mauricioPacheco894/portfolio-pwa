@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ToastProvider } from '@/contexts/ToastContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -9,12 +10,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const syncSessionToServer = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        
+
         if (session?.access_token) {
           // Send token to server so it can create authenticated requests
           await fetch('/api/auth/sync', {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -44,5 +45,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  return <>{children}</>
+  return (
+    <ToastProvider>
+      {children}
+    </ToastProvider>
+  )
 }

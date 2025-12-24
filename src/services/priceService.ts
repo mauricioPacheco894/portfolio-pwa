@@ -2,6 +2,12 @@ import YahooFinance from 'yahoo-finance2'
 
 const yahooFinance = new YahooFinance()
 
+// Type for Yahoo Finance quote response
+interface YahooQuote {
+  symbol?: string
+  regularMarketPrice?: number
+}
+
 export async function getCurrentPrices(tickers: string[]): Promise<Record<string, number>> {
   if (tickers.length === 0) return {}
 
@@ -14,9 +20,10 @@ export async function getCurrentPrices(tickers: string[]): Promise<Record<string
     const results = await yahooFinance.quote(uniqueTickers)
 
     // Normalizamos a array
-    const quotes = Array.isArray(results) ? results : [results]
+    const quotes = (Array.isArray(results) ? results : [results]) as YahooQuote[]
 
-    quotes.forEach((quote: any) => {
+
+    quotes.forEach((quote) => {
       if (quote.symbol && quote.regularMarketPrice) {
         priceMap[quote.symbol] = quote.regularMarketPrice
       }

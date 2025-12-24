@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { User } from '@/types/supabase'
+import { useDarkMode } from '@/hooks/useDarkMode'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogOut, LogIn, Wallet } from 'lucide-react'
+import { LogOut, LogIn, Wallet, Moon, Sun } from 'lucide-react'
 
 export function Header() {
   const router = useRouter()
-  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const { theme, toggleTheme } = useDarkMode()
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -49,6 +52,15 @@ export function Header() {
 
         {/* Auth Actions */}
         <div className="flex items-center gap-4">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            aria-label="Toggle dark mode"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+
           {!loading && user ? (
             <>
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
