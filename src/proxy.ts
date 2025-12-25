@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { env } from '@/env'
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -14,26 +14,34 @@ export async function proxy(request: NextRequest) {
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: any) {
-          request.cookies.set({ name, value, ...options })
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: any) {
-          request.cookies.set({ name, value: '', ...options })
-          response.cookies.set({ name, value: '', ...options })
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
-
   // Protected routes that require authentication
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/portfolio')
+  const isLoginPage = request.nextUrl.pathname === '/login'
+
+  let user = null
+
+  // Solo verificar autenticación en servidor si es estrictamente necesario
+  // (Rutas protegidas o Login para redirect). Evita latencia en Home.
+  if (isProtectedRoute || isLoginPage) {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  }
 
   // Redirect unauthenticated users trying to access protected routes
   if (isProtectedRoute && !user) {
@@ -43,7 +51,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from login page
-  if (request.nextUrl.pathname === '/login' && user) {
+  if (isLoginPage && user) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

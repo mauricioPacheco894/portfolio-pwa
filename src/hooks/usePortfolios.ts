@@ -19,11 +19,12 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
     return data || []
 }
 
-export function usePortfolios() {
+export function usePortfolios(options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: ['portfolios'],
         queryFn: fetchPortfolios,
         staleTime: 2 * 60 * 1000, // 2 minutes
+        enabled: options?.enabled,
     })
 }
 

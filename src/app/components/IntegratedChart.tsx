@@ -25,33 +25,33 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
     const data = holdings.map(h => ({ name: h.ticker, value: h.currentValue }))
 
     return (
-        <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="h-64 w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                     <Pie
                         data={data}
                         cx="50%"
                         cy="50%"
-                        innerRadius={35}
-                        outerRadius={55}
+                        innerRadius={45}
+                        outerRadius={65}
                         paddingAngle={2}
                         dataKey="value"
                         label={({ cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value, name }: any) => {
                             const RADIAN = Math.PI / 180
-                            // Cálculos super compactos para evitar recortes
+                            // Cálculos ajustados para tamaño mediano
                             const sin = Math.sin(-midAngle * RADIAN)
                             const cos = Math.cos(-midAngle * RADIAN)
 
-                            // Inicio de línea pegado al borde
+                            // Inicio de línea
                             const sx = cx + (outerRadius) * cos
                             const sy = cy + (outerRadius) * sin
 
-                            // Codo mucho más cerca (solo 10px fuera)
-                            const mx = cx + (outerRadius + 10) * cos
-                            const my = cy + (outerRadius + 10) * sin
+                            // Codo
+                            const mx = cx + (outerRadius + 8) * cos
+                            const my = cy + (outerRadius + 8) * sin
 
-                            // Línea horizontal corta (10px)
-                            const ex = mx + (cos >= 0 ? 1 : -1) * 10
+                            // Línea horizontal
+                            const ex = mx + (cos >= 0 ? 1 : -1) * 12
                             const ey = my
 
                             const textAnchor = cos >= 0 ? 'start' : 'end'
@@ -60,7 +60,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
                                 <g>
                                     <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#9ca3af" fill="none" />
                                     <circle cx={ex} cy={ey} r={2} fill="#9ca3af" stroke="none" />
-                                    <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} textAnchor={textAnchor} fill="#374151" dy={3} style={{ fontSize: '10px', fontWeight: 600 }}>
+                                    <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} textAnchor={textAnchor} fill="#374151" dy={3} style={{ fontSize: '11px', fontWeight: 600 }}>
                                         {`${name}: ${(percent * 100).toFixed(1)}%`}
                                     </text>
                                 </g>
@@ -73,8 +73,21 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
                         ))}
                     </Pie>
                     <Tooltip
-                        formatter={(value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00'}
-                        contentStyle={{ backgroundColor: '#333', borderColor: '#333', color: '#fff' }}
+                        content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                                return (
+                                    <div className="rounded-lg bg-white px-3 py-2 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10">
+                                        <p className="text-xs font-bold text-zinc-900 dark:text-white mb-0.5">
+                                            {payload[0].name}
+                                        </p>
+                                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                            ${Number(payload[0].value).toFixed(2)}
+                                        </p>
+                                    </div>
+                                )
+                            }
+                            return null
+                        }}
                     />
                 </PieChart>
             </ResponsiveContainer>

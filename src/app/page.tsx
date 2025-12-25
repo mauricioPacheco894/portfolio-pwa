@@ -13,32 +13,17 @@ import { Header } from './components/Header'
 import { SkeletonCard } from '@/components/ui/SkeletonLoader'
 import { usePortfolios } from '@/hooks/usePortfolios'
 
+import { useAuth } from '@/contexts/AuthContext'
+
 export default function Home() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [checkingAuth, setCheckingAuth] = useState(true)
+  // Usamos el estado global para evitar parpadeos
+  const { user, loading: authLoading } = useAuth()
 
-  // Use React Query for portfolios
-  const { data: portfolios = [], isLoading, error, refetch } = usePortfolios()
+  // Use React Query for portfolios, enabled only when user is authenticated
+  const { data: portfolios = [], isLoading: portfoliosLoading, error, refetch } = usePortfolios({ enabled: !!user })
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      setUser(user)
-      setCheckingAuth(false)
-
-      if (user) {
-        refetch()
-      }
-    }
-
-    checkAuth()
-  }, [refetch])
-
-  // Show error toast if query fails
+  // Error handling
   useEffect(() => {
     if (error) {
       toast.error('Error al cargar portafolios')
@@ -46,21 +31,21 @@ export default function Home() {
     }
   }, [error])
 
-  if (checkingAuth) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
         <Header />
         <main className="mx-auto flex max-w-6xl items-center justify-center px-4 py-12">
+          {/* Spinner sutil solo si realmente estamos cargando la primera vez */}
           <div className="text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500"></div>
-            </div>
-            <p className="text-zinc-600 dark:text-zinc-400">Verificando sesión...</p>
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500 mx-auto mb-2"></div>
+            <p className="text-zinc-400 text-sm">Cargando...</p>
           </div>
         </main>
       </div>
     )
   }
+
 
   if (!user) {
     return (
@@ -102,7 +87,7 @@ export default function Home() {
         </div>
 
         {/* Content */}
-        {isLoading ? (
+        {portfoliosLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <SkeletonCard />
             <SkeletonCard />

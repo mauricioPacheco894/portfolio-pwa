@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ReactQueryProvider } from '@/contexts/ReactQueryProvider'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -50,9 +51,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <ReactQueryProvider>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </ReactQueryProvider>
     </ErrorBoundary>
   )

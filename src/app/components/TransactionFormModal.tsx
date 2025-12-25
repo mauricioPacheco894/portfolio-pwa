@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { PlusCircle, Save, X } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export interface TransactionData {
     id?: string
@@ -25,6 +26,7 @@ type Props = {
 
 export default function TransactionFormModal({ isOpen, onClose, portfolioId, initialData }: Props) {
     const router = useRouter()
+    const [isPending, startTransition] = useTransition()
 
     const [ticker, setTicker] = useState('')
     const [type, setType] = useState<'BUY' | 'SELL'>('BUY')
@@ -86,36 +88,55 @@ export default function TransactionFormModal({ isOpen, onClose, portfolioId, ini
 
             let queryPromise
 
-            // Creación del timeout para evitar cuelgues
+            // Creación del timeout para evitar cuelgues (reducido a 5s para mejor UX)
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('La solicitud tardó demasiado. Verifica tu conexión.')), 10000)
+                setTimeout(() => reject(new Error('La solicitud tardó demasiado. Verifica tu conexión.')), 5000)
             )
 
             if (initialData?.id) {
                 // UPDATE
+                console.log('Intentando UPDATE:', { id: initialData.id, payload })
                 queryPromise = supabase
                     .from('transactions')
                     .update(payload)
                     .eq('id', initialData.id)
-                    .eq('user_id', user.id)
+                    .select()
             } else {
                 // INSERT
+                console.log('Intentando INSERT:', payload)
                 queryPromise = supabase
                     .from('transactions')
                     .insert([payload])
+                    .select()
             }
 
-            const { error: opError } = await Promise.race([queryPromise, timeoutPromise]) as any
+            // Aumentamos timeout temporalmente para debug y capturamos respuesta completa
+            const { data: opData, error: opError } = await Promise.race([queryPromise, timeoutPromise]) as any
+
+            console.log('Respuesta Supabase:', { opData, opError })
 
             if (opError) throw new Error(opError.message)
 
+            // Verificación de que realmente se guardó algo
+            if (opData && opData.length === 0) {
+                throw new Error('Operación exitosa pero ningún dato fue modificado. Verifica permisos o IDs.')
+            }
+
+            // UI Optimista: Éxito inmediato
+            toast.success(initialData ? 'Transacción actualizada' : 'Transacción agregada')
             onClose()
-            router.refresh()
+
+            // Refresco de datos en segundo plano
+            startTransition(() => {
+                router.refresh()
+            })
+
         } catch (err: any) {
             console.error(err)
+            toast.error(err.message || 'Error al guardar')
             setError(err.message || 'Error al guardar')
         } finally {
-            setLoading(false)
+            if (isOpen) setLoading(false)
         }
     }
 
