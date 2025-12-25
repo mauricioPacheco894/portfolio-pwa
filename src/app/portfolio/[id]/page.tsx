@@ -12,6 +12,7 @@ import { getCurrentPrices } from '@/services/priceService'
 import { Header } from '@/app/components/Header'
 
 import { Database } from '@/types/supabase'
+import { ChevronLeft } from 'lucide-react'
 
 type Transaction = Database['public']['Tables']['transactions']['Row']
 type Portfolio = Database['public']['Tables']['portfolios']['Row']
@@ -101,51 +102,59 @@ export default async function Page({ params }: Props) {
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link href="/" className="mb-3 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
-            ← Volver a mis portafolios
-          </Link>
-          <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{portfolio.name}</h1>
+          <div className="flex items-end justify-between gap-4 flex-wrap border-b border-zinc-200 pb-4 mb-8 dark:border-zinc-800">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                aria-label="Volver"
+              >
+                <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
+              </Link>
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">{portfolio.name}</h1>
+            </div>
 
             {/* KPIs Horizontales */}
-            <div className="flex items-center gap-4 text-sm flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-500 dark:text-zinc-400">Valor:</span>
-                <span className="font-bold text-zinc-900 dark:text-white">
+            <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-baseline gap-2">
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">Valor:</span>
+                <span className="text-lg font-bold text-zinc-900 dark:text-white">
                   ${holdings.reduce((sum, h) => sum + h.currentValue, 0).toFixed(2)}
                 </span>
               </div>
 
-              <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-600" />
+              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">|</span>
 
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-500 dark:text-zinc-400">Invertido:</span>
-                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+              <div className="flex items-baseline gap-2">
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">Invertido:</span>
+                <span className="text-lg font-bold text-zinc-900 dark:text-white">
                   ${holdings.reduce((sum, h) => sum + h.totalInvested, 0).toFixed(2)}
                 </span>
               </div>
 
-              <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-600" />
+              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">|</span>
 
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-500 dark:text-zinc-400">Ganancia:</span>
-                <span className={`font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                  ? 'text-green-600'
-                  : 'text-red-600'
-                  }`}>
-                  {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
-                  ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
-                </span>
-                <span className={`text-xs font-semibold ${holdings.length > 0 && holdings[0].totalInvested > 0
-                  ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                  : 'text-zinc-500'
-                  }`}>
-                  ({holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
-                    ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
-                    : '0.00'}%)
-                </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">Ganancia:</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-red-600 dark:text-red-400'
+                    }`}>
+                    {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
+                    ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
+                  </span>
+                  <span className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
+                    ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-red-600 dark:text-red-400'
+                    : 'text-zinc-400'
+                    }`}>
+                    ({holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                      ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
+                      : '0.00'}%)
+                  </span>
+                </div>
               </div>
             </div>
           </div>
