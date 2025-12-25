@@ -106,76 +106,96 @@ export default function TargetAllocationEditor({ portfolioId, currentTarget, ava
   const total = Object.values(allocation).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Definir Objetivo (Target)</h3>
+    <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-white">Definir Objetivo (Target)</h3>
 
-      {/* Lista actual */}
+      {/* Tabla de asignaciones */}
       {Object.entries(allocation).length > 0 && (
-        <div className="mb-4 space-y-2">
-          {Object.entries(allocation).map(([t, p]) => (
-            <div key={t} className="flex items-center justify-between rounded bg-zinc-50 p-3 dark:bg-zinc-700">
-              <div>
-                <span className="font-semibold text-zinc-900 dark:text-white">{t}</span>
-                <div className="mt-1 h-1.5 w-24 rounded bg-zinc-200 dark:bg-zinc-600">
-                  <div
-                    className="h-full rounded bg-blue-500"
-                    style={{ width: `${p}%` }}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {editingTicker === t ? (
-                  <>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      className="w-16 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') handleSaveEdit()
-                        if (e.key === 'Escape') handleCancelEdit()
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSaveEdit}
-                      className="text-green-600 hover:text-green-700"
-                      title="Guardar"
-                    >
-                      <Check size={18} />
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="text-zinc-400 hover:text-zinc-600"
-                      title="Cancelar"
-                    >
-                      <X size={18} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">{p}%</span>
-                    <button
-                      onClick={() => handleStartEdit(t, p)}
-                      className="text-zinc-400 hover:text-blue-500"
-                      title="Editar"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleRemove(t)}
-                      className="text-zinc-400 hover:text-red-500"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="mb-4 max-h-96 overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+              <tr>
+                <th className="px-3 py-2 text-left">Ticker</th>
+                <th className="px-3 py-2 text-right">Porcentaje</th>
+                <th className="px-3 py-2 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+              {Object.entries(allocation).map(([t, p]) => (
+                <tr key={t} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-zinc-900 dark:text-white">{t}</span>
+                      <div className="h-1.5 w-16 rounded bg-zinc-200 dark:bg-zinc-600">
+                        <div
+                          className="h-full rounded bg-blue-500"
+                          style={{ width: `${p}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {editingTicker === t ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        className="w-16 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        value={editValue}
+                        onChange={e => setEditValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSaveEdit()
+                          if (e.key === 'Escape') handleCancelEdit()
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">{p}%</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center justify-center gap-2">
+                      {editingTicker === t ? (
+                        <>
+                          <button
+                            onClick={handleSaveEdit}
+                            className="text-green-600 hover:text-green-700"
+                            title="Guardar"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-zinc-400 hover:text-zinc-600"
+                            title="Cancelar"
+                          >
+                            <X size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleStartEdit(t, p)}
+                            className="text-zinc-400 hover:text-blue-500"
+                            title="Editar"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleRemove(t)}
+                            className="text-zinc-400 hover:text-red-500"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

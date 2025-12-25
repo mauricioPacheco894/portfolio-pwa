@@ -11,6 +11,8 @@ type Props = {
 
 export default function AddTransactionForm({ portfolioId }: Props) {
   const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
+
   const [ticker, setTicker] = useState('')
   const [type, setType] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState<number | ''>('')
@@ -36,7 +38,8 @@ export default function AddTransactionForm({ portfolioId }: Props) {
         return
       }
 
-      const { error: insertError } = await supabase.from('transactions').insert([
+      // Crear una promesa con timeout
+      const insertPromise = supabase.from('transactions').insert([
         {
           portfolio_id: portfolioId,
           user_id: user.id,
@@ -49,18 +52,23 @@ export default function AddTransactionForm({ portfolioId }: Props) {
         },
       ])
 
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('La solicitud tardó demasiado. Verifica tu conexión.')), 10000)
+      )
+
+      const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]) as any
+
       if (insertError) {
-        setError(insertError.message)
-        setLoading(false)
-        return
+        throw new Error(insertError.message)
       }
 
-      // Reset
+      // Reset y cerrar
       setTicker('')
       setQuantity('')
       setPrice('')
       setFees('')
       setDate('')
+      setIsOpen(false)
 
       router.refresh()
     } catch (err) {
@@ -71,9 +79,29 @@ export default function AddTransactionForm({ portfolioId }: Props) {
     }
   }
 
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 py-4 text-sm font-medium text-zinc-500 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/10 dark:hover:text-blue-400 transition-all"
+      >
+        <PlusCircle size={20} />
+        Agregar Nueva Transacción
+      </button>
+    )
+  }
+
   return (
     <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-800 dark:border-zinc-700">
-      <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Agregar Transacción</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Agregar Transacción</h3>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        >
+          Cancelar
+        </button>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <input
@@ -82,6 +110,7 @@ export default function AddTransactionForm({ portfolioId }: Props) {
             placeholder="Ticker (ej: AAPL)"
             required
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white dark:border-zinc-600 dark:bg-zinc-700 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            autoFocus
           />
 
           <select

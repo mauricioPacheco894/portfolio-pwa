@@ -5,6 +5,8 @@ import AddTransactionForm from '@/app/components/AddTransactionForm'
 import TransactionActions from '@/app/components/TransactionActions'
 import AllocationChart from '@/app/components/AllocationChart'
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor'
+import PortfolioManagementTable from '@/app/components/PortfolioManagementTable'
+import IntegratedChart from '@/app/components/IntegratedChart'
 import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
 import { getCurrentPrices } from '@/services/priceService'
 import { Header } from '@/app/components/Header'
@@ -109,170 +111,138 @@ export default async function Page({ params }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <Link href="/" className="mb-4 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <Link href="/" className="mb-3 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
             ← Volver a mis portafolios
           </Link>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">{portfolio.name}</h1>
-        </div>
+          <div className="flex items-baseline justify-between gap-4 flex-wrap">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{portfolio.name}</h1>
 
-        {/* Sección de Resumen y Gráfico */}
-        <section className="mb-8 grid gap-6 lg:grid-cols-3">
-          {/* COLUMNA IZQUIERDA: Métricas Clave */}
-          <div className="space-y-6">
-            <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Valor Total</h3>
-              <p className="mt-2 text-4xl font-bold text-zinc-900 dark:text-white">
-                ${holdings.reduce((sum, h) => sum + h.currentValue, 0).toFixed(2)}
-              </p>
-              <div className="mt-4 text-sm">
-                <div className="text-zinc-600 dark:text-zinc-400">Total Invertido</div>
-                <div className="font-semibold text-zinc-900 dark:text-white">
-                  ${holdings.reduce((sum, h) => sum + h.totalInvested, 0).toFixed(2)}
-                </div>
+            {/* KPIs Horizontales */}
+            <div className="flex items-center gap-4 text-sm flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 dark:text-zinc-400">Valor:</span>
+                <span className="font-bold text-zinc-900 dark:text-white">
+                  ${holdings.reduce((sum, h) => sum + h.currentValue, 0).toFixed(2)}
+                </span>
               </div>
-            </div>
 
-            <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-              <h3 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Ganancia/Pérdida</h3>
-              <p className={`mt-2 text-3xl font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                ? 'text-green-600'
-                : 'text-red-600'
-                }`}>
-                {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
-                ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
-              </p>
-              <div className="mt-4 text-sm">
-                <div className={`font-semibold ${holdings.length > 0 && holdings[0].totalInvested > 0
+              <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-600" />
+
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 dark:text-zinc-400">Invertido:</span>
+                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                  ${holdings.reduce((sum, h) => sum + h.totalInvested, 0).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-600" />
+
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 dark:text-zinc-400">Ganancia:</span>
+                <span className={`font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
+                  }`}>
+                  {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
+                  ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
+                </span>
+                <span className={`text-xs font-semibold ${holdings.length > 0 && holdings[0].totalInvested > 0
                   ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
                     ? 'text-green-600'
                     : 'text-red-600'
-                  : ''
+                  : 'text-zinc-500'
                   }`}>
-                  {holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                  ({holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
                     ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
-                    : '0.00'}
-                  %
-                </div>
+                    : '0.00'}%)
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* COLUMNA DERECHA: Gráfica */}
-          <div className="lg:col-span-2">
-            <AllocationChart holdings={holdings} />
-          </div>
-        </section>
-
-        {/* Sección de Rebalanceo */}
-        <section className="mb-8 grid gap-6 lg:grid-cols-2">
-          {/* Editor de Objetivo */}
-          <TargetAllocationEditor
-            portfolioId={id}
+        {/* Tabla Maestra de Gestión Unificada */}
+        <section className="mb-6">
+          <PortfolioManagementTable
+            holdings={holdings}
             currentTarget={portfolio.target_allocation || undefined}
+            rebalanceSuggestions={rebalanceSuggestions}
+            portfolioId={id}
             availableTickers={uniqueTickers}
+            totalValue={holdings.reduce((sum, h) => sum + h.currentValue, 0)}
           />
-
-          {/* Sugerencias de Rebalanceo */}
-          <div className="rounded-xl border bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Plan de Rebalanceo</h3>
-
-            {!portfolio.target_allocation ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Define tu objetivo a la izquierda para ver sugerencias.</p>
-            ) : rebalanceSuggestions.length === 0 ? (
-              <div className="flex h-48 items-center justify-center">
-                <p className="text-center text-green-600 font-medium">✨ Tu portafolio está balanceado</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {rebalanceSuggestions.map(s => (
-                  <div key={s.ticker} className="flex items-center justify-between border-b pb-3 last:border-0 dark:border-zinc-700">
-                    <div>
-                      <span className="font-bold text-zinc-900 dark:text-white">{s.ticker}</span>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Actual: {s.currentPct.toFixed(1)}% → Meta: {s.targetPct}%
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {/* Badge de COMPRAR/VENDER (Sin cambios) */}
-                      <span className={`inline-block text-xs font-bold px-3 py-1 rounded mb-1 ${s.action === 'BUY'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                        : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                        }`}>
-                        {s.action === 'BUY' ? 'COMPRAR' : 'VENDER'}
-                      </span>
-
-                      {/* Monto en dinero (Sin cambios) */}
-                      <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-white">
-                        ${s.amount.toFixed(2)}
-                      </div>
-
-                      {/* --- NUEVO: Cantidad de acciones --- */}
-                      {/* Usamos Math.abs para que no salga negativo si es venta */}
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        {s.quantity ? Math.abs(s.quantity).toFixed(4) : "0"} títulos
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </section>
 
-        {/* Sección de Posiciones */}
-        <section className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold text-zinc-800 dark:text-zinc-100">Mis Posiciones</h2>
-          <div className="overflow-x-auto rounded-lg border bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
-                <tr>
-                  <th className="px-6 py-3">Activo</th>
-                  <th className="px-6 py-3 text-right">Cantidad</th>
-                  <th className="px-6 py-3 text-right">Costo Prom.</th>
-                  <th className="px-6 py-3 text-right">Último Precio</th>
-                  <th className="px-6 py-3 text-right">Valor Total</th>
-                  <th className="px-6 py-3 text-right">Ganancia/Pérdida</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                {holdings.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-zinc-500 dark:text-zinc-400">
-                      Agrega transacciones para ver tus posiciones.
-                    </td>
-                  </tr>
-                ) : (
-                  holdings.map((asset) => (
-                    <tr key={asset.ticker}>
-                      <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">{asset.ticker}</td>
-                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">{asset.totalQuantity.toFixed(4)}</td>
-                      <td className="px-6 py-4 text-right text-zinc-600 dark:text-zinc-400">${asset.averageCost.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="font-semibold text-zinc-900 dark:text-white">
-                          ${asset.marketPrice ? asset.marketPrice.toFixed(2) : (asset.currentValue / asset.totalQuantity).toFixed(2)}
-                        </div>
-                        {asset.marketPrice && (
-                          <span className="text-[10px] font-bold text-blue-500" title="Precio en tiempo real">LIVE</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                        ${asset.currentValue.toFixed(2)}
-                      </td>
-                      <td className={`px-6 py-4 text-right font-medium ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {asset.plDollars >= 0 ? '+' : ''}{asset.plDollars.toFixed(2)} ({asset.plPercentage.toFixed(2)}%)
-                      </td>
+        {/* Sección de Posiciones con Gráfica Integrada */}
+        <section className="mb-6">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">Mis Posiciones</h2>
+          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Tabla de Posiciones Detallada (Ocupa 2 columnas) */}
+              <div className="overflow-x-auto lg:col-span-2">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+                    <tr>
+                      <th className="px-3 py-2">Activo</th>
+                      <th className="px-3 py-2 text-right">Cant.</th>
+                      <th className="px-3 py-2 text-right">Costo Prom.</th>
+                      <th className="px-3 py-2 text-right">Precio</th>
+                      <th className="px-3 py-2 text-right">Valor</th>
+                      <th className="px-3 py-2 text-right">G/P</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                    {holdings.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400">
+                          Agrega transacciones para ver tus posiciones.
+                        </td>
+                      </tr>
+                    ) : (
+                      holdings.map((asset) => (
+                        <tr key={asset.ticker} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">{asset.ticker}</td>
+                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">{asset.totalQuantity.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">${asset.averageCost.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                            <div className="flex items-center justify-end gap-1">
+                              ${asset.marketPrice ? asset.marketPrice.toFixed(2) : (asset.currentValue / asset.totalQuantity).toFixed(2)}
+                              {asset.marketPrice && (
+                                <span className="text-[10px] font-bold text-blue-500" title="Precio en tiempo real">LIVE</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-white">
+                            ${asset.currentValue.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <div className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {asset.plDollars >= 0 ? '+' : ''}{asset.plPercentage.toFixed(1)}%
+                            </div>
+                            <div className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}>
+                              {asset.plDollars >= 0 ? '+' : ''}${asset.plDollars.toFixed(0)}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Gráfica de Distribución Integrada (Ocupa 1 columna) */}
+              <div className="flex flex-col justify-center border-t pt-4 lg:border-t-0 lg:border-l lg:pl-4 lg:pt-0 dark:border-zinc-700">
+                <h3 className="mb-2 text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">Distribución</h3>
+                <IntegratedChart holdings={holdings} />
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
+        <section className="mb-6">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
 
           <div className="overflow-x-auto rounded-lg border dark:border-zinc-700">
             <table className="w-full table-auto text-sm">
