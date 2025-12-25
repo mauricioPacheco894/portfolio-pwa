@@ -4,15 +4,17 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Trash2, Edit2 } from 'lucide-react'
 import { useState } from 'react'
+import TransactionFormModal, { TransactionData } from './TransactionFormModal'
 
 type Props = {
-  transactionId: string
-  onEdit?: (id: string) => void
+  transaction: any // Idealmente usar un tipo preciso, pero 'any' funcionará por ahora para compatibilidad rápida
+  portfolioId: string // Necesario para el modal
 }
 
-export default function TransactionActions({ transactionId, onEdit }: Props) {
+export default function TransactionActions({ transaction, portfolioId }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
 
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta transacción?')) {
@@ -34,7 +36,7 @@ export default function TransactionActions({ transactionId, onEdit }: Props) {
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', transactionId)
+        .eq('id', transaction.id)
         .eq('user_id', user.id)
 
       if (error) {
@@ -52,16 +54,44 @@ export default function TransactionActions({ transactionId, onEdit }: Props) {
     }
   }
 
+  // Mapear transaction de Supabase a TransactionData del Form
+  const transactionData: TransactionData = {
+    id: transaction.id,
+    ticker: transaction.ticker,
+    type: transaction.type,
+    quantity: transaction.quantity,
+    price_per_unit: transaction.price_per_unit,
+    fees: transaction.fees,
+    date: transaction.date,
+    portfolio_id: portfolioId
+  }
+
   return (
-    <div className="flex gap-2">
-      <button
-        onClick={handleDelete}
-        disabled={loading}
-        className="inline-flex items-center gap-1 rounded px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
-        title="Eliminar"
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
+    <>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setIsEditOpen(true)}
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-zinc-500 hover:bg-zinc-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+          title="Editar"
+        >
+          <Edit2 size={16} />
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={loading}
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
+          title="Eliminar"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
+      <TransactionFormModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        portfolioId={portfolioId}
+        initialData={transactionData}
+      />
+    </>
   )
 }

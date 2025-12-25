@@ -242,7 +242,10 @@ export default async function Page({ params }: Props) {
         </section>
 
         <section className="mb-6">
-          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
+            <AddTransactionForm portfolioId={id} />
+          </div>
 
           <div className="overflow-x-auto rounded-lg border dark:border-zinc-700">
             <table className="w-full table-auto text-sm">
@@ -294,7 +297,7 @@ export default async function Page({ params }: Props) {
                         <td className="px-4 py-3">${fees.toFixed(2)}</td>
                         <td className="px-4 py-3 font-medium">${total}</td>
                         <td className="px-4 py-3">
-                          <TransactionActions transactionId={t.id} />
+                          <TransactionActions transaction={t} portfolioId={id} />
                         </td>
                       </tr>
                     )
@@ -305,9 +308,7 @@ export default async function Page({ params }: Props) {
           </div>
         </section>
 
-        <section>
-          <AddTransactionForm portfolioId={id} />
-        </section>
+
       </main>
     </div>
   )
