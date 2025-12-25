@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
-import { Portfolio } from '@/types/portfolio'
+import { Database } from '@/types/supabase'
+
+type Portfolio = Database['public']['Tables']['portfolios']['Row']
 
 export async function getPortfolios(): Promise<Portfolio[]> {
   try {

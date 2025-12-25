@@ -6,9 +6,13 @@ import { Trash2, Edit2 } from 'lucide-react'
 import { useState } from 'react'
 import TransactionFormModal, { TransactionData } from './TransactionFormModal'
 
+import { Database } from '@/types/supabase'
+
+type Transaction = Database['public']['Tables']['transactions']['Row']
+
 type Props = {
-  transaction: any // Idealmente usar un tipo preciso, pero 'any' funcionará por ahora para compatibilidad rápida
-  portfolioId: string // Necesario para el modal
+  transaction: Transaction
+  portfolioId: string
 }
 
 export default function TransactionActions({ transaction, portfolioId }: Props) {
@@ -61,7 +65,7 @@ export default function TransactionActions({ transaction, portfolioId }: Props) 
     type: transaction.type,
     quantity: transaction.quantity,
     price_per_unit: transaction.price_per_unit,
-    fees: transaction.fees,
+    fees: transaction.fees || 0,
     date: transaction.date,
     portfolio_id: portfolioId
   }

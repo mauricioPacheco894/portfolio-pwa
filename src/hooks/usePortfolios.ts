@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { Portfolio } from '@/types/portfolio'
+import { Database } from '@/types/supabase'
 import toast from 'react-hot-toast'
+
+type Portfolio = Database['public']['Tables']['portfolios']['Row']
 
 export async function fetchPortfolios(): Promise<Portfolio[]> {
     const { data, error } = await supabase

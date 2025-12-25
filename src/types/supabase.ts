@@ -33,6 +33,7 @@ export interface Database {
             transactions: {
                 Row: {
                     id: string
+                    user_id: string
                     portfolio_id: string
                     ticker: string
                     type: 'BUY' | 'SELL'
@@ -44,6 +45,7 @@ export interface Database {
                 }
                 Insert: {
                     id?: string
+                    user_id: string
                     portfolio_id: string
                     ticker: string
                     type: 'BUY' | 'SELL'
@@ -55,6 +57,7 @@ export interface Database {
                 }
                 Update: {
                     id?: string
+                    user_id?: string
                     portfolio_id?: string
                     ticker?: string
                     type?: 'BUY' | 'SELL'

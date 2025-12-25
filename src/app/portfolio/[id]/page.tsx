@@ -11,22 +11,10 @@ import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
 import { getCurrentPrices } from '@/services/priceService'
 import { Header } from '@/app/components/Header'
 
-interface Transaction {
-  id: string
-  ticker: string
-  type: 'BUY' | 'SELL'
-  quantity: number
-  price_per_unit: number
-  fees?: number
-  date: string
-}
+import { Database } from '@/types/supabase'
 
-interface Portfolio {
-  id: string
-  name: string
-  target_allocation?: Record<string, number>
-  created_at: string
-}
+type Transaction = Database['public']['Tables']['transactions']['Row']
+type Portfolio = Database['public']['Tables']['portfolios']['Row']
 
 async function getPortfolio(id: string) {
   const supabase = await createClient()
