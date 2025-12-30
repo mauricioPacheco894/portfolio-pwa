@@ -1,34 +1,35 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import { Database } from '@/types/supabase'
-import toast from 'react-hot-toast'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
-type Portfolio = Database['public']['Tables']['portfolios']['Row']
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/supabase';
+
+type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
 export async function fetchPortfolios(): Promise<Portfolio[]> {
-    const { data, error } = await supabase
-        .from('portfolios')
-        .select('*')
-        .order('created_at', { ascending: false })
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('Error fetching portfolios:', error.message)
-        throw new Error(error.message)
-    }
+  if (error) {
+    console.error('Error fetching portfolios:', error.message);
+    throw new Error(error.message);
+  }
 
-    return data || []
+  return data || [];
 }
 
 export function usePortfolios(options?: { enabled?: boolean }) {
-    return useQuery({
-        queryKey: ['portfolios'],
-        queryFn: fetchPortfolios,
-        staleTime: 2 * 60 * 1000, // 2 minutes
-        enabled: options?.enabled,
-    })
+  return useQuery({
+    queryKey: ['portfolios'],
+    queryFn: fetchPortfolios,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled,
+  });
 }
 
 export function useInvalidatePortfolios() {
-    const queryClient = useQueryClient()
-    return () => queryClient.invalidateQueries({ queryKey: ['portfolios'] })
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ['portfolios'] });
 }

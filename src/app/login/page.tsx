@@ -1,22 +1,23 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { Mail, Lock, LogIn, UserPlus } from 'lucide-react'
+import { Lock, LogIn, Mail, UserPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
     try {
       if (isSignUp) {
@@ -24,47 +25,47 @@ export default function LoginPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-        })
+        });
 
         if (signUpError) {
-          setError(signUpError.message)
-          setLoading(false)
-          return
+          setError(signUpError.message);
+          setLoading(false);
+          return;
         }
 
         // If Supabase returned a session, the user is already signed in — redirect.
         if (data?.session) {
-          router.push('/')
-          router.refresh()
-          return
+          router.push('/');
+          router.refresh();
+          return;
         }
 
         // Otherwise, show the check-your-email message (confirmation required).
-        setError('Verifica tu correo para confirmar la cuenta')
+        setError('Verifica tu correo para confirmar la cuenta');
       } else {
         // Sign In
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
-        })
+        });
 
         if (signInError) {
-          setError(signInError.message)
-          setLoading(false)
-          return
+          setError(signInError.message);
+          setLoading(false);
+          return;
         }
 
         // Redirect to home
-        router.push('/')
-        router.refresh()
+        router.push('/');
+        router.refresh();
       }
     } catch (err) {
-      setError('Error inesperado. Intenta de nuevo.')
-      console.error(err)
+      setError('Error inesperado. Intenta de nuevo.');
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 px-4">
@@ -88,7 +89,10 @@ export default function LoginPage() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 text-zinc-400" size={20} />
+                <Mail
+                  className="absolute left-3 top-3 text-zinc-400"
+                  size={20}
+                />
                 <input
                   type="email"
                   value={email}
@@ -106,7 +110,10 @@ export default function LoginPage() {
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 text-zinc-400" size={20} />
+                <Lock
+                  className="absolute left-3 top-3 text-zinc-400"
+                  size={20}
+                />
                 <input
                   type="password"
                   value={password}
@@ -152,8 +159,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setIsSignUp(!isSignUp)
-                  setError('')
+                  setIsSignUp(!isSignUp);
+                  setError('');
                 }}
                 className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
@@ -164,5 +171,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

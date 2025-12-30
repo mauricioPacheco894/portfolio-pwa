@@ -24,17 +24,20 @@ Portfolio PWA es una aplicación web progresiva completa que demuestra la implem
 ## �️ Stack Tecnológico
 
 ### Frontend
+
 - **Next.js 16** - App Router, Server Components, Streaming
 - **TypeScript** - Type-safe con validación de schemas (Zod)
 - **Tailwind CSS** - Utility-first styling con dark mode
 - **React Query** - Server state management y caching
 
-### Backend & Infraestructura  
+### Backend & Infraestructura
+
 - **Supabase** - PostgreSQL, Auth, Row Level Security
 - **Yahoo Finance API** - Datos de mercado en tiempo real
 - **Vercel** - Deployment con edge functions
 
 ### Herramientas
+
 - **next-pwa** - Service Worker y manifest
 - **Recharts** - Visualización de datos
 - **React Hot Toast** - Sistema de notificaciones
@@ -43,6 +46,7 @@ Portfolio PWA es una aplicación web progresiva completa que demuestra la implem
 ## 🏗️ Arquitectura
 
 El proyecto implementa:
+
 - ✅ **PWA completa** con Service Worker y manifest
 - ✅ **Middleware de autenticación** para protección de rutas
 - ✅ **Error Boundaries** para manejo robusto de errores

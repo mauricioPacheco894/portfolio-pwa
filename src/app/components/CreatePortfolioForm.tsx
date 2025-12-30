@@ -1,33 +1,36 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Plus, X, Loader } from 'lucide-react'
+import { Loader,Plus, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { supabase } from '@/lib/supabase';
 
 interface CreatePortfolioFormProps {
-  onPortfolioCreated: () => void
+  onPortfolioCreated: () => void;
 }
 
-export function CreatePortfolioForm({ onPortfolioCreated }: CreatePortfolioFormProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export function CreatePortfolioForm({
+  onPortfolioCreated,
+}: CreatePortfolioFormProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        setError('Debes iniciar sesión para crear un portafolio')
-        setLoading(false)
-        return
+        setError('Debes iniciar sesión para crear un portafolio');
+        setLoading(false);
+        return;
       }
 
       const { error: insertError } = await supabase.from('portfolios').insert([
@@ -36,27 +39,27 @@ export function CreatePortfolioForm({ onPortfolioCreated }: CreatePortfolioFormP
           target_allocation: null,
           user_id: user.id,
         },
-      ])
+      ]);
 
       if (insertError) {
-        setError(insertError.message)
-        setLoading(false)
-        return
+        setError(insertError.message);
+        setLoading(false);
+        return;
       }
 
       // Reset form and close modal
-      setName('')
-      setIsOpen(false)
+      setName('');
+      setIsOpen(false);
 
       // Refresh portfolio list
-      onPortfolioCreated()
+      onPortfolioCreated();
     } catch (err) {
-      setError('Error inesperado al crear portafolio')
-      console.error(err)
+      setError('Error inesperado al crear portafolio');
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -136,5 +139,5 @@ export function CreatePortfolioForm({ onPortfolioCreated }: CreatePortfolioFormP
         </div>
       )}
     </>
-  )
+  );
 }

@@ -1,101 +1,102 @@
-import { createClient } from '@/lib/supabaseServer'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import AddTransactionForm from '@/app/components/AddTransactionForm'
-import TransactionActions from '@/app/components/TransactionActions'
-import AllocationChart from '@/app/components/AllocationChart'
-import TargetAllocationEditor from '@/app/components/TargetAllocationEditor'
-import PortfolioManagementTable from '@/app/components/PortfolioManagementTable'
-import IntegratedChart from '@/app/components/IntegratedChart'
-import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath'
-import { getCurrentPrices } from '@/services/priceService'
-import { Header } from '@/app/components/Header'
+import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
-import { Database } from '@/types/supabase'
-import { ChevronLeft } from 'lucide-react'
+import AddTransactionForm from '@/app/components/AddTransactionForm';
+import AllocationChart from '@/app/components/AllocationChart';
+import { Header } from '@/app/components/Header';
+import IntegratedChart from '@/app/components/IntegratedChart';
+import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
+import TargetAllocationEditor from '@/app/components/TargetAllocationEditor';
+import TransactionActions from '@/app/components/TransactionActions';
+import { createClient } from '@/lib/supabaseServer';
+import { getCurrentPrices } from '@/services/priceService';
+import { Database } from '@/types/supabase';
+import { calculateHoldings, calculateRebalancing } from '@/utils/portfolioMath';
 
-type Transaction = Database['public']['Tables']['transactions']['Row']
-type Portfolio = Database['public']['Tables']['portfolios']['Row']
+type Transaction = Database['public']['Tables']['transactions']['Row'];
+type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
 async function getPortfolio(id: string) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('portfolios')
     .select('*')
     .eq('id', id)
-    .maybeSingle()
+    .maybeSingle();
 
   if (error) {
-    console.error('[getPortfolio] Query error:', error.message)
-    return null
+    console.error('[getPortfolio] Query error:', error.message);
+    return null;
   }
 
-  return data as Portfolio
+  return data as Portfolio;
 }
 
 async function getTransactions(portfolioId: string) {
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
     .eq('portfolio_id', portfolioId)
-    .order('date', { ascending: false })
+    .order('date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching transactions', error)
-    return []
+    console.error('Error fetching transactions', error);
+    return [];
   }
-  return data as Transaction[]
+  return data as Transaction[];
 }
 
 type Props = {
-  params: Promise<{ id: string }>
-}
+  params: Promise<{ id: string }>;
+};
 
 export default async function Page({ params }: Props) {
-  const { id } = await params
+  const { id } = await params;
 
-  const portfolio = await getPortfolio(id)
+  const portfolio = await getPortfolio(id);
 
   if (!portfolio) {
-    return notFound()
+    return notFound();
   }
 
-  const transactions = await getTransactions(id)
-  let holdings = calculateHoldings(transactions)
+  const transactions = await getTransactions(id);
+  let holdings = calculateHoldings(transactions);
 
   // Obtener precios en tiempo real
-  const tickers = holdings.map(h => h.ticker)
-  const currentPrices = await getCurrentPrices(tickers)
+  const tickers = holdings.map((h) => h.ticker);
+  const currentPrices = await getCurrentPrices(tickers);
 
   // Actualizar holdings con precios reales
-  holdings = holdings.map(asset => {
-    const livePrice = currentPrices[asset.ticker]
+  holdings = holdings.map((asset) => {
+    const livePrice = currentPrices[asset.ticker];
 
     if (livePrice) {
-      const newVal = asset.totalQuantity * livePrice
+      const newVal = asset.totalQuantity * livePrice;
       return {
         ...asset,
         marketPrice: livePrice,
         currentValue: newVal,
         plDollars: newVal - asset.totalInvested,
-        plPercentage: asset.totalInvested > 0
-          ? ((newVal - asset.totalInvested) / asset.totalInvested) * 100
-          : 0,
-      }
+        plPercentage:
+          asset.totalInvested > 0
+            ? ((newVal - asset.totalInvested) / asset.totalInvested) * 100
+            : 0,
+      };
     }
-    return asset
-  })
+    return asset;
+  });
 
-  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0)
+  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
   const rebalanceSuggestions = calculateRebalancing(
     holdings,
     portfolio.target_allocation || {},
     totalValue,
     currentPrices
-  )
-  const uniqueTickers = Array.from(new Set(holdings.map(h => h.ticker)))
+  );
+  const uniqueTickers = Array.from(new Set(holdings.map((h) => h.ticker)));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -111,48 +112,95 @@ export default async function Page({ params }: Props) {
               >
                 <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
               </Link>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">{portfolio.name}</h1>
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
+                {portfolio.name}
+              </h1>
             </div>
 
             {/* KPIs Horizontales */}
             <div className="flex items-center gap-6 text-sm">
               <div className="flex items-baseline gap-2">
-                <span className="text-zinc-500 font-medium dark:text-zinc-400">Valor:</span>
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                  Valor:
+                </span>
                 <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                  ${holdings.reduce((sum, h) => sum + h.currentValue, 0).toFixed(2)}
+                  $
+                  {holdings
+                    .reduce((sum, h) => sum + h.currentValue, 0)
+                    .toFixed(2)}
                 </span>
               </div>
 
-              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">|</span>
+              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">
+                |
+              </span>
 
               <div className="flex items-baseline gap-2">
-                <span className="text-zinc-500 font-medium dark:text-zinc-400">Invertido:</span>
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                  Invertido:
+                </span>
                 <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                  ${holdings.reduce((sum, h) => sum + h.totalInvested, 0).toFixed(2)}
+                  $
+                  {holdings
+                    .reduce((sum, h) => sum + h.totalInvested, 0)
+                    .toFixed(2)}
                 </span>
               </div>
 
-              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">|</span>
+              <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">
+                |
+              </span>
 
               <div className="flex items-baseline gap-2">
-                <span className="text-zinc-500 font-medium dark:text-zinc-400">Ganancia:</span>
+                <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                  Ganancia:
+                </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-red-600 dark:text-red-400'
-                    }`}>
-                    {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0 ? '+' : ''}
-                    ${holdings.reduce((sum, h) => sum + h.plDollars, 0).toFixed(2)}
+                  <span
+                    className={`text-lg font-bold ${
+                      holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}
+                  >
+                    {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                      ? '+'
+                      : ''}
+                    $
+                    {holdings
+                      .reduce((sum, h) => sum + h.plDollars, 0)
+                      .toFixed(2)}
                   </span>
-                  <span className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
-                    ? holdings.reduce((sum, h) => sum + h.plPercentage * h.totalInvested, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0) >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-red-600 dark:text-red-400'
-                    : 'text-zinc-400'
-                    }`}>
-                    ({holdings.length > 0 && holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
-                      ? ((holdings.reduce((sum, h) => sum + h.plDollars, 0) / holdings.reduce((sum, h) => sum + h.totalInvested, 0)) * 100).toFixed(2)
-                      : '0.00'}%)
+                  <span
+                    className={`text-sm font-bold ${
+                      holdings.length > 0 && holdings[0].totalInvested > 0
+                        ? holdings.reduce(
+                            (sum, h) => sum + h.plPercentage * h.totalInvested,
+                            0
+                          ) /
+                            holdings.reduce(
+                              (sum, h) => sum + h.totalInvested,
+                              0
+                            ) >=
+                          0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-red-600 dark:text-red-400'
+                        : 'text-zinc-400'
+                    }`}
+                  >
+                    (
+                    {holdings.length > 0 &&
+                    holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                      ? (
+                          (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
+                            holdings.reduce(
+                              (sum, h) => sum + h.totalInvested,
+                              0
+                            )) *
+                          100
+                        ).toFixed(2)
+                      : '0.00'}
+                    %)
                   </span>
                 </div>
               </div>
@@ -174,7 +222,9 @@ export default async function Page({ params }: Props) {
 
         {/* Sección de Posiciones con Gráfica Integrada */}
         <section className="mb-6">
-          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">Mis Posiciones</h2>
+          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+            Mis Posiciones
+          </h2>
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Tabla de Posiciones Detallada (Ocupa 2 columnas) */}
@@ -182,32 +232,66 @@ export default async function Page({ params }: Props) {
                 <table className="w-full text-left text-sm relative">
                   <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
                     <tr>
-                      <th className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900">Activo</th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">Cant.</th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">Costo Prom.</th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">Precio</th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">Valor</th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">G/P</th>
+                      <th className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900">
+                        Activo
+                      </th>
+                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                        Cant.
+                      </th>
+                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                        Costo Prom.
+                      </th>
+                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                        Precio
+                      </th>
+                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                        Valor
+                      </th>
+                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                        G/P
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                     {holdings.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400">
+                        <td
+                          colSpan={6}
+                          className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
+                        >
                           Agrega transacciones para ver tus posiciones.
                         </td>
                       </tr>
                     ) : (
                       holdings.map((asset) => (
-                        <tr key={asset.ticker} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">{asset.ticker}</td>
-                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">{asset.totalQuantity.toFixed(2)}</td>
-                          <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">${asset.averageCost.toFixed(2)}</td>
+                        <tr
+                          key={asset.ticker}
+                          className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                        >
+                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
+                            {asset.ticker}
+                          </td>
+                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                            {asset.totalQuantity.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">
+                            ${asset.averageCost.toFixed(2)}
+                          </td>
                           <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
                             <div className="flex items-center justify-end gap-1">
-                              ${asset.marketPrice ? asset.marketPrice.toFixed(2) : (asset.currentValue / asset.totalQuantity).toFixed(2)}
+                              $
+                              {asset.marketPrice
+                                ? asset.marketPrice.toFixed(2)
+                                : (
+                                    asset.currentValue / asset.totalQuantity
+                                  ).toFixed(2)}
                               {asset.marketPrice && (
-                                <span className="text-[10px] font-bold text-blue-500" title="Precio en tiempo real">LIVE</span>
+                                <span
+                                  className="text-[10px] font-bold text-blue-500"
+                                  title="Precio en tiempo real"
+                                >
+                                  LIVE
+                                </span>
                               )}
                             </div>
                           </td>
@@ -215,11 +299,17 @@ export default async function Page({ params }: Props) {
                             ${asset.currentValue.toFixed(2)}
                           </td>
                           <td className="px-3 py-2 text-right">
-                            <div className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {asset.plDollars >= 0 ? '+' : ''}{asset.plPercentage.toFixed(1)}%
+                            <div
+                              className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                            >
+                              {asset.plDollars >= 0 ? '+' : ''}
+                              {asset.plPercentage.toFixed(1)}%
                             </div>
-                            <div className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}>
-                              {asset.plDollars >= 0 ? '+' : ''}${asset.plDollars.toFixed(0)}
+                            <div
+                              className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}
+                            >
+                              {asset.plDollars >= 0 ? '+' : ''}$
+                              {asset.plDollars.toFixed(0)}
                             </div>
                           </td>
                         </tr>
@@ -231,7 +321,9 @@ export default async function Page({ params }: Props) {
 
               {/* Gráfica de Distribución Integrada (Ocupa 1 columna) */}
               <div className="flex flex-col justify-center border-t pt-4 lg:border-t-0 lg:border-l lg:pl-4 lg:pt-0 dark:border-zinc-700">
-                <h3 className="mb-2 text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">Distribución</h3>
+                <h3 className="mb-2 text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                  Distribución
+                </h3>
                 <IntegratedChart holdings={holdings} />
               </div>
             </div>
@@ -240,7 +332,9 @@ export default async function Page({ params }: Props) {
 
         <section className="mb-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">Transacciones</h2>
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+              Transacciones
+            </h2>
             <AddTransactionForm portfolioId={id} />
           </div>
 
@@ -248,36 +342,57 @@ export default async function Page({ params }: Props) {
             <table className="w-full table-auto text-sm relative">
               <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
                 <tr>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Fecha</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Ticker</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Tipo</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Cantidad</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Precio Unit.</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Comisión</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Total</th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Acciones</th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Ticker
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Tipo
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Cantidad
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Precio Unit.
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Comisión
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Total
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400">
+                    <td
+                      colSpan={8}
+                      className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400"
+                    >
                       No hay transacciones registradas aún
                     </td>
                   </tr>
                 ) : (
                   transactions.map((t) => {
-                    const qty = Number(t.quantity)
-                    const price = Number(t.price_per_unit)
-                    const fees = t.fees ? Number(t.fees) : 0
-                    const total = (qty * price + fees).toFixed(2)
+                    const qty = Number(t.quantity);
+                    const price = Number(t.price_per_unit);
+                    const fees = t.fees ? Number(t.fees) : 0;
+                    const total = (qty * price + fees).toFixed(2);
 
                     return (
                       <tr key={t.id}>
                         <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
                           {new Date(t.date).toLocaleDateString('es-ES')}
                         </td>
-                        <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{t.ticker}</td>
+                        <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                          {t.ticker}
+                        </td>
                         <td className="px-4 py-3">
                           {t.type === 'BUY' ? (
                             <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
@@ -294,19 +409,20 @@ export default async function Page({ params }: Props) {
                         <td className="px-4 py-3">${fees.toFixed(2)}</td>
                         <td className="px-4 py-3 font-medium">${total}</td>
                         <td className="px-4 py-3">
-                          <TransactionActions transaction={t} portfolioId={id} />
+                          <TransactionActions
+                            transaction={t}
+                            portfolioId={id}
+                          />
                         </td>
                       </tr>
-                    )
+                    );
                   })
                 )}
               </tbody>
             </table>
           </div>
         </section>
-
-
       </main>
     </div>
-  )
+  );
 }

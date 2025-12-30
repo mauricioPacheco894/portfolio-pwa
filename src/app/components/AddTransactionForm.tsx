@@ -1,15 +1,16 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { PlusCircle } from 'lucide-react'
-import TransactionFormModal from './TransactionFormModal'
+import { PlusCircle } from 'lucide-react';
+import { useState } from 'react';
+
+import TransactionFormModal from './TransactionFormModal';
 
 type Props = {
-  portfolioId: string
-}
+  portfolioId: string;
+};
 
 export default function AddTransactionForm({ portfolioId }: Props) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
@@ -28,5 +29,5 @@ export default function AddTransactionForm({ portfolioId }: Props) {
         portfolioId={portfolioId}
       />
     </>
-  )
+  );
 }

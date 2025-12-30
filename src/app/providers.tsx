@@ -1,18 +1,21 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { ToastProvider } from '@/contexts/ToastContext'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { ReactQueryProvider } from '@/contexts/ReactQueryProvider'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { useEffect } from 'react';
+
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ReactQueryProvider } from '@/contexts/ReactQueryProvider';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { supabase } from '@/lib/supabase';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Sync session to server via API route
     const syncSessionToServer = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
         if (session?.access_token) {
           // Send token to server so it can create authenticated requests
@@ -25,38 +28,40 @@ export function Providers({ children }: { children: React.ReactNode }) {
               accessToken: session.access_token,
               refreshToken: session.refresh_token,
             }),
-          })
+          });
         }
       } catch (err) {
-        console.error('[Providers] Sync error:', err)
+        console.error('[Providers] Sync error:', err);
       }
-    }
+    };
 
-    syncSessionToServer()
+    syncSessionToServer();
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          await syncSessionToServer()
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'TOKEN_REFRESHED'
+      ) {
+        await syncSessionToServer();
       }
-    )
+    });
 
     return () => {
-      subscription?.unsubscribe()
-    }
-  }, [])
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   return (
     <ErrorBoundary>
       <ReactQueryProvider>
         <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
       </ReactQueryProvider>
     </ErrorBoundary>
-  )
+  );
 }

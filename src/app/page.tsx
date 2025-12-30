@@ -1,35 +1,40 @@
+'use client';
 
-'use client'
+import { Calendar,TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect,useState } from 'react';
+import toast from 'react-hot-toast';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { User } from '@/types/supabase'
-import { TrendingUp, Calendar } from 'lucide-react'
-import Link from 'next/link'
-import toast from 'react-hot-toast'
-import { CreatePortfolioForm } from './components/CreatePortfolioForm'
-import { Header } from './components/Header'
-import { SkeletonCard } from '@/components/ui/SkeletonLoader'
-import { usePortfolios } from '@/hooks/usePortfolios'
+import { SkeletonCard } from '@/components/ui/SkeletonLoader';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePortfolios } from '@/hooks/usePortfolios';
+import { supabase } from '@/lib/supabase';
+import { User } from '@/types/supabase';
 
-import { useAuth } from '@/contexts/AuthContext'
+import { CreatePortfolioForm } from './components/CreatePortfolioForm';
+import { Header } from './components/Header';
 
 export default function Home() {
-  const router = useRouter()
+  const router = useRouter();
   // Usamos el estado global para evitar parpadeos
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth();
 
   // Use React Query for portfolios, enabled only when user is authenticated
-  const { data: portfolios = [], isLoading: portfoliosLoading, error, refetch } = usePortfolios({ enabled: !!user })
+  const {
+    data: portfolios = [],
+    isLoading: portfoliosLoading,
+    error,
+    refetch,
+  } = usePortfolios({ enabled: !!user });
 
   // Error handling
   useEffect(() => {
     if (error) {
-      toast.error('Error al cargar portafolios')
-      console.error('Error loading portfolios:', error)
+      toast.error('Error al cargar portafolios');
+      console.error('Error loading portfolios:', error);
     }
-  }, [error])
+  }, [error]);
 
   if (authLoading) {
     return (
@@ -43,9 +48,8 @@ export default function Home() {
           </div>
         </main>
       </div>
-    )
+    );
   }
-
 
   if (!user) {
     return (
@@ -66,7 +70,7 @@ export default function Home() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   return (
@@ -107,7 +111,8 @@ export default function Home() {
                 No tienes portafolios
               </h2>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-                Crea tu primer portafolio para comenzar a gestionar tus inversiones
+                Crea tu primer portafolio para comenzar a gestionar tus
+                inversiones
               </p>
             </div>
           </div>
@@ -166,11 +171,14 @@ export default function Home() {
                 <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
                   <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <Calendar size={14} />
-                    {new Date(portfolio.created_at).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {new Date(portfolio.created_at).toLocaleDateString(
+                      'es-ES',
+                      {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      }
+                    )}
                   </div>
                 </div>
               </Link>
@@ -179,5 +187,5 @@ export default function Home() {
         )}
       </main>
     </div>
-  )
+  );
 }

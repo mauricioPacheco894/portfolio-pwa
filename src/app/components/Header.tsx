@@ -1,51 +1,56 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { User } from '@/types/supabase'
-import { useDarkMode } from '@/hooks/useDarkMode'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { LogOut, LogIn, Wallet, Moon, Sun } from 'lucide-react'
+import { LogIn, LogOut, Moon, Sun,Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect,useState } from 'react';
+
+import { useDarkMode } from '@/hooks/useDarkMode';
+import { supabase } from '@/lib/supabase';
+import { User } from '@/types/supabase';
 
 export function Header() {
-  const router = useRouter()
-  const { theme, toggleTheme, mounted } = useDarkMode()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const { theme, toggleTheme, mounted } = useDarkMode();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
 
-    checkUser()
+    checkUser();
 
     // Subscribe to auth changes
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null)
-    })
+      setUser(session?.user || null);
+    });
 
     return () => {
-      data?.subscription?.unsubscribe()
-    }
-  }, [])
+      data?.subscription?.unsubscribe();
+    };
+  }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white" aria-label="Inicio">
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white"
+          aria-label="Inicio"
+        >
           <Wallet size={28} className="text-blue-600 dark:text-blue-400" />
         </Link>
 
@@ -87,5 +92,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

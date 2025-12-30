@@ -1,29 +1,31 @@
 // Definimos la estructura de una "Posición"
 export interface AssetPosition {
-  ticker: string
-  totalQuantity: number
-  averageCost: number
-  totalInvested: number
-  currentValue: number
-  marketPrice?: number // Precio actual en tiempo real
-  plDollars: number
-  plPercentage: number
+  ticker: string;
+  totalQuantity: number;
+  averageCost: number;
+  totalInvested: number;
+  currentValue: number;
+  marketPrice?: number; // Precio actual en tiempo real
+  plDollars: number;
+  plPercentage: number;
 }
 
-import { Database } from '@/types/supabase'
+import { Database } from '@/types/supabase';
 
-type Transaction = Database['public']['Tables']['transactions']['Row']
+type Transaction = Database['public']['Tables']['transactions']['Row'];
 
-export function calculateHoldings(transactions: Transaction[]): AssetPosition[] {
-  const assets: Record<string, AssetPosition> = {}
+export function calculateHoldings(
+  transactions: Transaction[]
+): AssetPosition[] {
+  const assets: Record<string, AssetPosition> = {};
 
   // Ordenamos cronológicamente (más antiguo a más nuevo) para calcular bien el promedio
-  const sortedTx = [...transactions].sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
+  const sortedTx = [...transactions].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
   for (const tx of sortedTx) {
-    const ticker = tx.ticker.toUpperCase()
+    const ticker = tx.ticker.toUpperCase();
 
     // Si es el primer movimiento de este activo, inicializamos
     if (!assets[ticker]) {
@@ -34,51 +36,56 @@ export function calculateHoldings(transactions: Transaction[]): AssetPosition[] 
         totalInvested: 0,
         currentValue: 0,
         plDollars: 0,
-        plPercentage: 0
-      }
+        plPercentage: 0,
+      };
     }
 
-    const position = assets[ticker]
-    const qty = Number(tx.quantity)
-    const price = Number(tx.price_per_unit)
+    const position = assets[ticker];
+    const qty = Number(tx.quantity);
+    const price = Number(tx.price_per_unit);
 
     if (tx.type === 'BUY') {
       // Al comprar, actualizamos el Costo Promedio Ponderado
-      const newTotalQuantity = position.totalQuantity + qty
+      const newTotalQuantity = position.totalQuantity + qty;
       // Nuevo Costo Promedio = ((Cant. Actual * Costo Prom.) + (Nueva Cant. * Nuevo Precio)) / Total Nuevo
-      position.averageCost = ((position.totalQuantity * position.averageCost) + (qty * price)) / newTotalQuantity
-      position.totalQuantity = newTotalQuantity
-      position.totalInvested = position.totalQuantity * position.averageCost
+      position.averageCost =
+        (position.totalQuantity * position.averageCost + qty * price) /
+        newTotalQuantity;
+      position.totalQuantity = newTotalQuantity;
+      position.totalInvested = position.totalQuantity * position.averageCost;
     } else if (tx.type === 'SELL') {
       // Al vender, solo reducimos cantidad, el costo promedio NO cambia
       // (La ganancia/pérdida se realiza, pero el costo base de lo que queda es el mismo)
-      position.totalQuantity -= qty
-      position.totalInvested = position.totalQuantity * position.averageCost
+      position.totalQuantity -= qty;
+      position.totalInvested = position.totalQuantity * position.averageCost;
     }
 
     // Actualizamos el "precio actual" con el último precio de transacción
-    position.currentValue = position.totalQuantity * price
+    position.currentValue = position.totalQuantity * price;
   }
 
   // Convertimos el objeto en array, filtramos los que ya vendimos todo (cantidad 0) y calculamos P/L
   return Object.values(assets)
-    .filter(asset => asset.totalQuantity > 0.000001) // Evitamos errores de punto flotante
-    .map(asset => {
+    .filter((asset) => asset.totalQuantity > 0.000001) // Evitamos errores de punto flotante
+    .map((asset) => {
       // Ganancia no realizada
-      asset.plDollars = asset.currentValue - asset.totalInvested
-      asset.plPercentage = asset.totalInvested > 0 ? (asset.plDollars / asset.totalInvested) * 100 : 0
-      return asset
-    })
+      asset.plDollars = asset.currentValue - asset.totalInvested;
+      asset.plPercentage =
+        asset.totalInvested > 0
+          ? (asset.plDollars / asset.totalInvested) * 100
+          : 0;
+      return asset;
+    });
 }
 
 // Agrega 'quantity' a la interfaz
 export interface RebalanceSuggestion {
-  ticker: string
-  currentPct: number
-  targetPct: number
-  action: 'BUY' | 'SELL' | 'HOLD'
-  amount: number
-  quantity: number // <--- NUEVO CAMPO
+  ticker: string;
+  currentPct: number;
+  targetPct: number;
+  action: 'BUY' | 'SELL' | 'HOLD';
+  amount: number;
+  quantity: number; // <--- NUEVO CAMPO
 }
 
 // Actualiza la función para recibir los precios actuales
@@ -88,22 +95,24 @@ export function calculateRebalancing(
   totalPortfolioValue: number,
   currentPrices: Record<string, number> // <--- NUEVO ARGUMENTO
 ): RebalanceSuggestion[] {
-  if (!targetAllocation || totalPortfolioValue === 0) return []
+  if (!targetAllocation || totalPortfolioValue === 0) return [];
 
-  const suggestions: RebalanceSuggestion[] = []
+  const suggestions: RebalanceSuggestion[] = [];
 
   Object.entries(targetAllocation).forEach(([ticker, targetPct]) => {
-    const existing = holdings.find(h => h.ticker === ticker)
-    const currentVal = existing ? existing.currentValue : 0
+    const existing = holdings.find((h) => h.ticker === ticker);
+    const currentVal = existing ? existing.currentValue : 0;
 
     // Obtenemos el precio real (o fallback al histórico si no hay live)
-    const price = currentPrices[ticker] || (existing ? existing.currentValue / existing.totalQuantity : 0)
+    const price =
+      currentPrices[ticker] ||
+      (existing ? existing.currentValue / existing.totalQuantity : 0);
 
-    const currentPct = (currentVal / totalPortfolioValue) * 100
-    const targetVal = totalPortfolioValue * (targetPct / 100)
-    const diffVal = targetVal - currentVal
+    const currentPct = (currentVal / totalPortfolioValue) * 100;
+    const targetVal = totalPortfolioValue * (targetPct / 100);
+    const diffVal = targetVal - currentVal;
 
-    if (Math.abs(diffVal) < 10) return
+    if (Math.abs(diffVal) < 10) return;
 
     suggestions.push({
       ticker,
@@ -112,9 +121,9 @@ export function calculateRebalancing(
       action: diffVal > 0 ? 'BUY' : 'SELL',
       amount: Math.abs(diffVal),
       // Calculamos acciones: Dinero / Precio Unitario
-      quantity: price > 0 ? Math.abs(diffVal) / price : 0
-    })
-  })
+      quantity: price > 0 ? Math.abs(diffVal) / price : 0,
+    });
+  });
 
-  return suggestions.sort((a, b) => b.amount - a.amount)
+  return suggestions.sort((a, b) => b.amount - a.amount);
 }

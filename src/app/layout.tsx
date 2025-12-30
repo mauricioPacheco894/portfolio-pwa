@@ -1,48 +1,60 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Providers } from "./providers";
+import './globals.css';
+
+import type { Metadata, Viewport } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+
+import { Providers } from './providers';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Portfolio PWA - Gestión de Inversiones",
-    template: "%s | Portfolio PWA"
+    default: 'Portfolio PWA - Gestión de Inversiones',
+    template: '%s | Portfolio PWA',
   },
-  description: "Aplicación PWA para gestionar y monitorear tus portafolios de inversión en tiempo real. Seguimiento de activos, transacciones y rebalanceo inteligente.",
-  keywords: ["portfolio", "inversiones", "finanzas", "crypto", "acciones", "pwa"],
-  authors: [{ name: "Mauricio Pacheco" }],
-  creator: "Mauricio Pacheco",
+  description:
+    'Aplicación PWA para gestionar y monitorear tus portafolios de inversión en tiempo real. Seguimiento de activos, transacciones y rebalanceo inteligente.',
+  keywords: [
+    'portfolio',
+    'inversiones',
+    'finanzas',
+    'crypto',
+    'acciones',
+    'pwa',
+  ],
+  authors: [{ name: 'Mauricio Pacheco' }],
+  creator: 'Mauricio Pacheco',
   openGraph: {
-    type: "website",
-    locale: "es_ES",
-    url: "https://portfolio-pwa.vercel.app",
-    title: "Portfolio PWA - Gestión de Inversiones",
-    description: "Gestiona y monitorea tus portafolios de inversión en tiempo real",
-    siteName: "Portfolio PWA",
+    type: 'website',
+    locale: 'es_ES',
+    url: 'https://portfolio-pwa.vercel.app',
+    title: 'Portfolio PWA - Gestión de Inversiones',
+    description:
+      'Gestiona y monitorea tus portafolios de inversión en tiempo real',
+    siteName: 'Portfolio PWA',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Portfolio PWA - Gestión de Inversiones",
-    description: "Gestiona y monitorea tus portafolios de inversión en tiempo real",
+    card: 'summary_large_image',
+    title: 'Portfolio PWA - Gestión de Inversiones',
+    description:
+      'Gestiona y monitorea tus portafolios de inversión en tiempo real',
   },
-  manifest: "/manifest.json",
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#2563eb",
+  themeColor: '#2563eb',
 };
 
 export default function RootLayout({
@@ -76,9 +88,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

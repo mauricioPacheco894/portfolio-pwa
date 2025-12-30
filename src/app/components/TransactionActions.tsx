@@ -1,62 +1,66 @@
-'use client'
+'use client';
 
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { Trash2, Edit2 } from 'lucide-react'
-import { useState } from 'react'
-import TransactionFormModal, { TransactionData } from './TransactionFormModal'
+import { Edit2,Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-import { Database } from '@/types/supabase'
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/supabase';
 
-type Transaction = Database['public']['Tables']['transactions']['Row']
+import TransactionFormModal, { TransactionData } from './TransactionFormModal';
+
+type Transaction = Database['public']['Tables']['transactions']['Row'];
 
 type Props = {
-  transaction: Transaction
-  portfolioId: string
-}
+  transaction: Transaction;
+  portfolioId: string;
+};
 
-export default function TransactionActions({ transaction, portfolioId }: Props) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [isEditOpen, setIsEditOpen] = useState(false)
+export default function TransactionActions({
+  transaction,
+  portfolioId,
+}: Props) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta transacción?')) {
-      return
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        alert('Debes estar autenticado para eliminar')
-        setLoading(false)
-        return
+        alert('Debes estar autenticado para eliminar');
+        setLoading(false);
+        return;
       }
 
       const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('id', transaction.id)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id);
 
       if (error) {
-        console.error('Delete error:', error)
-        alert('Error al eliminar: ' + error.message)
-        setLoading(false)
-        return
+        console.error('Delete error:', error);
+        alert('Error al eliminar: ' + error.message);
+        setLoading(false);
+        return;
       }
 
-      router.refresh()
+      router.refresh();
     } catch (err) {
-      console.error('Delete exception:', err)
-      alert('Error al eliminar la transacción')
-      setLoading(false)
+      console.error('Delete exception:', err);
+      alert('Error al eliminar la transacción');
+      setLoading(false);
     }
-  }
+  };
 
   // Mapear transaction de Supabase a TransactionData del Form
   const transactionData: TransactionData = {
@@ -67,8 +71,8 @@ export default function TransactionActions({ transaction, portfolioId }: Props) 
     price_per_unit: transaction.price_per_unit,
     fees: transaction.fees || 0,
     date: transaction.date,
-    portfolio_id: portfolioId
-  }
+    portfolio_id: portfolioId,
+  };
 
   return (
     <>
@@ -97,5 +101,5 @@ export default function TransactionActions({ transaction, portfolioId }: Props) 
         initialData={transactionData}
       />
     </>
-  )
+  );
 }
