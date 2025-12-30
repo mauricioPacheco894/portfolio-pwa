@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import AddTransactionForm from '@/app/components/AddTransactionForm';
 import { Header } from '@/app/components/Header';
+import PaginationControls from '@/app/components/PaginationControls';
 import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor';
@@ -33,27 +34,58 @@ async function getPortfolio(id: string) {
   return data as Portfolio;
 }
 
-async function getTransactions(portfolioId: string) {
+async function getAllTransactions(portfolioId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('portfolio_id', portfolioId)
-    .order('date', { ascending: false });
+    .eq('portfolio_id', portfolioId);
 
   if (error) {
-    console.error('Error fetching transactions', error);
+    console.error('Error fetching all transactions', error);
     return [];
   }
   return data as Transaction[];
 }
 
+async function getPaginatedTransactions(
+  portfolioId: string,
+  page: number,
+  pageSize: number
+) {
+  const supabase = await createClient();
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, count, error } = await supabase
+    .from('transactions')
+    .select('*', { count: 'exact' })
+    .eq('portfolio_id', portfolioId)
+    .order('date', { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error('Error fetching paginated transactions', error);
+    return { data: [], count: 0 };
+  }
+
+  return {
+    data: (data as Transaction[]) || [],
+    count: count || 0,
+  };
+}
+
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function Page({ params }: Props) {
+export default async function Page({ params, searchParams }: Props) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const page = Number(resolvedSearchParams.page) || 1;
+  const pageSize = 10;
 
   const portfolio = await getPortfolio(id);
 
@@ -61,8 +93,15 @@ export default async function Page({ params }: Props) {
     return notFound();
   }
 
-  const transactions = await getTransactions(id);
-  let holdings = calculateHoldings(transactions);
+  // Fetch data in parallel
+  const [allTransactions, paginatedResult] = await Promise.all([
+    getAllTransactions(id),
+    getPaginatedTransactions(id, page, pageSize),
+  ]);
+
+  const { data: transactions, count: totalCount } = paginatedResult;
+
+  let holdings = calculateHoldings(allTransactions);
 
   // Obtener precios en tiempo real
   const tickers = holdings.map((h) => h.ticker);
@@ -96,6 +135,7 @@ export default async function Page({ params }: Props) {
     currentPrices
   );
   const uniqueTickers = Array.from(new Set(holdings.map((h) => h.ticker)));
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -230,23 +270,23 @@ export default async function Page({ params }: Props) {
               <table className="w-full text-left text-sm relative">
                 <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
                   <tr>
-                    <th className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900">
+                    <th className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 text-left">
                       Activo
                     </th>
-                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                      Cant.
+                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                      Cantidad
                     </th>
-                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                      Costo Prom.
+                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                      Costo Promedio
                     </th>
-                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                      Precio
+                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                      Precio Actual
                     </th>
-                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                      Valor
+                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                      Valor de Mercado
                     </th>
-                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                      G/P
+                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                      Ganancia / Pérdida
                     </th>
                   </tr>
                 </thead>
@@ -266,17 +306,17 @@ export default async function Page({ params }: Props) {
                         key={asset.ticker}
                         className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                       >
-                        <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
+                        <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
                           {asset.ticker}
                         </td>
-                        <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
                           {asset.totalQuantity.toFixed(2)}
                         </td>
-                        <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">
+                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
                           ${asset.averageCost.toFixed(2)}
                         </td>
-                        <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                          <div className="flex items-center justify-end gap-1">
+                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
+                          <div className="flex items-center justify-center gap-1">
                             $
                             {asset.marketPrice
                               ? asset.marketPrice.toFixed(2)
@@ -293,21 +333,22 @@ export default async function Page({ params }: Props) {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-white">
+                        <td className="px-4 py-2 text-center font-semibold text-zinc-900 dark:text-white">
                           ${asset.currentValue.toFixed(2)}
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-4 py-2 text-center">
                           <div
-                            className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                            className={`flex items-center justify-center gap-1.5 font-semibold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}
                           >
-                            {asset.plDollars >= 0 ? '+' : ''}
-                            {asset.plPercentage.toFixed(1)}%
-                          </div>
-                          <div
-                            className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}
-                          >
-                            {asset.plDollars >= 0 ? '+' : ''}$
-                            {asset.plDollars.toFixed(0)}
+                            <span className="text-sm">
+                              {asset.plDollars >= 0 ? '+' : ''}
+                              {asset.plPercentage.toFixed(2)}%
+                            </span>
+                            <span className="text-xs opacity-80 font-normal">
+                              ({asset.plDollars >= 0 ? '+' : ''}$
+                              {asset.plDollars.toFixed(2)})
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -316,6 +357,8 @@ export default async function Page({ params }: Props) {
                 </tbody>
               </table>
             </div>
+
+
           </div>
         </section>
 
@@ -327,7 +370,7 @@ export default async function Page({ params }: Props) {
             <AddTransactionForm portfolioId={id} />
           </div>
 
-          <div className="overflow-auto max-h-[500px] rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+          <div className="overflow-auto rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
             <table className="w-full table-auto text-sm relative">
               <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
                 <tr>
@@ -410,6 +453,13 @@ export default async function Page({ params }: Props) {
               </tbody>
             </table>
           </div>
+
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            hasNextPage={page < totalPages}
+            hasPrevPage={page > 1}
+          />
         </section>
       </main>
     </div>
