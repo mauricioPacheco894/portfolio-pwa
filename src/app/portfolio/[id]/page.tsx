@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import AddTransactionForm from '@/app/components/AddTransactionForm';
-import AllocationChart from '@/app/components/AllocationChart';
 import { Header } from '@/app/components/Header';
-import IntegratedChart from '@/app/components/IntegratedChart';
+import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor';
 import TransactionActions from '@/app/components/TransactionActions';
@@ -157,11 +156,10 @@ export default async function Page({ params }: Props) {
                 </span>
                 <div className="flex items-baseline gap-1.5">
                   <span
-                    className={`text-lg font-bold ${
-                      holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
-                    }`}
+                    className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-red-600 dark:text-red-400'
+                      }`}
                   >
                     {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
                       ? '+'
@@ -172,33 +170,32 @@ export default async function Page({ params }: Props) {
                       .toFixed(2)}
                   </span>
                   <span
-                    className={`text-sm font-bold ${
-                      holdings.length > 0 && holdings[0].totalInvested > 0
-                        ? holdings.reduce(
-                            (sum, h) => sum + h.plPercentage * h.totalInvested,
-                            0
-                          ) /
-                            holdings.reduce(
-                              (sum, h) => sum + h.totalInvested,
-                              0
-                            ) >=
+                    className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
+                      ? holdings.reduce(
+                        (sum, h) => sum + h.plPercentage * h.totalInvested,
+                        0
+                      ) /
+                        holdings.reduce(
+                          (sum, h) => sum + h.totalInvested,
                           0
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-red-600 dark:text-red-400'
-                        : 'text-zinc-400'
-                    }`}
+                        ) >=
+                        0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                      : 'text-zinc-400'
+                      }`}
                   >
                     (
                     {holdings.length > 0 &&
-                    holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                      holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
                       ? (
-                          (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
-                            holdings.reduce(
-                              (sum, h) => sum + h.totalInvested,
-                              0
-                            )) *
-                          100
-                        ).toFixed(2)
+                        (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
+                          holdings.reduce(
+                            (sum, h) => sum + h.totalInvested,
+                            0
+                          )) *
+                        100
+                      ).toFixed(2)
                       : '0.00'}
                     %)
                   </span>
@@ -220,112 +217,104 @@ export default async function Page({ params }: Props) {
           />
         </section>
 
-        {/* Sección de Posiciones con Gráfica Integrada */}
+        {/* Sección de Posiciones con Gráfica Modal */}
         <section className="mb-6">
-          <h2 className="mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-            Mis Posiciones
-          </h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+              Mis Posiciones
+            </h2>
+            <PortfolioChartModal holdings={holdings} />
+          </div>
           <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Tabla de Posiciones Detallada (Ocupa 2 columnas) */}
-              <div className="overflow-auto max-h-96 lg:col-span-2 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
-                <table className="w-full text-left text-sm relative">
-                  <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
+            <div className="overflow-auto max-h-[500px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+              <table className="w-full text-left text-sm relative">
+                <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
+                  <tr>
+                    <th className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900">
+                      Activo
+                    </th>
+                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                      Cant.
+                    </th>
+                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                      Costo Prom.
+                    </th>
+                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                      Precio
+                    </th>
+                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                      Valor
+                    </th>
+                    <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
+                      G/P
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                  {holdings.length === 0 ? (
                     <tr>
-                      <th className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900">
-                        Activo
-                      </th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                        Cant.
-                      </th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                        Costo Prom.
-                      </th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                        Precio
-                      </th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                        Valor
-                      </th>
-                      <th className="px-3 py-2 text-right bg-zinc-50 dark:bg-zinc-900">
-                        G/P
-                      </th>
+                      <td
+                        colSpan={6}
+                        className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
+                      >
+                        Agrega transacciones para ver tus posiciones.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                    {holdings.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
-                        >
-                          Agrega transacciones para ver tus posiciones.
+                  ) : (
+                    holdings.map((asset) => (
+                      <tr
+                        key={asset.ticker}
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                      >
+                        <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
+                          {asset.ticker}
+                        </td>
+                        <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                          {asset.totalQuantity.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">
+                          ${asset.averageCost.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                          <div className="flex items-center justify-end gap-1">
+                            $
+                            {asset.marketPrice
+                              ? asset.marketPrice.toFixed(2)
+                              : (
+                                asset.currentValue / asset.totalQuantity
+                              ).toFixed(2)}
+                            {asset.marketPrice && (
+                              <span
+                                className="text-[10px] font-bold text-blue-500"
+                                title="Precio en tiempo real"
+                              >
+                                LIVE
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-white">
+                          ${asset.currentValue.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <div
+                            className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                          >
+                            {asset.plDollars >= 0 ? '+' : ''}
+                            {asset.plPercentage.toFixed(1)}%
+                          </div>
+                          <div
+                            className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}
+                          >
+                            {asset.plDollars >= 0 ? '+' : ''}$
+                            {asset.plDollars.toFixed(0)}
+                          </div>
                         </td>
                       </tr>
-                    ) : (
-                      holdings.map((asset) => (
-                        <tr
-                          key={asset.ticker}
-                          className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                        >
-                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
-                            {asset.ticker}
-                          </td>
-                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                            {asset.totalQuantity.toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-500">
-                            ${asset.averageCost.toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                            <div className="flex items-center justify-end gap-1">
-                              $
-                              {asset.marketPrice
-                                ? asset.marketPrice.toFixed(2)
-                                : (
-                                    asset.currentValue / asset.totalQuantity
-                                  ).toFixed(2)}
-                              {asset.marketPrice && (
-                                <span
-                                  className="text-[10px] font-bold text-blue-500"
-                                  title="Precio en tiempo real"
-                                >
-                                  LIVE
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-right font-semibold text-zinc-900 dark:text-white">
-                            ${asset.currentValue.toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            <div
-                              className={`text-xs font-bold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                            >
-                              {asset.plDollars >= 0 ? '+' : ''}
-                              {asset.plPercentage.toFixed(1)}%
-                            </div>
-                            <div
-                              className={`text-[10px] ${asset.plDollars >= 0 ? 'text-green-600/80' : 'text-red-600/80'}`}
-                            >
-                              {asset.plDollars >= 0 ? '+' : ''}$
-                              {asset.plDollars.toFixed(0)}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Gráfica de Distribución Integrada (Ocupa 1 columna) */}
-              <div className="flex flex-col justify-center border-t pt-4 lg:border-t-0 lg:border-l lg:pl-4 lg:pt-0 dark:border-zinc-700">
-                <h3 className="mb-2 text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-                  Distribución
-                </h3>
-                <IntegratedChart holdings={holdings} />
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>

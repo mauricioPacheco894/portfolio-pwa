@@ -34,15 +34,15 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
   const data = holdings.map((h) => ({ name: h.ticker, value: h.currentValue }));
 
   return (
-    <div className="h-64 w-full min-w-0">
+    <div className="h-full w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={45}
-            outerRadius={65}
+            innerRadius="60%"
+            outerRadius="80%"
             paddingAngle={2}
             dataKey="value"
             label={({
@@ -92,7 +92,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
                     textAnchor={textAnchor}
                     fill="#374151"
                     dy={3}
-                    style={{ fontSize: '11px', fontWeight: 600 }}
+                    style={{ fontSize: '14px', fontWeight: 600 }}
                   >
                     {`${name}: ${(percent * 100).toFixed(1)}%`}
                   </text>
