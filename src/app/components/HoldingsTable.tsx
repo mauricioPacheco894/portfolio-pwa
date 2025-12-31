@@ -22,16 +22,29 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
     direction: 'desc', // De mayor a menor
   });
 
-  const currencyFormatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  });
+  const currencyFormatter = (value: number, currency: 'USD' | 'MXN' = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(value);
+  };
 
-  const currencyFormatterWithSign = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    signDisplay: 'always',
-  });
+  const currencyFormatterWithSign = (value: number, currency: 'USD' | 'MXN' = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      signDisplay: 'always',
+    }).format(value);
+  };
+
+  const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => (
+    <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${currency === 'MXN'
+        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
+        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+      }`}>
+      {currency || 'USD'}
+    </span>
+  );
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
@@ -85,15 +98,13 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
     align?: 'left' | 'right';
   }) => (
     <th
-      className={`cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 select-none group hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${
-        align === 'left' ? 'text-left' : 'text-right'
-      }`}
+      className={`cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 select-none group hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${align === 'left' ? 'text-left' : 'text-right'
+        }`}
       onClick={() => handleSort(columnKey)}
     >
       <div
-        className={`flex items-center ${
-          align === 'left' ? 'justify-start' : 'justify-end'
-        }`}
+        className={`flex items-center ${align === 'left' ? 'justify-start' : 'justify-end'
+          }`}
       >
         {label}
         <SortIcon columnKey={columnKey} />
@@ -129,11 +140,10 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
               sortedHoldings.map((asset) => (
                 <tr
                   key={asset.ticker}
-                  className={`transition-colors ${
-                    asset.isNegative
-                      ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
-                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
-                  }`}
+                  className={`transition-colors ${asset.isNegative
+                    ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                    : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+                    }`}
                 >
                   <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
                     <div className="flex items-center gap-2">
@@ -166,18 +176,19 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     {asset.totalQuantity.toFixed(2)}
                   </td>
                   <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                    {currencyFormatter.format(asset.averageCost)}
+                    {currencyFormatter(asset.averageCost, asset.currency)}
                   </td>
                   <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
                     <div className="flex items-center justify-end gap-1">
                       {asset.marketPrice
-                        ? currencyFormatter.format(asset.marketPrice)
-                        : currencyFormatter.format(
-                            asset.currentValue / asset.totalQuantity
-                          )}
+                        ? currencyFormatter(asset.marketPrice, asset.currency)
+                        : currencyFormatter(asset.currentValue / asset.totalQuantity, asset.currency)}
+
+                      <CurrencyBadge currency={asset.currency} />
+
                       {asset.marketPrice && (
                         <span
-                          className="text-[10px] font-bold text-blue-500"
+                          className="text-[10px] font-bold text-blue-500 ml-0.5"
                           title="Precio en tiempo real"
                         >
                           LIVE
@@ -186,22 +197,21 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     </div>
                   </td>
                   <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
-                    {currencyFormatter.format(asset.currentValue)}
+                    {currencyFormatter(asset.currentValue, asset.currency)}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <div
-                      className={`flex items-center justify-end gap-1.5 font-semibold ${
-                        asset.plDollars >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}
+                      className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                        }`}
                     >
                       <span className="text-sm">
                         {asset.plPercentage > 0 ? '+' : ''}
                         {asset.plPercentage.toFixed(2)}%
                       </span>
                       <span className="text-xs opacity-80 font-normal">
-                        ({currencyFormatterWithSign.format(asset.plDollars)})
+                        ({currencyFormatterWithSign(asset.plDollars, asset.currency)})
                       </span>
                     </div>
                   </td>

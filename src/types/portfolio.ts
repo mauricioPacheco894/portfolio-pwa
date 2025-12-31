@@ -18,6 +18,10 @@ export interface AssetPosition {
   realizedPL?: number;
   plPercentage: number;
   isNegative?: boolean;
+  currency?: 'USD' | 'MXN';
+  marketValueGlobal?: number; // Valor normalizado a moneda base (USD) para totales
+  totalInvestedGlobal?: number; // Costo base normalizado a USD
+  plDollarsGlobal?: number; // Ganancia normalizada a USD
 }
 
 // Rebalancing suggestion
