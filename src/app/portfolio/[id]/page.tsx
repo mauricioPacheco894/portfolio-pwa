@@ -228,33 +228,69 @@ export default async function Page({ params, searchParams }: Props) {
                       (sum, h) => sum + h.totalInvested,
                       0
                     );
-                    const totalProfit = holdings.reduce(
-                      (sum, h) => sum + h.plDollars + (h.realizedPL || 0),
+                    const realizedPL = holdings.reduce(
+                      (sum, h) => sum + (h.realizedPL || 0),
                       0
                     );
+                    const unrealizedPL = holdings.reduce(
+                      (sum, h) => sum + h.plDollars,
+                      0
+                    );
+                    const totalProfit = realizedPL + unrealizedPL;
+
                     const isProfitable = totalProfit >= 0;
                     const profitColor = isProfitable
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-red-600 dark:text-red-400';
-                    // Calcular ROI sobre Inversión Total Histórica (mejor aproximación simple: Invertido Activo)
+
                     const percentage =
                       totalInvested > 0
                         ? (totalProfit / totalInvested) * 100
                         : 0;
 
+                    const formatCurrency = (val: number) =>
+                      new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        signDisplay: 'always',
+                      }).format(val);
+
                     return (
-                      <>
-                        <span className={`text-lg font-bold ${profitColor}`}>
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                            signDisplay: 'always',
-                          }).format(totalProfit)}
-                        </span>
-                        <span className={`text-sm font-bold ${profitColor}`}>
-                          ({percentage.toFixed(2)}%)
-                        </span>
-                      </>
+                      <div className="relative group cursor-help">
+                        <div className="flex items-baseline gap-1.5 border-b border-dotted border-zinc-300 dark:border-zinc-700 pb-0.5">
+                          <span className={`text-lg font-bold ${profitColor}`}>
+                            {formatCurrency(totalProfit)}
+                          </span>
+                          <span className={`text-sm font-bold ${profitColor}`}>
+                            ({percentage.toFixed(2)}%)
+                          </span>
+                        </div>
+
+                        {/* Tooltip Detallado */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 rounded-xl bg-white dark:bg-zinc-800 p-4 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-zinc-600 dark:text-zinc-300">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium">Latente (Actual):</span>
+                            <span className={`font-mono ${unrealizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatCurrency(unrealizedPL)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="font-medium">Realizada (Histórico):</span>
+                            <span className={`font-mono ${realizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatCurrency(realizedPL)}
+                            </span>
+                          </div>
+                          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex justify-between items-center font-bold text-zinc-900 dark:text-white">
+                            <span>Total Neto:</span>
+                            <span className={`font-mono text-sm ${profitColor}`}>
+                              {formatCurrency(totalProfit)}
+                            </span>
+                          </div>
+
+                          {/* Flecha del tooltip */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-white dark:border-b-zinc-800"></div>
+                        </div>
+                      </div>
                     );
                   })()}
                 </div>
