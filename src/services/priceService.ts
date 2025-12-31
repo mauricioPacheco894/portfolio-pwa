@@ -158,19 +158,28 @@ async function scrapeGoogleFinancePrice(
 ): Promise<number | null> {
   const upperTicker = ticker.toUpperCase();
   let cleanTicker = upperTicker;
+  let customExchanges: string[] | null = null;
 
+  // Manejo especial para DIVISAS (Currency pairs)
+  // Google Finance url: /quote/USD-MXN (sin exchange suffix)
+  if (upperTicker.includes('-')) {
+    cleanTicker = upperTicker;
+    customExchanges = ['']; // Indica que no se debe user exchange suffix
+  }
   // Limpiar ticker si viene con exchange explícito para la URL
-  if (upperTicker.includes(':')) {
+  else if (upperTicker.includes(':')) {
     cleanTicker = upperTicker.split(':')[0];
   } else if (upperTicker.endsWith('.MX')) {
     cleanTicker = upperTicker.replace('.MX', '');
   }
 
-  const exchanges = getExchangeForTicker(ticker);
+  const exchanges = customExchanges || getExchangeForTicker(ticker);
 
   for (const exchange of exchanges) {
     try {
-      const url = `https://www.google.com/finance/quote/${cleanTicker}:${exchange}`;
+      // Construir URL: si exchange es vacío, no poner los dos puntos
+      const suffix = exchange ? `:${exchange}` : '';
+      const url = `https://www.google.com/finance/quote/${cleanTicker}${suffix}`;
 
       const response = await fetch(url, {
         headers: {
