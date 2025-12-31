@@ -1,9 +1,9 @@
 'use client';
 
-import { LogIn, LogOut, Moon, Sun,Wallet } from 'lucide-react';
+import { LogIn, LogOut, Moon, Sun, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { supabase } from '@/lib/supabase';

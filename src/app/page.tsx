@@ -1,9 +1,9 @@
 'use client';
 
-import { Calendar,TrendingUp } from 'lucide-react';
+import { Calendar, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { SkeletonCard } from '@/components/ui/SkeletonLoader';
@@ -14,6 +14,7 @@ import { User } from '@/types/supabase';
 
 import { CreatePortfolioForm } from './components/CreatePortfolioForm';
 import { Header } from './components/Header';
+import PortfolioActions from './components/PortfolioActions';
 
 export default function Home() {
   const router = useRouter();
@@ -126,18 +127,13 @@ export default function Home() {
                 className="group rounded-xl bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg dark:bg-zinc-800"
               >
                 {/* Card Header */}
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-zinc-900 dark:text-white">
-                      {portfolio.name}
-                    </h3>
-                  </div>
-                  <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900">
-                    <TrendingUp
-                      size={20}
-                      className="text-blue-600 dark:text-blue-400"
-                    />
-                  </div>
+                <div className="mb-4">
+                  <PortfolioActions
+                    portfolioId={portfolio.id}
+                    portfolioName={portfolio.name}
+                    variant="card"
+                    onUpdate={refetch}
+                  />
                 </div>
 
                 {/* Card Body */}

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import AddTransactionForm from '@/app/components/AddTransactionForm';
 import { Header } from '@/app/components/Header';
 import PaginationControls from '@/app/components/PaginationControls';
+import PortfolioActions from '@/app/components/PortfolioActions';
 import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
 import TargetAllocationEditor from '@/app/components/TargetAllocationEditor';
@@ -151,9 +152,10 @@ export default async function Page({ params, searchParams }: Props) {
               >
                 <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
               </Link>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
-                {portfolio.name}
-              </h1>
+              <PortfolioActions
+                portfolioId={id}
+                portfolioName={portfolio.name}
+              />
             </div>
 
             {/* KPIs Horizontales */}
@@ -196,10 +198,11 @@ export default async function Page({ params, searchParams }: Props) {
                 </span>
                 <div className="flex items-baseline gap-1.5">
                   <span
-                    className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-red-600 dark:text-red-400'
-                      }`}
+                    className={`text-lg font-bold ${
+                      holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}
                   >
                     {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
                       ? '+'
@@ -210,32 +213,33 @@ export default async function Page({ params, searchParams }: Props) {
                       .toFixed(2)}
                   </span>
                   <span
-                    className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
-                      ? holdings.reduce(
-                        (sum, h) => sum + h.plPercentage * h.totalInvested,
-                        0
-                      ) /
-                        holdings.reduce(
-                          (sum, h) => sum + h.totalInvested,
+                    className={`text-sm font-bold ${
+                      holdings.length > 0 && holdings[0].totalInvested > 0
+                        ? holdings.reduce(
+                            (sum, h) => sum + h.plPercentage * h.totalInvested,
+                            0
+                          ) /
+                            holdings.reduce(
+                              (sum, h) => sum + h.totalInvested,
+                              0
+                            ) >=
                           0
-                        ) >=
-                        0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
-                      : 'text-zinc-400'
-                      }`}
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-red-600 dark:text-red-400'
+                        : 'text-zinc-400'
+                    }`}
                   >
                     (
                     {holdings.length > 0 &&
-                      holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                    holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
                       ? (
-                        (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
-                          holdings.reduce(
-                            (sum, h) => sum + h.totalInvested,
-                            0
-                          )) *
-                        100
-                      ).toFixed(2)
+                          (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
+                            holdings.reduce(
+                              (sum, h) => sum + h.totalInvested,
+                              0
+                            )) *
+                          100
+                        ).toFixed(2)
                       : '0.00'}
                     %)
                   </span>
@@ -321,8 +325,8 @@ export default async function Page({ params, searchParams }: Props) {
                             {asset.marketPrice
                               ? asset.marketPrice.toFixed(2)
                               : (
-                                asset.currentValue / asset.totalQuantity
-                              ).toFixed(2)}
+                                  asset.currentValue / asset.totalQuantity
+                                ).toFixed(2)}
                             {asset.marketPrice && (
                               <span
                                 className="text-[10px] font-bold text-blue-500"
@@ -338,8 +342,11 @@ export default async function Page({ params, searchParams }: Props) {
                         </td>
                         <td className="px-4 py-2 text-center">
                           <div
-                            className={`flex items-center justify-center gap-1.5 font-semibold ${asset.plDollars >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}
+                            className={`flex items-center justify-center gap-1.5 font-semibold ${
+                              asset.plDollars >= 0
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            }`}
                           >
                             <span className="text-sm">
                               {asset.plDollars >= 0 ? '+' : ''}
@@ -357,8 +364,6 @@ export default async function Page({ params, searchParams }: Props) {
                 </tbody>
               </table>
             </div>
-
-
           </div>
         </section>
 

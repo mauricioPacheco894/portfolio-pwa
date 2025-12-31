@@ -58,7 +58,8 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
               percent,
               value,
               name,
-            }: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            }: any) => {
+              // eslint-disable-line @typescript-eslint/no-explicit-any
               const RADIAN = Math.PI / 180;
               // Cálculos ajustados para tamaño mediano
               const sin = Math.sin(-midAngle * RADIAN);

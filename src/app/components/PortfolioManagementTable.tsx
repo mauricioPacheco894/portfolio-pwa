@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Edit2, PlusCircle,X } from 'lucide-react';
+import { Check, Edit2, PlusCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
