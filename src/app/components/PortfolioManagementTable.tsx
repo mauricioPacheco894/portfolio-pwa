@@ -144,7 +144,6 @@ export default function PortfolioManagementTable({
     };
   });
 
-
   const hasChanges = (() => {
     const initial = currentTarget || {};
     const currentKeys = Object.keys(allocation);
@@ -174,10 +173,11 @@ export default function PortfolioManagementTable({
             <button
               onClick={handleSaveStrategy}
               disabled={isSaving}
-              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${Math.abs(total - 100) < 0.01
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-zinc-400 hover:bg-zinc-500'
-                }`}
+              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${
+                Math.abs(total - 100) < 0.01
+                  ? 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-zinc-400 hover:bg-zinc-500'
+              }`}
             >
               {isSaving ? 'Guardando...' : 'Guardar Estrategia'}
             </button>
@@ -288,12 +288,13 @@ export default function PortfolioManagementTable({
                 <td className="px-3 py-2 text-right">
                   {row.targetPct > 0 && (
                     <span
-                      className={`text-xs font-semibold ${row.targetPct - row.currentPct > 0
-                        ? 'text-blue-600'
-                        : row.targetPct - row.currentPct < 0
-                          ? 'text-orange-600'
-                          : 'text-zinc-500'
-                        }`}
+                      className={`text-xs font-semibold ${
+                        row.targetPct - row.currentPct > 0
+                          ? 'text-blue-600'
+                          : row.targetPct - row.currentPct < 0
+                            ? 'text-orange-600'
+                            : 'text-zinc-500'
+                      }`}
                     >
                       {row.targetPct - row.currentPct >= 0 ? '+' : ''}
                       {(row.targetPct - row.currentPct).toFixed(2)}%
@@ -303,10 +304,11 @@ export default function PortfolioManagementTable({
                 <td className="px-3 py-2 text-center">
                   {row.suggestion && (
                     <button
-                      className={`rounded px-2 py-1 text-xs font-bold ${row.suggestion.action === 'BUY'
-                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
-                        : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
-                        }`}
+                      className={`rounded px-2 py-1 text-xs font-bold ${
+                        row.suggestion.action === 'BUY'
+                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
+                          : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
+                      }`}
                     >
                       {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'} $
                       {row.suggestion.amount.toFixed(0)}

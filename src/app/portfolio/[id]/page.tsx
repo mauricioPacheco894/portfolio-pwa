@@ -146,6 +146,8 @@ export default async function Page({ params, searchParams }: Props) {
     return asset;
   });
 
+  const activeHoldings = holdings.filter((h) => h.totalQuantity > 0.000001);
+
   const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
   const rebalanceSuggestions = calculateRebalancing(
     holdings,
@@ -183,10 +185,12 @@ export default async function Page({ params, searchParams }: Props) {
                   Valor:
                 </span>
                 <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                  $
-                  {holdings
-                    .reduce((sum, h) => sum + h.currentValue, 0)
-                    .toFixed(2)}
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(
+                    holdings.reduce((sum, h) => sum + h.currentValue, 0)
+                  )}
                 </span>
               </div>
 
@@ -199,10 +203,12 @@ export default async function Page({ params, searchParams }: Props) {
                   Invertido:
                 </span>
                 <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                  $
-                  {holdings
-                    .reduce((sum, h) => sum + h.totalInvested, 0)
-                    .toFixed(2)}
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(
+                    holdings.reduce((sum, h) => sum + h.totalInvested, 0)
+                  )}
                 </span>
               </div>
 
@@ -215,50 +221,40 @@ export default async function Page({ params, searchParams }: Props) {
                   Ganancia:
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span
-                    className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                  {(() => {
+                    const totalInvested = holdings.reduce(
+                      (sum, h) => sum + h.totalInvested,
+                      0
+                    );
+                    const totalProfit = holdings.reduce(
+                      (sum, h) => sum + h.plDollars + (h.realizedPL || 0),
+                      0
+                    );
+                    const isProfitable = totalProfit >= 0;
+                    const profitColor = isProfitable
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-red-600 dark:text-red-400'
-                      }`}
-                  >
-                    {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                      ? '+'
-                      : ''}
-                    $
-                    {holdings
-                      .reduce((sum, h) => sum + h.plDollars, 0)
-                      .toFixed(2)}
-                  </span>
-                  <span
-                    className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
-                      ? holdings.reduce(
-                        (sum, h) => sum + h.plPercentage * h.totalInvested,
-                        0
-                      ) /
-                        holdings.reduce(
-                          (sum, h) => sum + h.totalInvested,
-                          0
-                        ) >=
-                        0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
-                      : 'text-zinc-400'
-                      }`}
-                  >
-                    (
-                    {holdings.length > 0 &&
-                      holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
-                      ? (
-                        (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
-                          holdings.reduce(
-                            (sum, h) => sum + h.totalInvested,
-                            0
-                          )) *
-                        100
-                      ).toFixed(2)
-                      : '0.00'}
-                    %)
-                  </span>
+                      : 'text-red-600 dark:text-red-400';
+                    // Calcular ROI sobre Inversión Total Histórica (mejor aproximación simple: Invertido Activo)
+                    const percentage =
+                      totalInvested > 0
+                        ? (totalProfit / totalInvested) * 100
+                        : 0;
+
+                    return (
+                      <>
+                        <span className={`text-lg font-bold ${profitColor}`}>
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            signDisplay: 'always',
+                          }).format(totalProfit)}
+                        </span>
+                        <span className={`text-sm font-bold ${profitColor}`}>
+                          ({percentage.toFixed(2)}%)
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -268,7 +264,7 @@ export default async function Page({ params, searchParams }: Props) {
         {/* Tabla Maestra de Gestión Unificada */}
         <section className="mb-6">
           <PortfolioManagementTable
-            holdings={holdings}
+            holdings={activeHoldings}
             currentTarget={portfolio.target_allocation || undefined}
             rebalanceSuggestions={rebalanceSuggestions}
             portfolioId={id}
@@ -283,9 +279,9 @@ export default async function Page({ params, searchParams }: Props) {
             <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
               Mis Posiciones
             </h2>
-            <PortfolioChartModal holdings={holdings} />
+            <PortfolioChartModal holdings={activeHoldings} />
           </div>
-          <HoldingsTable holdings={holdings} />
+          <HoldingsTable holdings={activeHoldings} />
         </section>
 
         <section className="mb-6">
@@ -356,7 +352,9 @@ export default async function Page({ params, searchParams }: Props) {
                             const d = new Date(t.date);
                             // Usar UTC explícitamente para evitar desfases de zona horaria
                             // tanto para transacciones viejas (00:00 UTC) como nuevas
-                            return d.toLocaleDateString('es-ES', { timeZone: 'UTC' });
+                            return d.toLocaleDateString('es-ES', {
+                              timeZone: 'UTC',
+                            });
                           })()}
                         </td>
                         <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
@@ -374,9 +372,15 @@ export default async function Page({ params, searchParams }: Props) {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">{qty}</td>
-                        <td className="px-4 py-3 text-right">${price.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right">${fees.toFixed(2)}</td>
-                        <td className="px-4 py-3 font-medium text-right">${total}</td>
+                        <td className="px-4 py-3 text-right">
+                          ${price.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          ${fees.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-right">
+                          ${total}
+                        </td>
                         <td className="px-4 py-3">
                           <TransactionActions
                             transaction={t}
@@ -399,6 +403,6 @@ export default async function Page({ params, searchParams }: Props) {
           />
         </section>
       </main>
-    </div >
+    </div>
   );
 }

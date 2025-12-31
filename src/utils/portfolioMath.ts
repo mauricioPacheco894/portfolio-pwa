@@ -28,6 +28,7 @@ export function calculateHoldings(
         totalInvested: 0,
         currentValue: 0,
         plDollars: 0,
+        realizedPL: 0,
         plPercentage: 0,
       };
     }
@@ -40,14 +41,19 @@ export function calculateHoldings(
       // Al comprar, actualizamos el Costo Promedio Ponderado
       const newTotalQuantity = position.totalQuantity + qty;
       // Nuevo Costo Promedio = ((Cant. Actual * Costo Prom.) + (Nueva Cant. * Nuevo Precio)) / Total Nuevo
-      position.averageCost =
-        (position.totalQuantity * position.averageCost + qty * price) /
-        newTotalQuantity;
+      if (newTotalQuantity > 0) {
+        position.averageCost =
+          (position.totalQuantity * position.averageCost + qty * price) /
+          newTotalQuantity;
+      }
       position.totalQuantity = newTotalQuantity;
       position.totalInvested = position.totalQuantity * position.averageCost;
     } else if (tx.type === 'SELL') {
-      // Al vender, solo reducimos cantidad, el costo promedio NO cambia
-      // (La ganancia/pérdida se realiza, pero el costo base de lo que queda es el mismo)
+      // Al vender, realizamos ganancia/pérdida
+      // P/L Realizado = (Precio Venta - Costo Promedio) * Cantidad Vendida
+      const realizedGain = (price - position.averageCost) * qty;
+      position.realizedPL = (position.realizedPL || 0) + realizedGain;
+
       position.totalQuantity -= qty;
       position.totalInvested = position.totalQuantity * position.averageCost;
     }
@@ -56,18 +62,34 @@ export function calculateHoldings(
     position.currentValue = position.totalQuantity * price;
   }
 
-  // Convertimos el objeto en array, filtramos los que ya vendimos todo (cantidad 0) y calculamos P/L
-  return Object.values(assets)
-    .filter((asset) => asset.totalQuantity > 0.000001) // Evitamos errores de punto flotante
-    .map((asset) => {
-      // Ganancia no realizada
-      asset.plDollars = asset.currentValue - asset.totalInvested;
-      asset.plPercentage =
-        asset.totalInvested > 0
-          ? (asset.plDollars / asset.totalInvested) * 100
-          : 0;
-      return asset;
-    });
+  // Convertimos el objeto en array
+  return Object.values(assets).map((asset) => {
+    // Ganancia no realizada (solo relevante si quantity > 0)
+    asset.plDollars = asset.currentValue - asset.totalInvested;
+
+    // Evitar división por cero
+    asset.plPercentage =
+      asset.totalInvested > 0.000001
+        ? (asset.plDollars / asset.totalInvested) * 100
+        : 0;
+
+    // Sanitizar valores para evitar NaN en la UI
+    if (isNaN(asset.totalInvested) || !isFinite(asset.totalInvested))
+      asset.totalInvested = 0;
+    if (isNaN(asset.currentValue) || !isFinite(asset.currentValue))
+      asset.currentValue = 0;
+    if (isNaN(asset.plDollars) || !isFinite(asset.plDollars))
+      asset.plDollars = 0;
+    if (isNaN(asset.plPercentage) || !isFinite(asset.plPercentage))
+      asset.plPercentage = 0;
+    if (
+      asset.realizedPL &&
+      (isNaN(asset.realizedPL) || !isFinite(asset.realizedPL))
+    )
+      asset.realizedPL = 0;
+
+    return asset;
+  });
 }
 
 // Calcula sugerencias de rebalanceo basado en la asignación objetivo
@@ -88,7 +110,9 @@ export function calculateRebalancing(
     // Obtenemos el precio real (o fallback al histórico si no hay live)
     const price =
       currentPrices[ticker] ||
-      (existing ? existing.currentValue / existing.totalQuantity : 0);
+      (existing && existing.totalQuantity > 0
+        ? existing.currentValue / existing.totalQuantity
+        : 0);
 
     const currentPct = (currentVal / totalPortfolioValue) * 100;
     const targetVal = totalPortfolioValue * (targetPct / 100);
