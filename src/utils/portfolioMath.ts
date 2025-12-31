@@ -42,7 +42,7 @@ export function calculateHoldings(
       // Al comprar, actualizamos el Costo Promedio Ponderado incluyendo comisiones
       const newTotalQuantity = position.totalQuantity + qty;
       // Costo total de esta compra = (Cantidad * Precio) + Comisión
-      const transactionCost = (qty * price) + fees;
+      const transactionCost = qty * price + fees;
 
       // Nuevo Costo Promedio = ((Cant. Actual * Costo Prom.) + Costo Transacción) / Total Nuevo
       if (newTotalQuantity > 0) {
@@ -60,7 +60,7 @@ export function calculateHoldings(
       const costBasis = qty * position.averageCost;
 
       // Ganancia Neta = (Venta Bruta - Costo Base) - Comisión de Venta
-      const realizedGain = (grossSaleValue - costBasis) - fees;
+      const realizedGain = grossSaleValue - costBasis - fees;
 
       position.realizedPL = (position.realizedPL || 0) + realizedGain;
 

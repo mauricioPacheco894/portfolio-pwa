@@ -155,7 +155,7 @@ export default async function Page({ params, searchParams }: Props) {
         marketValueGlobal: marketValueGlobal,
         totalInvestedGlobal: totalInvestedGlobal,
         plDollarsGlobal: marketValueGlobal - totalInvestedGlobal,
-        realizedPL: isMxn ? realizedPLGlobal : asset.realizedPL // Normalizamos realizedPL a USD porque ese dato es histórico y mejor tenerlo base
+        realizedPL: isMxn ? realizedPLGlobal : asset.realizedPL, // Normalizamos realizedPL a USD porque ese dato es histórico y mejor tenerlo base
       };
     }
 
@@ -165,7 +165,7 @@ export default async function Page({ params, searchParams }: Props) {
       currency: isMxn ? 'MXN' : 'USD',
       marketValueGlobal: asset.currentValue, // Fallback (asume USD o error 1:1)
       totalInvestedGlobal: asset.totalInvested,
-      plDollarsGlobal: asset.plDollars
+      plDollarsGlobal: asset.plDollars,
     };
   });
 
@@ -174,7 +174,10 @@ export default async function Page({ params, searchParams }: Props) {
   );
 
   // Total para rebalancing (en USD)
-  const totalValueUSD = holdings.reduce((sum, h) => sum + (h.marketValueGlobal || 0), 0);
+  const totalValueUSD = holdings.reduce(
+    (sum, h) => sum + (h.marketValueGlobal || 0),
+    0
+  );
 
   const rebalanceSuggestions = calculateRebalancing(
     holdings,

@@ -19,305 +19,335 @@ type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
 interface Props {
-    portfolio: Portfolio;
-    holdings: AssetPosition[];
-    activeHoldings: AssetPosition[];
-    transactions: Transaction[];
-    uniqueTickers: string[];
-    rebalanceSuggestions: RebalanceSuggestion[];
-    usdMxnRate: number;
-    pagination: {
-        page: number;
-        totalPages: number;
-    };
+  portfolio: Portfolio;
+  holdings: AssetPosition[];
+  activeHoldings: AssetPosition[];
+  transactions: Transaction[];
+  uniqueTickers: string[];
+  rebalanceSuggestions: RebalanceSuggestion[];
+  usdMxnRate: number;
+  pagination: {
+    page: number;
+    totalPages: number;
+  };
 }
 
 export default function PortfolioDashboard({
-    portfolio,
-    holdings,
-    activeHoldings,
-    transactions,
-    uniqueTickers,
-    rebalanceSuggestions,
-    usdMxnRate,
-    pagination,
+  portfolio,
+  holdings,
+  activeHoldings,
+  transactions,
+  uniqueTickers,
+  rebalanceSuggestions,
+  usdMxnRate,
+  pagination,
 }: Props) {
-    const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
+  const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
 
-    const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
+  const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
 
-    // Cálculos dinámicos en la moneda seleccionada
-    const totalValue = holdings.reduce(
-        (sum, h) => sum + (h.marketValueGlobal || 0) * exchangeRate,
-        0
-    );
-    const totalInvested = holdings.reduce(
-        (sum, h) => sum + (h.totalInvestedGlobal || 0) * exchangeRate,
-        0
-    );
+  // Cálculos dinámicos en la moneda seleccionada
+  const totalValue = holdings.reduce(
+    (sum, h) => sum + (h.marketValueGlobal || 0) * exchangeRate,
+    0
+  );
+  const totalInvested = holdings.reduce(
+    (sum, h) => sum + (h.totalInvestedGlobal || 0) * exchangeRate,
+    0
+  );
 
-    // Realized PL y Unrealized PL también deben convertirse
-    // h.realizedPL ya viene normalizado a USD desde page.tsx si está en MXN? No, en page.tsx:
-    // "realizedPL: isMxn ? realizedPLGlobal : asset.realizedPL" -> SÍ, está en USD base.
-    const realizedPL = holdings.reduce(
-        (sum, h) => sum + (h.realizedPL || 0) * exchangeRate,
-        0
-    );
-    const unrealizedPL = holdings.reduce(
-        (sum, h) => sum + (h.plDollarsGlobal || 0) * exchangeRate,
-        0
-    );
+  // Realized PL y Unrealized PL también deben convertirse
+  const realizedPL = holdings.reduce(
+    (sum, h) => sum + (h.realizedPL || 0) * exchangeRate,
+    0
+  );
+  const unrealizedPL = holdings.reduce(
+    (sum, h) => sum + (h.plDollarsGlobal || 0) * exchangeRate,
+    0
+  );
 
-    const totalProfit = realizedPL + unrealizedPL;
+  const totalProfit = realizedPL + unrealizedPL;
 
-    const percentage =
-        totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const percentage =
+    totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
 
-    const isProfitable = totalProfit >= 0;
-    const profitColor = isProfitable
-        ? 'text-emerald-600 dark:text-emerald-400'
-        : 'text-red-600 dark:text-red-400';
+  const isProfitable = totalProfit >= 0;
+  const profitColor = isProfitable
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : 'text-red-600 dark:text-red-400';
 
-    const formatCurrency = (val: number) =>
-        new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-            signDisplay: 'always',
-        }).format(val);
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      signDisplay: 'always',
+    }).format(val);
 
-    const formatTotal = (val: number) =>
-        new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-        }).format(val);
+  const formatTotal = (val: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(val);
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
-            <Header />
-            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="mb-6">
-                    <div className="flex items-end justify-between gap-4 flex-wrap border-b border-zinc-200 pb-4 mb-8 dark:border-zinc-800">
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/"
-                                className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                                aria-label="Volver"
-                            >
-                                <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
-                            </Link>
-                            <PortfolioActions
-                                portfolioId={portfolio.id}
-                                portfolioName={portfolio.name}
-                            />
-                        </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
+      <Header />
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-b border-zinc-200 pb-6 mb-8 dark:border-zinc-800">
+            <div className="flex items-center justify-between w-full md:w-auto gap-3">
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/"
+                  className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  aria-label="Volver"
+                >
+                  <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
+                </Link>
+                <PortfolioActions
+                  portfolioId={portfolio.id}
+                  portfolioName={portfolio.name}
+                />
+              </div>
+            </div>
 
-                        <div className="flex items-center gap-6">
-                            {/* Selector de Moneda */}
-                            <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1">
-                                <button
-                                    onClick={() => setCurrency('USD')}
-                                    className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                                            ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                                            : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                                        }`}
-                                >
-                                    USD
-                                </button>
-                                <button
-                                    onClick={() => setCurrency('MXN')}
-                                    className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                                            ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                                            : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                                        }`}
-                                >
-                                    MXN
-                                </button>
-                            </div>
+            <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:gap-6 w-full md:w-auto">
+              {/* Selector de Moneda */}
+              <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 self-start md:self-center">
+                <button
+                  onClick={() => setCurrency('USD')}
+                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${
+                    currency === 'USD'
+                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  USD
+                </button>
+                <button
+                  onClick={() => setCurrency('MXN')}
+                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${
+                    currency === 'MXN'
+                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  MXN
+                </button>
+              </div>
 
-                            {/* KPIs Horizontales */}
-                            <div className="flex items-center gap-6 text-sm">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-zinc-500 font-medium dark:text-zinc-400">
-                                        Valor:
-                                    </span>
-                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                                        {formatTotal(totalValue)}
-                                    </span>
-                                </div>
-
-                                <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">
-                                    |
-                                </span>
-
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-zinc-500 font-medium dark:text-zinc-400">
-                                        Invertido:
-                                    </span>
-                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
-                                        {formatTotal(totalInvested)}
-                                    </span>
-                                </div>
-
-                                <span className="text-zinc-300 text-lg font-light dark:text-zinc-700">
-                                    |
-                                </span>
-
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-zinc-500 font-medium dark:text-zinc-400">
-                                        Ganancia:
-                                    </span>
-                                    <div className="relative group cursor-help flex items-baseline gap-1.5">
-                                        <div className="flex items-baseline gap-1.5 border-b border-dotted border-zinc-300 dark:border-zinc-700 pb-0.5">
-                                            <span className={`text-lg font-bold ${profitColor}`}>
-                                                {formatCurrency(totalProfit)}
-                                            </span>
-                                            <span className={`text-sm font-bold ${profitColor}`}>
-                                                ({percentage.toFixed(2)}%)
-                                            </span>
-                                        </div>
-
-                                        {/* Tooltip Detallado */}
-                                        <div className="absolute top-full right-0 mt-2 w-56 rounded-xl bg-white dark:bg-zinc-800 p-4 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-zinc-600 dark:text-zinc-300">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-medium">Latente (Actual):</span>
-                                                <span className={`font-mono ${unrealizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                    {formatCurrency(unrealizedPL)}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="font-medium">Realizada (Histórico):</span>
-                                                <span className={`font-mono ${realizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                    {formatCurrency(realizedPL)}
-                                                </span>
-                                            </div>
-                                            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex justify-between items-center font-bold text-zinc-900 dark:text-white">
-                                                <span>Total Neto:</span>
-                                                <span className={`font-mono text-sm ${profitColor}`}>
-                                                    {formatCurrency(totalProfit)}
-                                                </span>
-                                            </div>
-
-                                            {/* Flecha del tooltip */}
-                                            <div className="absolute bottom-full right-8 border-8 border-transparent border-b-white dark:border-b-zinc-800"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+              {/* KPIs Grid Responsivo -> Flex en Desktop para ancho variable */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 md:flex md:flex-row md:items-center gap-y-2 gap-x-6 md:gap-x-8 text-sm w-full md:w-auto">
+                <div className="flex justify-between md:justify-start items-baseline gap-2">
+                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                    Valor:
+                  </span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">
+                    {formatTotal(totalValue)}
+                  </span>
                 </div>
 
-                {/* Tabla Maestra de Gestión Unificada */}
-                <section className="mb-6">
-                    <PortfolioManagementTable
-                        holdings={activeHoldings}
-                        currentTarget={portfolio.target_allocation || undefined}
-                        rebalanceSuggestions={rebalanceSuggestions}
-                        portfolioId={portfolio.id}
-                        availableTickers={uniqueTickers}
-                        totalValue={totalValue} // Se pasa el totalValue en la moneda seleccionada
-                    // NOTA: PortfolioManagementTable asume USD para cálculos internos o render? 
-                    // Si le paso totalValue en MXN, los % funcionan igual. 
-                    // Pero si muestra montos absolutos en la tabla, pueden no cuadrar con los tickers.
-                    // Por ahora solo afecta el "Monto Total" arriba.
-                    />
-                </section>
+                <div className="flex justify-between md:justify-start items-baseline gap-2">
+                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                    Invertido:
+                  </span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">
+                    {formatTotal(totalInvested)}
+                  </span>
+                </div>
 
-                {/* Sección de Posiciones con Gráfica Modal */}
-                <section className="mb-6">
-                    <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-                            Mis Posiciones
-                        </h2>
-                        <PortfolioChartModal holdings={activeHoldings} />
-                    </div>
-                    <HoldingsTable holdings={activeHoldings} />
-                </section>
-
-                {/* Transacciones */}
-                <section className="mb-6">
-                    <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-                            Transacciones
-                        </h2>
-                        <div className="flex gap-2">
-                            <AddTransactionForm portfolioId={portfolio.id} />
-                        </div>
+                <div className="flex justify-between md:justify-start items-baseline gap-2">
+                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                    Ganancia:
+                  </span>
+                  <div className="relative group cursor-help flex items-baseline gap-1.5 whitespace-nowrap">
+                    <div className="flex items-baseline gap-1.5 border-b border-dotted border-zinc-300 dark:border-zinc-700 pb-0.5">
+                      <span className={`text-lg font-bold ${profitColor}`}>
+                        {formatCurrency(totalProfit)}
+                      </span>
+                      <span className={`text-sm font-bold ${profitColor}`}>
+                        ({percentage.toFixed(2)}%)
+                      </span>
                     </div>
 
-                    <div className="mb-4">
-                        <TransactionFilters />
+                    {/* Tooltip Detallado */}
+                    <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-white dark:bg-zinc-800 p-4 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-zinc-600 dark:text-zinc-300 whitespace-normal text-left">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Latente (Actual):</span>
+                        <span
+                          className={`font-mono ${unrealizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+                        >
+                          {formatCurrency(unrealizedPL)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-medium">
+                          Realizada (Histórico):
+                        </span>
+                        <span
+                          className={`font-mono ${realizedPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+                        >
+                          {formatCurrency(realizedPL)}
+                        </span>
+                      </div>
+                      <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex justify-between items-center font-bold text-zinc-900 dark:text-white">
+                        <span>Total Neto:</span>
+                        <span className={`font-mono text-sm ${profitColor}`}>
+                          {formatCurrency(totalProfit)}
+                        </span>
+                      </div>
+
+                      {/* Flecha del tooltip */}
+                      <div className="absolute bottom-full right-8 md:right-1/2 md:translate-x-1/2 border-8 border-transparent border-b-white dark:border-b-zinc-800"></div>
                     </div>
-
-                    <div className="overflow-auto rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
-                        <table className="w-full table-auto text-sm relative">
-                            <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
-                                <tr>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Fecha</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Ticker</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Tipo</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">Cantidad</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">Precio Unit.</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">Comisión</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">Total</th>
-                                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
-                                {transactions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={8} className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400">
-                                            No hay transacciones registradas aún
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    transactions.map((t) => {
-                                        const qty = Number(t.quantity);
-                                        const price = Number(t.price_per_unit);
-                                        const fees = t.fees ? Number(t.fees) : 0;
-                                        const total = (qty * price + fees).toFixed(2);
-
-                                        return (
-                                            <tr key={t.id}>
-                                                <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                                                    {(() => {
-                                                        const d = new Date(t.date);
-                                                        return d.toLocaleDateString('es-ES', { timeZone: 'UTC' });
-                                                    })()}
-                                                </td>
-                                                <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                                                    {t.ticker}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {t.type === 'BUY' ? (
-                                                        <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">Compra</span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 dark:bg-red-900/20 dark:text-red-400">Venta</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">{qty}</td>
-                                                <td className="px-4 py-3 text-right">${price.toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-right">${fees.toFixed(2)}</td>
-                                                <td className="px-4 py-3 font-medium text-right">${total}</td>
-                                                <td className="px-4 py-3">
-                                                    <TransactionActions transaction={t} portfolioId={portfolio.id} />
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <PaginationControls
-                        currentPage={pagination.page}
-                        totalPages={pagination.totalPages}
-                        hasNextPage={pagination.page < pagination.totalPages}
-                        hasPrevPage={pagination.page > 1}
-                    />
-                </section>
-            </main>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* Tabla Maestra de Gestión Unificada */}
+        <section className="mb-6">
+          <PortfolioManagementTable
+            holdings={activeHoldings}
+            currentTarget={portfolio.target_allocation || undefined}
+            rebalanceSuggestions={rebalanceSuggestions}
+            portfolioId={portfolio.id}
+            availableTickers={uniqueTickers}
+            totalValue={totalValue}
+          />
+        </section>
+
+        {/* Sección de Posiciones con Gráfica Modal */}
+        <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+              Mis Posiciones
+            </h2>
+            <PortfolioChartModal holdings={activeHoldings} />
+          </div>
+          <HoldingsTable holdings={activeHoldings} />
+        </section>
+
+        {/* Transacciones */}
+        <section className="mb-6">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
+              Transacciones
+            </h2>
+            <div className="flex gap-2">
+              <AddTransactionForm portfolioId={portfolio.id} />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <TransactionFilters />
+          </div>
+
+          <div className="overflow-auto rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+            <table className="w-full table-auto text-sm relative">
+              <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Ticker
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Tipo
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    Cantidad
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    Precio Unit.
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    Comisión
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    Total
+                  </th>
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400"
+                    >
+                      No hay transacciones registradas aún
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((t) => {
+                    const qty = Number(t.quantity);
+                    const price = Number(t.price_per_unit);
+                    const fees = t.fees ? Number(t.fees) : 0;
+                    const total = (qty * price + fees).toFixed(2);
+
+                    return (
+                      <tr key={t.id}>
+                        <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
+                          {(() => {
+                            const d = new Date(t.date);
+                            return d.toLocaleDateString('es-ES', {
+                              timeZone: 'UTC',
+                            });
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                          {t.ticker}
+                        </td>
+                        <td className="px-4 py-3">
+                          {t.type === 'BUY' ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                              Compra
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                              Venta
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">{qty}</td>
+                        <td className="px-4 py-3 text-right">
+                          ${price.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          ${fees.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-right">
+                          ${total}
+                        </td>
+                        <td className="px-4 py-3">
+                          <TransactionActions
+                            transaction={t}
+                            portfolioId={portfolio.id}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationControls
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            hasNextPage={pagination.page < pagination.totalPages}
+            hasPrevPage={pagination.page > 1}
+          />
+        </section>
+      </main>
+    </div>
+  );
 }
