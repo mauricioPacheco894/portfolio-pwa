@@ -146,7 +146,9 @@ export default async function Page({ params, searchParams }: Props) {
     return asset;
   });
 
-  const activeHoldings = holdings.filter((h) => h.totalQuantity > 0.000001);
+  const activeHoldings = holdings.filter(
+    (h) => Math.abs(h.totalQuantity) > 0.000001
+  );
 
   const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
   const rebalanceSuggestions = calculateRebalancing(

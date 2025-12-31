@@ -73,6 +73,11 @@ export function calculateHoldings(
         ? (asset.plDollars / asset.totalInvested) * 100
         : 0;
 
+    // Detectar inconsistencias (Ventas > Compras)
+    if (asset.totalQuantity < -0.000001) {
+      asset.isNegative = true;
+    }
+
     // Sanitizar valores para evitar NaN en la UI
     if (isNaN(asset.totalInvested) || !isFinite(asset.totalInvested))
       asset.totalInvested = 0;

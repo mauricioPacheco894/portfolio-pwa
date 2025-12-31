@@ -129,10 +129,38 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
               sortedHoldings.map((asset) => (
                 <tr
                   key={asset.ticker}
-                  className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+                  className={`transition-colors ${
+                    asset.isNegative
+                      ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+                  }`}
                 >
                   <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
-                    {asset.ticker}
+                    <div className="flex items-center gap-2">
+                      {asset.isNegative && (
+                        <div
+                          className="text-red-500"
+                          title="Error: Has vendido más de lo que compraste. Revisa tus transacciones."
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                        </div>
+                      )}
+                      {asset.ticker}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
                     {asset.totalQuantity.toFixed(2)}

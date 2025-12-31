@@ -17,6 +17,7 @@ export interface AssetPosition {
   plDollars: number;
   realizedPL?: number;
   plPercentage: number;
+  isNegative?: boolean;
 }
 
 // Rebalancing suggestion
