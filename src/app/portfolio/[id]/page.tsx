@@ -9,6 +9,7 @@ import PortfolioActions from '@/app/components/PortfolioActions';
 import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
 import TransactionActions from '@/app/components/TransactionActions';
+import TransactionFilters from '@/app/components/TransactionFilters';
 import { createClient } from '@/lib/supabaseServer';
 import { getCurrentPrices } from '@/services/priceService';
 import { Database } from '@/types/supabase';
@@ -51,16 +52,27 @@ async function getAllTransactions(portfolioId: string) {
 async function getPaginatedTransactions(
   portfolioId: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  filters?: { ticker?: string; type?: string }
 ) {
   const supabase = await createClient();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const { data, count, error } = await supabase
+  let query = supabase
     .from('transactions')
     .select('*', { count: 'exact' })
-    .eq('portfolio_id', portfolioId)
+    .eq('portfolio_id', portfolioId);
+
+  if (filters?.ticker) {
+    query = query.ilike('ticker', `%${filters.ticker}%`);
+  }
+
+  if (filters?.type && filters.type !== 'ALL') {
+    query = query.eq('type', filters.type);
+  }
+
+  const { data, count, error } = await query
     .order('date', { ascending: false })
     .range(from, to);
 
@@ -87,6 +99,9 @@ export default async function Page({ params, searchParams }: Props) {
   const page = Number(resolvedSearchParams.page) || 1;
   const pageSize = 10;
 
+  const tickerFilter = resolvedSearchParams.ticker as string | undefined;
+  const typeFilter = resolvedSearchParams.type as string | undefined;
+
   const portfolio = await getPortfolio(id);
 
   if (!portfolio) {
@@ -96,7 +111,10 @@ export default async function Page({ params, searchParams }: Props) {
   // Fetch data in parallel
   const [allTransactions, paginatedResult] = await Promise.all([
     getAllTransactions(id),
-    getPaginatedTransactions(id, page, pageSize),
+    getPaginatedTransactions(id, page, pageSize, {
+      ticker: tickerFilter,
+      type: typeFilter,
+    }),
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
@@ -364,11 +382,17 @@ export default async function Page({ params, searchParams }: Props) {
         </section>
 
         <section className="mb-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
               Transacciones
             </h2>
-            <AddTransactionForm portfolioId={id} />
+            <div className="flex gap-2">
+              <AddTransactionForm portfolioId={id} />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <TransactionFilters />
           </div>
 
           <div className="overflow-auto rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
