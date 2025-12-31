@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import AddTransactionForm from '@/app/components/AddTransactionForm';
 import { Header } from '@/app/components/Header';
 import PaginationControls from '@/app/components/PaginationControls';
+import HoldingsTable from '@/app/components/HoldingsTable';
 import PortfolioActions from '@/app/components/PortfolioActions';
 import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
@@ -284,101 +285,7 @@ export default async function Page({ params, searchParams }: Props) {
             </h2>
             <PortfolioChartModal holdings={holdings} />
           </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            <div className="overflow-auto max-h-[500px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
-              <table className="w-full text-left text-sm relative">
-                <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
-                  <tr>
-                    <th className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 text-left">
-                      Activo
-                    </th>
-                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
-                      Cantidad
-                    </th>
-                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
-                      Costo Promedio
-                    </th>
-                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
-                      Precio Actual
-                    </th>
-                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
-                      Valor de Mercado
-                    </th>
-                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
-                      Ganancia / Pérdida
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                  {holdings.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
-                      >
-                        Agrega transacciones para ver tus posiciones.
-                      </td>
-                    </tr>
-                  ) : (
-                    holdings.map((asset) => (
-                      <tr
-                        key={asset.ticker}
-                        className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                      >
-                        <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
-                          {asset.ticker}
-                        </td>
-                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                          {asset.totalQuantity.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                          ${asset.averageCost.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                          <div className="flex items-center justify-end gap-1">
-                            $
-                            {asset.marketPrice
-                              ? asset.marketPrice.toFixed(2)
-                              : (
-                                asset.currentValue / asset.totalQuantity
-                              ).toFixed(2)}
-                            {asset.marketPrice && (
-                              <span
-                                className="text-[10px] font-bold text-blue-500"
-                                title="Precio en tiempo real"
-                              >
-                                LIVE
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
-                          ${asset.currentValue.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <div
-                            className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                              }`}
-                          >
-                            <span className="text-sm">
-                              {asset.plDollars >= 0 ? '+' : ''}
-                              {asset.plPercentage.toFixed(2)}%
-                            </span>
-                            <span className="text-xs opacity-80 font-normal">
-                              ({asset.plDollars >= 0 ? '+' : ''}$
-                              {asset.plDollars.toFixed(2)})
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <HoldingsTable holdings={holdings} />
         </section>
 
         <section className="mb-6">
@@ -492,6 +399,6 @@ export default async function Page({ params, searchParams }: Props) {
           />
         </section>
       </main>
-    </div>
+    </div >
   );
 }
