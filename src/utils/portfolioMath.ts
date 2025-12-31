@@ -36,22 +36,32 @@ export function calculateHoldings(
     const position = assets[ticker];
     const qty = Number(tx.quantity);
     const price = Number(tx.price_per_unit);
+    const fees = tx.fees ? Number(tx.fees) : 0;
 
     if (tx.type === 'BUY') {
-      // Al comprar, actualizamos el Costo Promedio Ponderado
+      // Al comprar, actualizamos el Costo Promedio Ponderado incluyendo comisiones
       const newTotalQuantity = position.totalQuantity + qty;
-      // Nuevo Costo Promedio = ((Cant. Actual * Costo Prom.) + (Nueva Cant. * Nuevo Precio)) / Total Nuevo
+      // Costo total de esta compra = (Cantidad * Precio) + Comisión
+      const transactionCost = (qty * price) + fees;
+
+      // Nuevo Costo Promedio = ((Cant. Actual * Costo Prom.) + Costo Transacción) / Total Nuevo
       if (newTotalQuantity > 0) {
         position.averageCost =
-          (position.totalQuantity * position.averageCost + qty * price) /
+          (position.totalQuantity * position.averageCost + transactionCost) /
           newTotalQuantity;
       }
       position.totalQuantity = newTotalQuantity;
       position.totalInvested = position.totalQuantity * position.averageCost;
     } else if (tx.type === 'SELL') {
-      // Al vender, realizamos ganancia/pérdida
-      // P/L Realizado = (Precio Venta - Costo Promedio) * Cantidad Vendida
-      const realizedGain = (price - position.averageCost) * qty;
+      // Al vender, realizamos ganancia/pérdida DESPUÉS de comisiones
+      // Valor de Venta Bruto = Cantidad * Precio
+      const grossSaleValue = qty * price;
+      // Costo de los activos vendidos
+      const costBasis = qty * position.averageCost;
+
+      // Ganancia Neta = (Venta Bruta - Costo Base) - Comisión de Venta
+      const realizedGain = (grossSaleValue - costBasis) - fees;
+
       position.realizedPL = (position.realizedPL || 0) + realizedGain;
 
       position.totalQuantity -= qty;
