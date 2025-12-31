@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Edit2, PlusCircle, X } from 'lucide-react';
+import { Check, Edit2, PlusCircle, X, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -81,8 +81,13 @@ export default function PortfolioManagementTable({
     }
 
     setAllocation({ ...allocation, [trimmedTicker]: pct });
-    setTicker('');
     setPercentage('');
+  };
+
+  const handleDelete = (tickerToDelete: string) => {
+    const newAllocation = { ...allocation };
+    delete newAllocation[tickerToDelete];
+    setAllocation(newAllocation);
   };
 
   const handleSaveStrategy = async () => {
@@ -139,6 +144,20 @@ export default function PortfolioManagementTable({
     };
   });
 
+
+  const hasChanges = (() => {
+    const initial = currentTarget || {};
+    const currentKeys = Object.keys(allocation);
+    const initialKeys = Object.keys(initial);
+
+    if (currentKeys.length !== initialKeys.length) return true;
+
+    for (const key of currentKeys) {
+      if (allocation[key] !== initial[key]) return true;
+    }
+    return false;
+  })();
+
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
       <div className="mb-3 flex items-center justify-between">
@@ -149,13 +168,16 @@ export default function PortfolioManagementTable({
           <span
             className={`text-sm font-medium ${Math.abs(total - 100) < 0.01 ? 'text-green-600' : 'text-amber-600'}`}
           >
-            Total: {total.toFixed(1)}%
+            Total: {total.toFixed(2)}%
           </span>
-          {Math.abs(total - 100) >= 0.01 && (
+          {hasChanges && (
             <button
               onClick={handleSaveStrategy}
               disabled={isSaving}
-              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${Math.abs(total - 100) < 0.01
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-zinc-400 hover:bg-zinc-500'
+                }`}
             >
               {isSaving ? 'Guardando...' : 'Guardar Estrategia'}
             </button>
@@ -202,7 +224,7 @@ export default function PortfolioManagementTable({
                       />
                     </div>
                     <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {row.currentPct.toFixed(1)}%
+                      {row.currentPct.toFixed(2)}%
                     </span>
                   </div>
                 </td>
@@ -236,9 +258,10 @@ export default function PortfolioManagementTable({
                       </button>
                     </div>
                   ) : (
+                    // ...existing code...
                     <div className="flex items-center justify-end gap-2">
                       <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                        {row.targetPct.toFixed(1)}%
+                        {row.targetPct.toFixed(2)}%
                       </span>
                       <button
                         onClick={() =>
@@ -249,33 +272,41 @@ export default function PortfolioManagementTable({
                       >
                         <Edit2 size={14} />
                       </button>
+                      {/* Check if the ticker is actually part of the strategy before showing delete */}
+                      {allocation[row.ticker] !== undefined && (
+                        <button
+                          onClick={() => handleDelete(row.ticker)}
+                          className="text-zinc-400 hover:text-red-500"
+                          title="Eliminar de estrategia"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {row.targetPct > 0 && (
                     <span
-                      className={`text-xs font-semibold ${
-                        row.targetPct - row.currentPct > 0
-                          ? 'text-blue-600'
-                          : row.targetPct - row.currentPct < 0
-                            ? 'text-orange-600'
-                            : 'text-zinc-500'
-                      }`}
+                      className={`text-xs font-semibold ${row.targetPct - row.currentPct > 0
+                        ? 'text-blue-600'
+                        : row.targetPct - row.currentPct < 0
+                          ? 'text-orange-600'
+                          : 'text-zinc-500'
+                        }`}
                     >
                       {row.targetPct - row.currentPct >= 0 ? '+' : ''}
-                      {(row.targetPct - row.currentPct).toFixed(1)}%
+                      {(row.targetPct - row.currentPct).toFixed(2)}%
                     </span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-center">
                   {row.suggestion && (
                     <button
-                      className={`rounded px-2 py-1 text-xs font-bold ${
-                        row.suggestion.action === 'BUY'
-                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
-                      }`}
+                      className={`rounded px-2 py-1 text-xs font-bold ${row.suggestion.action === 'BUY'
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
+                        }`}
                     >
                       {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'} $
                       {row.suggestion.amount.toFixed(0)}
