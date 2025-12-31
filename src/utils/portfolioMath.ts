@@ -1,16 +1,8 @@
-// Definimos la estructura de una "Posición"
-export interface AssetPosition {
-  ticker: string;
-  totalQuantity: number;
-  averageCost: number;
-  totalInvested: number;
-  currentValue: number;
-  marketPrice?: number; // Precio actual en tiempo real
-  plDollars: number;
-  plPercentage: number;
-}
+// Re-export types from shared file
+export type { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 
 import { Database } from '@/types/supabase';
+import type { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 
@@ -78,22 +70,12 @@ export function calculateHoldings(
     });
 }
 
-// Agrega 'quantity' a la interfaz
-export interface RebalanceSuggestion {
-  ticker: string;
-  currentPct: number;
-  targetPct: number;
-  action: 'BUY' | 'SELL' | 'HOLD';
-  amount: number;
-  quantity: number; // <--- NUEVO CAMPO
-}
-
-// Actualiza la función para recibir los precios actuales
+// Calcula sugerencias de rebalanceo basado en la asignación objetivo
 export function calculateRebalancing(
   holdings: AssetPosition[],
   targetAllocation: Record<string, number>,
   totalPortfolioValue: number,
-  currentPrices: Record<string, number> // <--- NUEVO ARGUMENTO
+  currentPrices: Record<string, number>
 ): RebalanceSuggestion[] {
   if (!targetAllocation || totalPortfolioValue === 0) return [];
 
