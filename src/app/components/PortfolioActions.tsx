@@ -5,6 +5,7 @@ import { Check, Edit2, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 interface Props {
@@ -21,6 +22,7 @@ export default function PortfolioActions({
   onUpdate,
 }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(portfolioName);
@@ -42,18 +44,13 @@ export default function PortfolioActions({
       return;
     }
 
+    if (!user) {
+      alert('Debes iniciar sesión para editar');
+      return;
+    }
+
     setLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        alert('Debes iniciar sesión para editar');
-        setLoading(false);
-        return;
-      }
-
       const { error } = await supabase
         .from('portfolios')
         .update({ name: newName })
@@ -66,9 +63,7 @@ export default function PortfolioActions({
       } else {
         await queryClient.invalidateQueries({ queryKey: ['portfolios'] });
         router.refresh();
-        if (onUpdate) {
-          onUpdate();
-        }
+        onUpdate?.();
         setIsEditing(false);
       }
     } catch (error) {
@@ -91,18 +86,13 @@ export default function PortfolioActions({
       return;
     }
 
+    if (!user) {
+      alert('Debes iniciar sesión para eliminar');
+      return;
+    }
+
     setLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        alert('Debes iniciar sesión para eliminar');
-        setLoading(false);
-        return;
-      }
-
       const { error } = await supabase
         .from('portfolios')
         .delete()
@@ -115,9 +105,7 @@ export default function PortfolioActions({
         setLoading(false);
       } else {
         await queryClient.invalidateQueries({ queryKey: ['portfolios'] });
-        if (onUpdate) {
-          onUpdate();
-        }
+        onUpdate?.();
         router.push('/');
         router.refresh();
       }

@@ -8,7 +8,6 @@ import PaginationControls from '@/app/components/PaginationControls';
 import PortfolioActions from '@/app/components/PortfolioActions';
 import PortfolioChartModal from '@/app/components/PortfolioChartModal';
 import PortfolioManagementTable from '@/app/components/PortfolioManagementTable';
-import TargetAllocationEditor from '@/app/components/TargetAllocationEditor';
 import TransactionActions from '@/app/components/TransactionActions';
 import { createClient } from '@/lib/supabaseServer';
 import { getCurrentPrices } from '@/services/priceService';

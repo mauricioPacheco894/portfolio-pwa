@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 export interface TransactionData {
@@ -32,6 +33,7 @@ export default function TransactionFormModal({
   initialData,
 }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
 
   const [ticker, setTicker] = useState('');
@@ -70,17 +72,16 @@ export default function TransactionFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!user) {
+      setError('Debes iniciar sesión');
+      toast.error('Debes iniciar sesión');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error('Debes iniciar sesión');
-      }
-
       const payload = {
         portfolio_id: portfolioId,
         user_id: user.id,
@@ -92,47 +93,30 @@ export default function TransactionFormModal({
         date: date ? new Date(date).toISOString() : new Date().toISOString(),
       };
 
-      let queryPromise;
-
-      // Creación del timeout para evitar cuelgues (reducido a 5s para mejor UX)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              new Error('La solicitud tardó demasiado. Verifica tu conexión.')
-            ),
-          5000
-        )
-      );
+      let result;
 
       if (initialData?.id) {
         // UPDATE
-        console.log('Intentando UPDATE:', { id: initialData.id, payload });
-        queryPromise = supabase
+        result = await supabase
           .from('transactions')
           .update(payload)
           .eq('id', initialData.id)
           .select();
       } else {
         // INSERT
-        console.log('Intentando INSERT:', payload);
-        queryPromise = supabase.from('transactions').insert([payload]).select();
+        result = await supabase.from('transactions').insert([payload]).select();
       }
 
-      // Aumentamos timeout temporalmente para debug y capturamos respuesta completa
-      const { data: opData, error: opError } = (await Promise.race([
-        queryPromise,
-        timeoutPromise,
-      ])) as { data: any; error: any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const { data: opData, error: opError } = result;
 
-      console.log('Respuesta Supabase:', { opData, opError });
-
-      if (opError) throw new Error(opError.message);
+      if (opError) {
+        throw new Error(opError.message);
+      }
 
       // Verificación de que realmente se guardó algo
       if (opData && opData.length === 0) {
         throw new Error(
-          'Operación exitosa pero ningún dato fue modificado. Verifica permisos o IDs.'
+          'Operación exitosa pero ningún dato fue modificado. Verifica permisos.'
         );
       }
 

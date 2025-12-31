@@ -4,6 +4,7 @@ import { Edit2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 
@@ -21,6 +22,7 @@ export default function TransactionActions({
   portfolioId,
 }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -29,18 +31,13 @@ export default function TransactionActions({
       return;
     }
 
+    if (!user) {
+      alert('Debes estar autenticado para eliminar');
+      return;
+    }
+
     setLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        alert('Debes estar autenticado para eliminar');
-        setLoading(false);
-        return;
-      }
-
       const { error } = await supabase
         .from('transactions')
         .delete()

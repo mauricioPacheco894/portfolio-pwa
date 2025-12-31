@@ -1,7 +1,13 @@
 'use client';
 
 import { Session, User } from '@supabase/supabase-js';
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
 
 import { supabase } from '@/lib/supabase';
 
@@ -18,7 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   error: null,
-  signOut: async () => { },
+  signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -52,11 +58,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (mounted && loading) {
             console.warn('[AuthContext] Auth initialization timed out');
             setLoading(false);
-            setError('La verificación de sesión tardó demasiado. Recarga la página.');
+            setError(
+              'La verificación de sesión tardó demasiado. Recarga la página.'
+            );
           }
         }, AUTH_TIMEOUT_MS);
 
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
         if (!mounted) return;
 

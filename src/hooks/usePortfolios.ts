@@ -1,5 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';

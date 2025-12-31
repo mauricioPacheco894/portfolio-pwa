@@ -26,17 +26,6 @@ const AllocationChartLazy = dynamic(
   }
 );
 
-const TargetAllocationEditorLazy = dynamic(
-  () => import('@/app/components/TargetAllocationEditor'),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center p-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500"></div>
-      </div>
-    ),
-  }
-);
-
 import { Header } from '@/app/components/Header';
 
 // Memoized Header component
@@ -44,8 +33,4 @@ export const HeaderMemo = memo(function HeaderMemo() {
   return <Header />;
 });
 
-export {
-  AddTransactionFormLazy,
-  AllocationChartLazy,
-  TargetAllocationEditorLazy,
-};
+export { AddTransactionFormLazy, AllocationChartLazy };

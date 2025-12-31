@@ -2,22 +2,18 @@
 
 import { Calendar, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { SkeletonCard } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolios } from '@/hooks/usePortfolios';
-import { supabase } from '@/lib/supabase';
-import { User } from '@/types/supabase';
 
 import { CreatePortfolioForm } from './components/CreatePortfolioForm';
 import { Header } from './components/Header';
 import PortfolioActions from './components/PortfolioActions';
 
 export default function Home() {
-  const router = useRouter();
   // Usamos el estado global para evitar parpadeos
   const { user, loading: authLoading } = useAuth();
 
@@ -49,7 +45,8 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [authLoading]);
 
-  const [showSlowPortfolioLoading, setShowSlowPortfolioLoading] = useState(false);
+  const [showSlowPortfolioLoading, setShowSlowPortfolioLoading] =
+    useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -132,7 +129,9 @@ export default function Home() {
         {portfoliosLoading ? (
           showSlowPortfolioLoading ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-dashed border-2 border-zinc-300 dark:border-zinc-700 p-12 text-center animate-fade-in">
-              <p className="text-zinc-600 dark:text-zinc-400 mb-4">La carga de portafolios está tardando demasiado.</p>
+              <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                La carga de portafolios está tardando demasiado.
+              </p>
               <button
                 onClick={() => {
                   setShowSlowPortfolioLoading(false);

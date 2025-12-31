@@ -3,6 +3,7 @@
 import { Loader, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 interface CreatePortfolioFormProps {
@@ -12,6 +13,7 @@ interface CreatePortfolioFormProps {
 export function CreatePortfolioForm({
   onPortfolioCreated,
 }: CreatePortfolioFormProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,19 +22,15 @@ export function CreatePortfolioForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!user) {
+      setError('Debes iniciar sesión para crear un portafolio');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setError('Debes iniciar sesión para crear un portafolio');
-        setLoading(false);
-        return;
-      }
-
       const { error: insertError } = await supabase.from('portfolios').insert([
         {
           name,
