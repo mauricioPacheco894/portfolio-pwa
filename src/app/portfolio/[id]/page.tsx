@@ -197,11 +197,10 @@ export default async function Page({ params, searchParams }: Props) {
                 </span>
                 <div className="flex items-baseline gap-1.5">
                   <span
-                    className={`text-lg font-bold ${
-                      holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
+                    className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-red-600 dark:text-red-400'
-                    }`}
+                      }`}
                   >
                     {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
                       ? '+'
@@ -212,33 +211,32 @@ export default async function Page({ params, searchParams }: Props) {
                       .toFixed(2)}
                   </span>
                   <span
-                    className={`text-sm font-bold ${
-                      holdings.length > 0 && holdings[0].totalInvested > 0
+                    className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
                         ? holdings.reduce(
-                            (sum, h) => sum + h.plPercentage * h.totalInvested,
+                          (sum, h) => sum + h.plPercentage * h.totalInvested,
+                          0
+                        ) /
+                          holdings.reduce(
+                            (sum, h) => sum + h.totalInvested,
                             0
-                          ) /
-                            holdings.reduce(
-                              (sum, h) => sum + h.totalInvested,
-                              0
-                            ) >=
+                          ) >=
                           0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-red-600 dark:text-red-400'
                         : 'text-zinc-400'
-                    }`}
+                      }`}
                   >
                     (
                     {holdings.length > 0 &&
-                    holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
+                      holdings.reduce((sum, h) => sum + h.totalInvested, 0) > 0
                       ? (
-                          (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
-                            holdings.reduce(
-                              (sum, h) => sum + h.totalInvested,
-                              0
-                            )) *
-                          100
-                        ).toFixed(2)
+                        (holdings.reduce((sum, h) => sum + h.plDollars, 0) /
+                          holdings.reduce(
+                            (sum, h) => sum + h.totalInvested,
+                            0
+                          )) *
+                        100
+                      ).toFixed(2)
                       : '0.00'}
                     %)
                   </span>
@@ -276,19 +274,19 @@ export default async function Page({ params, searchParams }: Props) {
                     <th className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 text-left">
                       Activo
                     </th>
-                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
                       Cantidad
                     </th>
-                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
                       Costo Promedio
                     </th>
-                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
                       Precio Actual
                     </th>
-                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
                       Valor de Mercado
                     </th>
-                    <th className="px-4 py-2 text-center bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
+                    <th className="px-4 py-2 text-right bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200">
                       Ganancia / Pérdida
                     </th>
                   </tr>
@@ -312,20 +310,20 @@ export default async function Page({ params, searchParams }: Props) {
                         <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
                           {asset.ticker}
                         </td>
-                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
+                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
                           {asset.totalQuantity.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
+                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
                           ${asset.averageCost.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-center text-zinc-600 dark:text-zinc-400">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                          <div className="flex items-center justify-end gap-1">
                             $
                             {asset.marketPrice
                               ? asset.marketPrice.toFixed(2)
                               : (
-                                  asset.currentValue / asset.totalQuantity
-                                ).toFixed(2)}
+                                asset.currentValue / asset.totalQuantity
+                              ).toFixed(2)}
                             {asset.marketPrice && (
                               <span
                                 className="text-[10px] font-bold text-blue-500"
@@ -336,16 +334,15 @@ export default async function Page({ params, searchParams }: Props) {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-center font-semibold text-zinc-900 dark:text-white">
+                        <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
                           ${asset.currentValue.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-center">
+                        <td className="px-4 py-2 text-right">
                           <div
-                            className={`flex items-center justify-center gap-1.5 font-semibold ${
-                              asset.plDollars >= 0
+                            className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
                                 ? 'text-green-600'
                                 : 'text-red-600'
-                            }`}
+                              }`}
                           >
                             <span className="text-sm">
                               {asset.plDollars >= 0 ? '+' : ''}
@@ -387,16 +384,16 @@ export default async function Page({ params, searchParams }: Props) {
                   <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
                     Tipo
                   </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
                     Cantidad
                   </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
                     Precio Unit.
                   </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
                     Comisión
                   </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
                     Total
                   </th>
                   <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
@@ -440,10 +437,10 @@ export default async function Page({ params, searchParams }: Props) {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">{qty}</td>
-                        <td className="px-4 py-3">${price.toFixed(2)}</td>
-                        <td className="px-4 py-3">${fees.toFixed(2)}</td>
-                        <td className="px-4 py-3 font-medium">${total}</td>
+                        <td className="px-4 py-3 text-right">{qty}</td>
+                        <td className="px-4 py-3 text-right">${price.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right">${fees.toFixed(2)}</td>
+                        <td className="px-4 py-3 font-medium text-right">${total}</td>
                         <td className="px-4 py-3">
                           <TransactionActions
                             transaction={t}
