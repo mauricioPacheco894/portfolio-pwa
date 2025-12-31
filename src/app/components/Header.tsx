@@ -3,41 +3,17 @@
 import { LogIn, LogOut, Moon, Sun, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
-import { supabase } from '@/lib/supabase';
-import { User } from '@/types/supabase';
 
 export function Header() {
   const router = useRouter();
   const { theme, toggleTheme, mounted } = useDarkMode();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-
-    checkUser();
-
-    // Subscribe to auth changes
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => {
-      data?.subscription?.unsubscribe();
-    };
-  }, []);
+  const { user, loading, signOut } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push('/login');
     router.refresh();
   };

@@ -37,15 +37,52 @@ export default function Home() {
     }
   }, [error]);
 
+  const [showSlowLoadingMessage, setShowSlowLoadingMessage] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (authLoading) {
+      timer = setTimeout(() => {
+        setShowSlowLoadingMessage(true);
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [authLoading]);
+
+  const [showSlowPortfolioLoading, setShowSlowPortfolioLoading] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (portfoliosLoading) {
+      timer = setTimeout(() => {
+        setShowSlowPortfolioLoading(true);
+      }, 3000);
+    } else {
+      setShowSlowPortfolioLoading(false);
+    }
+    return () => clearTimeout(timer);
+  }, [portfoliosLoading]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
         <Header />
-        <main className="mx-auto flex max-w-6xl items-center justify-center px-4 py-12">
-          {/* Spinner sutil solo si realmente estamos cargando la primera vez */}
+        <main className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-12">
           <div className="text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500 mx-auto mb-2"></div>
-            <p className="text-zinc-400 text-sm">Cargando...</p>
+            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500"></div>
+            <p className="text-sm text-zinc-400">Verificando sesión...</p>
+
+            {showSlowLoadingMessage && (
+              <div className="mt-4 animate-fade-in text-sm text-zinc-500 dark:text-zinc-400">
+                <p>Esto está tardando más de lo habitual.</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-2 text-blue-600 hover:text-blue-500 underline dark:text-blue-400"
+                >
+                  Recargar página
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -93,11 +130,26 @@ export default function Home() {
 
         {/* Content */}
         {portfoliosLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          showSlowPortfolioLoading ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-dashed border-2 border-zinc-300 dark:border-zinc-700 p-12 text-center animate-fade-in">
+              <p className="text-zinc-600 dark:text-zinc-400 mb-4">La carga de portafolios está tardando demasiado.</p>
+              <button
+                onClick={() => {
+                  setShowSlowPortfolioLoading(false);
+                  refetch();
+                }}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+              >
+                Reintentar conexión
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          )
         ) : portfolios.length === 0 ? (
           // Empty State
           <div className="flex min-h-96 items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-800">

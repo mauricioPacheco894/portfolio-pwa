@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -9,16 +9,20 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { supabase } from '@/lib/supabase';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const syncInProgress = useRef(false);
+
   useEffect(() => {
-    // Sync session to server via API route
+    // Sync session to server via API route (debounced to prevent race conditions)
     const syncSessionToServer = async () => {
+      if (syncInProgress.current) return;
+      syncInProgress.current = true;
+
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
         if (session?.access_token) {
-          // Send token to server so it can create authenticated requests
           await fetch('/api/auth/sync', {
             method: 'POST',
             headers: {
@@ -32,12 +36,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error('[Providers] Sync error:', err);
+      } finally {
+        syncInProgress.current = false;
       }
     };
 
+    // Initial sync
     syncSessionToServer();
 
-    // Subscribe to auth changes
+    // Subscribe to auth changes for syncing to server only
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event) => {
@@ -46,7 +53,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         event === 'SIGNED_OUT' ||
         event === 'TOKEN_REFRESHED'
       ) {
-        await syncSessionToServer();
+        // Small delay to let AuthContext update first
+        setTimeout(() => syncSessionToServer(), 100);
       }
     });
 
