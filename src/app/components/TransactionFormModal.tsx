@@ -82,6 +82,19 @@ export default function TransactionFormModal({
     setLoading(true);
 
     try {
+      // Corregir problema de timezone: Crear fecha a mediodía local para evitar desfases
+      // El input date regresa YYYY-MM-DD. Si usamos new Date(date), asume UTC 00:00
+      // que en zonas horarias como UTC-6 resulta en el día anterior.
+      let submitDate: string;
+      if (date) {
+        const [y, m, d] = date.split('-').map(Number);
+        // Crear fecha en tiempo local a las 12:00 PM
+        const localDate = new Date(y, m - 1, d, 12, 0, 0);
+        submitDate = localDate.toISOString();
+      } else {
+        submitDate = new Date().toISOString();
+      }
+
       const payload = {
         portfolio_id: portfolioId,
         user_id: user.id,
@@ -90,7 +103,7 @@ export default function TransactionFormModal({
         quantity: Number(quantity),
         price_per_unit: Number(price),
         fees: fees ? Number(fees) : 0,
-        date: date ? new Date(date).toISOString() : new Date().toISOString(),
+        date: submitDate,
       };
 
       let result;

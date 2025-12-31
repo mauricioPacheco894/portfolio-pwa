@@ -198,8 +198,8 @@ export default async function Page({ params, searchParams }: Props) {
                 <div className="flex items-baseline gap-1.5">
                   <span
                     className={`text-lg font-bold ${holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-red-600 dark:text-red-400'
                       }`}
                   >
                     {holdings.reduce((sum, h) => sum + h.plDollars, 0) >= 0
@@ -212,18 +212,18 @@ export default async function Page({ params, searchParams }: Props) {
                   </span>
                   <span
                     className={`text-sm font-bold ${holdings.length > 0 && holdings[0].totalInvested > 0
-                        ? holdings.reduce(
-                          (sum, h) => sum + h.plPercentage * h.totalInvested,
+                      ? holdings.reduce(
+                        (sum, h) => sum + h.plPercentage * h.totalInvested,
+                        0
+                      ) /
+                        holdings.reduce(
+                          (sum, h) => sum + h.totalInvested,
                           0
-                        ) /
-                          holdings.reduce(
-                            (sum, h) => sum + h.totalInvested,
-                            0
-                          ) >=
-                          0
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-red-600 dark:text-red-400'
-                        : 'text-zinc-400'
+                        ) >=
+                        0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                      : 'text-zinc-400'
                       }`}
                   >
                     (
@@ -340,8 +340,8 @@ export default async function Page({ params, searchParams }: Props) {
                         <td className="px-4 py-2 text-right">
                           <div
                             className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
-                                ? 'text-green-600'
-                                : 'text-red-600'
+                              ? 'text-green-600'
+                              : 'text-red-600'
                               }`}
                           >
                             <span className="text-sm">
@@ -421,7 +421,12 @@ export default async function Page({ params, searchParams }: Props) {
                     return (
                       <tr key={t.id}>
                         <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                          {new Date(t.date).toLocaleDateString('es-ES')}
+                          {(() => {
+                            const d = new Date(t.date);
+                            // Usar UTC explícitamente para evitar desfases de zona horaria
+                            // tanto para transacciones viejas (00:00 UTC) como nuevas
+                            return d.toLocaleDateString('es-ES', { timeZone: 'UTC' });
+                          })()}
                         </td>
                         <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
                           {t.ticker}
