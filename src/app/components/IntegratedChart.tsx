@@ -44,8 +44,8 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
   const data = holdings.map((h) => ({ name: h.ticker, value: h.currentValue }));
 
   // Configuración dinámica según dispositivo
-  const innerRadiusVal = isMobile ? '40%' : '50%';
-  const outerRadiusVal = isMobile ? '55%' : '70%'; // Reducido drásticamente en mobile para dar espacio a etiquetas
+  const innerRadiusVal = isMobile ? '40%' : '35%';
+  const outerRadiusVal = isMobile ? '55%' : '50%'; // Reducido aún más para asegurar que las etiquetas quepan
   const labelOffsetCodo = isMobile ? 10 : 30; // Línea diagonal más corta en mobile
   const labelOffsetHoriz = isMobile ? 10 : 20; // Línea horizontal más corta en mobile
   const fontSize = isMobile ? '10px' : '14px';

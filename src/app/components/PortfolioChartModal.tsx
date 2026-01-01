@@ -12,10 +12,28 @@ interface AssetPosition {
 
 interface Props {
   holdings: AssetPosition[];
+  targetAllocation?: Record<string, number>;
+  totalValue?: number;
 }
 
-export default function PortfolioChartModal({ holdings }: Props) {
+export default function PortfolioChartModal({
+  holdings,
+  targetAllocation,
+  totalValue = 0,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Preparamos datos de la Meta para la gráfica
+  const targetHoldings: AssetPosition[] = targetAllocation
+    ? Object.entries(targetAllocation).map(([ticker, pct]) => ({
+      ticker,
+      currentValue: totalValue * (pct / 100),
+    }))
+      // Filtramos metas vacías
+      .filter((h) => h.currentValue > 0)
+      // Ordenamos por valor
+      .sort((a, b) => b.currentValue - a.currentValue)
+    : [];
 
   return (
     <>
@@ -33,10 +51,11 @@ export default function PortfolioChartModal({ holdings }: Props) {
           onClick={() => setIsOpen(false)}
         >
           <div
-            className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200"
+            className={`w-full ${targetHoldings.length > 0 ? 'max-w-6xl' : 'max-w-4xl'
+              } rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between flex-shrink-0">
               <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
                 Distribución del Portafolio
               </h3>
@@ -48,8 +67,30 @@ export default function PortfolioChartModal({ holdings }: Props) {
               </button>
             </div>
 
-            <div className="h-[500px] w-full">
-              <IntegratedChart holdings={holdings} />
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className={`grid gap-8 ${targetHoldings.length > 0 ? 'lg:grid-cols-2' : ''} h-full`}>
+                {/* Gráfica Actual */}
+                <div className="flex flex-col h-[400px] lg:h-[500px]">
+                  <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
+                    Actual
+                  </h4>
+                  <div className="flex-1 min-h-0 bg-zinc-50/50 dark:bg-zinc-800/20 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700/50 p-2">
+                    <IntegratedChart holdings={holdings} />
+                  </div>
+                </div>
+
+                {/* Gráfica Meta (Solo si existe estrategia) */}
+                {targetHoldings.length > 0 && (
+                  <div className="flex flex-col h-[400px] lg:h-[500px]">
+                    <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
+                      Meta (Estrategia)
+                    </h4>
+                    <div className="flex-1 min-h-0 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl border border-dashed border-blue-200 dark:border-blue-800/30 p-2">
+                      <IntegratedChart holdings={targetHoldings} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

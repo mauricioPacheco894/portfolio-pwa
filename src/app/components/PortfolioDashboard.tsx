@@ -245,7 +245,11 @@ export default function PortfolioDashboard({
             totalValue={totalValue}
             exchangeRate={exchangeRate}
             headerAction={
-              <PortfolioChartModal holdings={consolidatedAssetsForChart as any} />
+              <PortfolioChartModal
+                holdings={consolidatedAssetsForChart as any}
+                targetAllocation={portfolio.target_allocation || undefined}
+                totalValue={totalValue}
+              />
             }
           />
         </section>
