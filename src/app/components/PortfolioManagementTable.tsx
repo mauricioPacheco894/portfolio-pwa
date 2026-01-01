@@ -432,66 +432,62 @@ export default function PortfolioManagementTable({
               </tr>
             ))}
 
-            {/* Footer de Tabla: Agregar Nuevo */}
-            <tr className="border-t-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-              <td className="p-3">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="NUEVO ACTIVO"
-                    className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-8 text-sm font-medium uppercase text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
-                    value={ticker}
-                    onChange={(e) => setTicker(e.target.value)}
-                    list="available-tickers"
-                    suppressHydrationWarning
-                  />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400">
-                    <Search size={14} />
-                  </div>
-                  <datalist id="available-tickers">
-                    {availableTickers.map((t) => (
-                      <option key={t} value={t} />
-                    ))}
-                  </datalist>
-                </div>
-              </td>
 
-              {/* Celdas vacías para alineación */}
-              <td className="p-3 hidden sm:table-cell"></td>
-              <td className="p-3 hidden sm:table-cell"></td>
-
-              <td className="p-3">
-                <div className="relative">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-8 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white text-right"
-                    value={percentage}
-                    onChange={(e) => setPercentage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                    suppressHydrationWarning
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">
-                    %
-                  </div>
-                </div>
-              </td>
-
-              <td className="p-3" colSpan={2}>
-                <button
-                  onClick={handleAdd}
-                  disabled={!ticker || !percentage}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-zinc-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  <PlusCircle size={14} />
-                  AGREGAR
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* Footer separado: Agregar Nuevo */}
+      <div className="border-t border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="NUEVO ACTIVO (TICKER)"
+              className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-9 pr-4 text-xs font-medium uppercase text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value)}
+              list="available-tickers"
+              suppressHydrationWarning
+            />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              <Search size={14} />
+            </div>
+            <datalist id="available-tickers">
+              {availableTickers.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-24">
+              <input
+                type="number"
+                placeholder="Meta"
+                min="0"
+                max="100"
+                className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-7 text-right text-xs font-medium text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
+                value={percentage}
+                onChange={(e) => setPercentage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                suppressHydrationWarning
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400">
+                %
+              </div>
+            </div>
+
+            <button
+              onClick={handleAdd}
+              disabled={!ticker || !percentage}
+              className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-zinc-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              <PlusCircle size={14} />
+              <span>AGREGAR</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
