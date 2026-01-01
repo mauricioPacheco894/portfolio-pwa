@@ -154,18 +154,41 @@ export function calculateRebalancing(
     const targetVal = totalPortfolioValue * (targetPct / 100);
     const diffVal = targetVal - currentVal;
 
-    // Ignorar diferencias menores a $10 USD para evitar ruido
-    if (Math.abs(diffVal) < 10) return;
+    // LÓGICA DE BANDAS DINÁMICAS GENERALIZADA
+    // Determinar Acción: BUY, SELL o HOLD
+    let action: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
 
-    suggestions.push({
-      ticker: targetTicker, // Mantenemos el nombre que el usuario definió en su target
-      currentPct,
-      targetPct,
-      action: diffVal > 0 ? 'BUY' : 'SELL',
-      amount: Math.abs(diffVal),
-      // Cantidad estimada de acciones a mover
-      quantity: price > 0 ? Math.abs(diffVal) / price : 0,
-    });
+    // Tolerancia dinámica basada en el tamaño de la posición (evita hardcodear 7.5% o 5%)
+    // - Posiciones pequeñas (<= 6%): Tolerancia más ajustada (+2.5%)
+    // - Posiciones grandes (> 6%): Tolerancia estándar (+3.0%)
+    const tolerance = targetPct <= 6.0 ? 2.5 : 3.0;
+
+    // Umbral de venta
+    const sellThreshold = targetPct + tolerance;
+
+    if (currentPct >= sellThreshold) {
+      action = 'SELL';
+    }
+    // Compra (Underweight)
+    else if (currentPct < targetPct) {
+      action = 'BUY';
+    }
+    // Mantener (Dentro de banda de tolerancia)
+    else {
+      action = 'HOLD';
+    }
+
+    // Solo generamos sugerencia si la acción NO es HOLD y el monto vale la pena (> $10)
+    if (action !== 'HOLD' && Math.abs(diffVal) > 10) {
+      suggestions.push({
+        ticker: targetTicker,
+        currentPct,
+        targetPct,
+        action: action as 'BUY' | 'SELL', // Cast for now, as types/portfolio only has BUY/SELL usually
+        amount: Math.abs(diffVal),
+        quantity: price > 0 ? Math.abs(diffVal) / price : 0,
+      });
+    }
   });
 
   return suggestions.sort((a, b) => b.amount - a.amount);
