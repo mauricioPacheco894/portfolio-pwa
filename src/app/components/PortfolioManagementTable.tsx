@@ -418,6 +418,15 @@ export default function PortfolioManagementTable({
                         )}
                       </span>
                     </div>
+                  ) : row.targetPct > 0 && row.currentValue < 0.01 ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="inline-flex w-20 items-center justify-center rounded bg-blue-100 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                        Comprar
+                      </span>
+                      <span className="w-16 text-right text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        ---
+                      </span>
+                    </div>
                   ) : row.targetPct > 0 ? (
                     <div className="flex items-center justify-end gap-2">
                       <span className="inline-flex w-20 items-center justify-center rounded bg-gray-100 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
@@ -431,8 +440,6 @@ export default function PortfolioManagementTable({
                 </td>
               </tr>
             ))}
-
-
           </tbody>
         </table>
       </div>
