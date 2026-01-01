@@ -392,22 +392,22 @@ export default function PortfolioManagementTable({
                     // Si el total no cuadra, mostramos aviso en vez de sugerencia engañosa
                     row.targetPct > 0 ? (
                       <div className="flex justify-end">
-                        <span className="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                        <span className="inline-flex items-center justify-center rounded bg-red-100 w-24 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
                           AJUSTAR %
                         </span>
                       </div>
                     ) : null
                   ) : row.suggestion ? (
-                    <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center justify-end gap-2">
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.suggestion.action === 'BUY'
+                        className={`inline-flex w-20 items-center justify-center rounded py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.suggestion.action === 'BUY'
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
                           }`}
                       >
                         {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
                       </span>
-                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      <span className="w-16 text-right text-xs font-medium text-zinc-600 dark:text-zinc-400">
                         $
                         {(row.suggestion.amount * exchangeRate).toLocaleString(
                           'en-US',
@@ -419,11 +419,11 @@ export default function PortfolioManagementTable({
                       </span>
                     </div>
                   ) : row.targetPct > 0 ? (
-                    <div className="flex flex-col items-end gap-0.5">
-                      <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="inline-flex w-20 items-center justify-center rounded bg-gray-100 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">
                         Mantener
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                      <span className="w-16 text-right text-[10px] text-zinc-400 dark:text-zinc-500">
                         En rango
                       </span>
                     </div>
