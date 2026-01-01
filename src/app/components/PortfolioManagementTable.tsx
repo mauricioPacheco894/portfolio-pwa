@@ -15,6 +15,7 @@ import { useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import { normalizeTicker } from '@/utils/tickerMapping';
+import { calculateRebalancing } from '@/utils/portfolioMath';
 
 import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 
@@ -127,33 +128,44 @@ export default function PortfolioManagementTable({
 
   const total = Object.values(allocation).reduce((a, b) => a + b, 0);
 
-  // 1. Preparar claves de target
+  // 1. Preparar claves de target (incluye lo que estemos editando)
   const targetKeys = Object.keys(allocation);
 
   // 2. Consolidar Holdings (BASE USD)
-  // Si nos pasan ya el mapa calculado, lo usamos. Si no, lo calculamos aquí (fallback).
+  // ... (código existente de consolidación) ...
   let consolidatedHoldingsUSD: Record<string, number>;
-
   if (preCalculatedHoldingsUSD) {
     consolidatedHoldingsUSD = preCalculatedHoldingsUSD;
   } else {
-    // Lógica legacy por si acaso no pasan la prop
     consolidatedHoldingsUSD = {};
     holdings.forEach((h) => {
       const normTicker = normalizeTicker(h.ticker, targetKeys);
-      // Usamos marketValueGlobal que siempre es USD.
-      // Si no existe, fallback a currentValue (que sería local) pero dividido por exchangeRate si es necesario, 
-      // pero idealmente confiamos en que page.tsx ya normalizó a marketValueGlobal.
       const valUSD = (h as any).marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
-
       consolidatedHoldingsUSD[normTicker] = (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
     });
   }
 
-  // Calculamos el totalPortfolioValue en USD sumando los holdings consolidados para tener un denominador base consistente
+  // Calculamos el valor total
   const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce((a, b) => a + b, 0);
 
-  // 3. Crear lista unificada de tickers para la tabla
+  // >>> NUEVO: Calcular Sugerencias en Tiempo Real <<<
+  // Extraemos precios aproximados para el cálculo (si existen)
+  const derivedPrices: Record<string, number> = {};
+  holdings.forEach(h => {
+    if (h.totalQuantity > 0) {
+      derivedPrices[h.ticker] = h.currentValue / h.totalQuantity;
+    }
+  });
+
+  // Usamos la utilidad compartida para recalcular basándonos en el allocation ACTUAL (editado)
+  const liveSuggestions = calculateRebalancing(
+    holdings,
+    allocation,
+    totalPortfolioValueUSD,
+    derivedPrices
+  );
+
+  // 3. Crear lista unificada de tickers
   const allTickers = new Set([
     ...Object.keys(consolidatedHoldingsUSD),
     ...targetKeys,
@@ -166,7 +178,8 @@ export default function PortfolioManagementTable({
     // Convertimos para DISPLAY visual
     const displayValue = valueBaseUSD * exchangeRate;
 
-    const suggestion = rebalanceSuggestions.find((s) => s.ticker === ticker);
+    // Usamos la sugerencia EN VIVO, no la prop estática
+    const suggestion = liveSuggestions.find((s) => s.ticker === ticker);
 
     // Porcentaje siempre calculado sobre la base USD consistente
     const currentPct = totalPortfolioValueUSD > 0 ? (valueBaseUSD / totalPortfolioValueUSD) * 100 : 0;
@@ -198,6 +211,11 @@ export default function PortfolioManagementTable({
       return b.currentValue - a.currentValue;
     });
 
+  const handleCancelStrategy = () => {
+    setAllocation(currentTarget || {});
+    setError('');
+  };
+
   const hasChanges = (() => {
     const initial = currentTarget || {};
     const currentKeys = Object.keys(allocation);
@@ -223,25 +241,33 @@ export default function PortfolioManagementTable({
         </div>
 
         <div className="flex items-center gap-3">
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums tracking-tight ${Math.abs(total - 100) < 0.01
+          {hasChanges && (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums tracking-tight animate-in fade-in zoom-in-95 ${Math.abs(total - 100) < 0.01
                 ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
                 : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
-              }`}
-          >
-            Total: {total.toFixed(2)}%
-          </span>
-          {hasChanges && (
-            <button
-              onClick={handleSaveStrategy}
-              disabled={isSaving}
-              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${Math.abs(total - 100) < 0.01
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-zinc-400 hover:bg-zinc-500'
                 }`}
             >
-              {isSaving ? 'Guardando...' : 'Guardar Estrategia'}
-            </button>
+              Total: {total.toFixed(2)}%
+            </span>
+          )}
+          {hasChanges && (
+            <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+              <button
+                onClick={handleCancelStrategy}
+                className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                title="Cancelar cambios"
+              >
+                <X size={16} />
+              </button>
+              <button
+                onClick={handleSaveStrategy}
+                disabled={isSaving}
+                className="flex items-center gap-1 rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {isSaving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -362,7 +388,16 @@ export default function PortfolioManagementTable({
                   )}
                 </td>
                 <td className="px-3 py-2 text-center align-middle">
-                  {row.suggestion ? (
+                  {Math.abs(total - 100) > 0.1 ? (
+                    // Si el total no cuadra, mostramos aviso en vez de sugerencia engañosa
+                    row.targetPct > 0 ? (
+                      <div className="flex justify-end">
+                        <span className="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                          AJUSTAR %
+                        </span>
+                      </div>
+                    ) : null
+                  ) : row.suggestion ? (
                     <div className="flex flex-col items-end gap-0.5">
                       <span
                         className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.suggestion.action === 'BUY'
