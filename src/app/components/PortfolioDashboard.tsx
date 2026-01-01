@@ -234,13 +234,6 @@ export default function PortfolioDashboard({
 
         {/* Tabla Maestra de Gestión Unificada */}
         <section className="mb-6">
-          <div className="mb-3 flex items-center justify-between">
-            {/* Espaciador. El botón se renderiza flotando a la derecha en el div siguiente */}
-          </div>
-          <div className="flex justify-end mb-2">
-            <PortfolioChartModal holdings={consolidatedAssetsForChart as any} />
-          </div>
-
           <PortfolioManagementTable
             holdings={activeHoldings}
             // Pasamos los datos pre-calculados para optimizar
@@ -251,6 +244,9 @@ export default function PortfolioDashboard({
             availableTickers={uniqueTickers}
             totalValue={totalValue}
             exchangeRate={exchangeRate}
+            headerAction={
+              <PortfolioChartModal holdings={consolidatedAssetsForChart as any} />
+            }
           />
         </section>
 

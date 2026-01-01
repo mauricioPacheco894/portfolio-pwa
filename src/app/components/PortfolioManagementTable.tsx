@@ -18,6 +18,7 @@ interface PortfolioManagementTableProps {
   totalValue: number; // Este valor viene convertido en dashboard, pero lo recalculamos internamente en USD para precisión de %
   exchangeRate: number;
   preCalculatedHoldingsUSD?: Record<string, number>; // Nueva prop opcional optimizada
+  headerAction?: React.ReactNode; // Slot para botones extra (ej. Gráfica)
 }
 
 export default function PortfolioManagementTable({
@@ -29,6 +30,7 @@ export default function PortfolioManagementTable({
   totalValue,
   exchangeRate = 1,
   preCalculatedHoldingsUSD,
+  headerAction,
 }: PortfolioManagementTableProps) {
   const router = useRouter();
   const [allocation, setAllocation] = useState<Record<string, number>>(
@@ -185,10 +187,15 @@ export default function PortfolioManagementTable({
 
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
-          Gestión de Portafolio
-        </h3>
+      <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
+            Gestión de Portafolio
+          </h3>
+          {/* Aquí renderizamos la acción inyectada (Botón de Gráfica) */}
+          {headerAction && <div>{headerAction}</div>}
+        </div>
+
         <div className="flex items-center gap-2">
           <span
             className={`text-sm font-medium ${Math.abs(total - 100) < 0.01 ? 'text-green-600' : 'text-amber-600'}`}
