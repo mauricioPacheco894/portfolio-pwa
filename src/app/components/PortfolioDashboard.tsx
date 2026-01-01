@@ -191,7 +191,7 @@ export default function PortfolioDashboard({
                         {formatCurrency(totalProfit)}
                       </span>
                       <span className={`text-sm font-bold ${profitColor}`}>
-                        ({percentage.toFixed(2)}%)
+                        ({percentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
                       </span>
                     </div>
 
@@ -320,7 +320,7 @@ export default function PortfolioDashboard({
                     const qty = Number(t.quantity);
                     const price = Number(t.price_per_unit);
                     const fees = t.fees ? Number(t.fees) : 0;
-                    const total = (qty * price + fees).toFixed(2);
+                    const total = (qty * price + fees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                     return (
                       <tr key={t.id}>
@@ -346,12 +346,12 @@ export default function PortfolioDashboard({
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">{qty}</td>
+                        <td className="px-4 py-3 text-right">{qty.toLocaleString('en-US')}</td>
                         <td className="px-4 py-3 text-right">
-                          ${price.toFixed(2)}
+                          ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          ${fees.toFixed(2)}
+                          ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-4 py-3 font-medium text-right">
                           ${total}

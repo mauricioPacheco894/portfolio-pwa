@@ -300,7 +300,7 @@ export default function PortfolioManagementTable({
                   {row.ticker}
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
-                  ${row.currentValue.toFixed(2)}
+                  ${row.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <div className="flex items-center justify-end gap-2">

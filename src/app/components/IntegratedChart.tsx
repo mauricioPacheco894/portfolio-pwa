@@ -134,7 +134,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
                       {payload[0].name}
                     </p>
                     <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ${Number(payload[0].value).toFixed(2)}
+                      ${Number(payload[0].value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                 );

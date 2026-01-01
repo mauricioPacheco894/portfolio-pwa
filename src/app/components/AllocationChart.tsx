@@ -77,7 +77,7 @@ export default function AllocationChart({ holdings }: Props) {
             </Pie>
             <Tooltip
               formatter={(value: number | undefined) =>
-                value ? `$${value.toFixed(2)}` : '$0.00'
+                value ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'
               }
               contentStyle={{
                 backgroundColor: '#333',
