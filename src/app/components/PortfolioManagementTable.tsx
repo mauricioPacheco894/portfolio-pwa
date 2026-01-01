@@ -1,6 +1,15 @@
 'use client';
 
-import { Check, Edit2, PlusCircle, X, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Edit2,
+  PlusCircle,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Search,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -213,9 +222,12 @@ export default function PortfolioManagementTable({
           {headerAction && <div>{headerAction}</div>}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span
-            className={`text-sm font-medium ${Math.abs(total - 100) < 0.01 ? 'text-green-600' : 'text-amber-600'}`}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums tracking-tight ${Math.abs(total - 100) < 0.01
+                ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+              }`}
           >
             Total: {total.toFixed(2)}%
           </span>
@@ -354,8 +366,8 @@ export default function PortfolioManagementTable({
                     <div className="flex flex-col items-end gap-0.5">
                       <span
                         className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.suggestion.action === 'BUY'
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
                           }`}
                       >
                         {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
@@ -385,45 +397,61 @@ export default function PortfolioManagementTable({
               </tr>
             ))}
 
-            {/* Fila para agregar nuevo */}
-            <tr className="bg-zinc-50 dark:bg-zinc-900">
-              <td className="px-3 py-2">
-                <input
-                  type="text"
-                  placeholder="Ticker"
-                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm uppercase dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                  value={ticker}
-                  onChange={(e) => setTicker(e.target.value)}
-                  list="available-tickers"
-                  suppressHydrationWarning
-                />
-                <datalist id="available-tickers">
-                  {availableTickers.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
+            {/* Footer de Tabla: Agregar Nuevo */}
+            <tr className="border-t-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+              <td className="p-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="NUEVO ACTIVO"
+                    className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-8 text-sm font-medium uppercase text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
+                    value={ticker}
+                    onChange={(e) => setTicker(e.target.value)}
+                    list="available-tickers"
+                    suppressHydrationWarning
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400">
+                    <Search size={14} />
+                  </div>
+                  <datalist id="available-tickers">
+                    {availableTickers.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                </div>
               </td>
-              <td className="px-3 py-2" colSpan={2}></td>
-              <td className="px-3 py-2">
-                <input
-                  type="number"
-                  placeholder="%"
-                  min="0"
-                  max="100"
-                  className="w-full rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                  suppressHydrationWarning
-                />
+
+              {/* Celdas vacías para alineación */}
+              <td className="p-3 hidden sm:table-cell"></td>
+              <td className="p-3 hidden sm:table-cell"></td>
+
+              <td className="p-3">
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-8 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white text-right"
+                    value={percentage}
+                    onChange={(e) => setPercentage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                    suppressHydrationWarning
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">
+                    %
+                  </div>
+                </div>
               </td>
-              <td className="px-3 py-2" colSpan={2}>
+
+              <td className="p-3" colSpan={2}>
                 <button
                   onClick={handleAdd}
-                  className="flex items-center gap-1 rounded bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+                  disabled={!ticker || !percentage}
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-zinc-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
                   <PlusCircle size={14} />
-                  Agregar
+                  AGREGAR
                 </button>
               </td>
             </tr>
