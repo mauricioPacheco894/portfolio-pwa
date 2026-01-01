@@ -5,21 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { normalizeTicker } from '@/utils/tickerMapping';
 
-interface AssetPosition {
-  ticker: string;
-  currentValue: number;
-  totalInvested: number;
-}
-
-interface RebalanceSuggestion {
-  ticker: string;
-  currentPct: number;
-  targetPct: number;
-  action: 'BUY' | 'SELL' | 'HOLD';
-  amount: number;
-  quantity?: number;
-}
+import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 
 interface PortfolioManagementTableProps {
   holdings: AssetPosition[];
@@ -27,7 +15,8 @@ interface PortfolioManagementTableProps {
   rebalanceSuggestions: RebalanceSuggestion[];
   portfolioId: string;
   availableTickers: string[];
-  totalValue: number;
+  totalValue: number; // Este valor viene convertido en dashboard, pero lo recalculamos internamente en USD para precisión de %
+  exchangeRate: number;
 }
 
 export default function PortfolioManagementTable({
@@ -37,6 +26,7 @@ export default function PortfolioManagementTable({
   portfolioId,
   availableTickers,
   totalValue,
+  exchangeRate = 1,
 }: PortfolioManagementTableProps) {
   const router = useRouter();
   const [allocation, setAllocation] = useState<Record<string, number>>(
@@ -124,21 +114,49 @@ export default function PortfolioManagementTable({
 
   const total = Object.values(allocation).reduce((a, b) => a + b, 0);
 
-  // Crear mapa de datos combinados
+  // 1. Preparar claves de target para ayudar a la normalización
+  const targetKeys = Object.keys(allocation);
+
+  // 2. Consolidar Holdings (BASE USD)
+  // Mapa: TickerNormalizado -> ValorTotalEnUSD
+  const consolidatedHoldingsUSD: Record<string, number> = {};
+
+  holdings.forEach((h) => {
+    const normTicker = normalizeTicker(h.ticker, targetKeys);
+    // Usamos marketValueGlobal que siempre es USD.
+    // Si no existe, fallback a currentValue (que sería local) pero dividido por exchangeRate si es necesario, 
+    // pero idealmente confiamos en que page.tsx ya normalizó a marketValueGlobal.
+    const valUSD = (h as any).marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
+
+    consolidatedHoldingsUSD[normTicker] = (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
+  });
+
+  // Calculamos el totalPortfolioValue en USD sumando los holdings consolidados para tener un denominador base consistente
+  const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce((a, b) => a + b, 0);
+
+  // 3. Crear lista unificada de tickers para la tabla
   const allTickers = new Set([
-    ...holdings.map((h) => h.ticker),
-    ...Object.keys(allocation),
+    ...Object.keys(consolidatedHoldingsUSD),
+    ...targetKeys,
   ]);
+
   const tableData = Array.from(allTickers).map((ticker) => {
-    const holding = holdings.find((h) => h.ticker === ticker);
+    // Valor Base en USD
+    const valueBaseUSD = consolidatedHoldingsUSD[ticker] || 0;
+
+    // Convertimos para DISPLAY visual
+    const displayValue = valueBaseUSD * exchangeRate;
+
     const suggestion = rebalanceSuggestions.find((s) => s.ticker === ticker);
-    const currentPct = holding ? (holding.currentValue / totalValue) * 100 : 0;
+
+    // Porcentaje siempre calculado sobre la base USD consistente
+    const currentPct = totalPortfolioValueUSD > 0 ? (valueBaseUSD / totalPortfolioValueUSD) * 100 : 0;
     const targetPct = allocation[ticker] || 0;
 
     return {
       ticker,
-      currentValue: holding?.currentValue || 0,
-      currentPct,
+      currentValue: displayValue, // Para visualización en moneda seleccionada
+      currentPct, // % real basado en valor (independiente de moneda)
       targetPct,
       suggestion,
     };
@@ -173,11 +191,10 @@ export default function PortfolioManagementTable({
             <button
               onClick={handleSaveStrategy}
               disabled={isSaving}
-              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${
-                Math.abs(total - 100) < 0.01
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-zinc-400 hover:bg-zinc-500'
-              }`}
+              className={`rounded px-3 py-1 text-sm font-medium text-white disabled:opacity-50 ${Math.abs(total - 100) < 0.01
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-zinc-400 hover:bg-zinc-500'
+                }`}
             >
               {isSaving ? 'Guardando...' : 'Guardar Estrategia'}
             </button>
@@ -288,13 +305,12 @@ export default function PortfolioManagementTable({
                 <td className="px-3 py-2 text-right">
                   {row.targetPct > 0 && (
                     <span
-                      className={`text-xs font-semibold ${
-                        row.targetPct - row.currentPct > 0
-                          ? 'text-blue-600'
-                          : row.targetPct - row.currentPct < 0
-                            ? 'text-orange-600'
-                            : 'text-zinc-500'
-                      }`}
+                      className={`text-xs font-semibold ${row.targetPct - row.currentPct > 0
+                        ? 'text-blue-600'
+                        : row.targetPct - row.currentPct < 0
+                          ? 'text-orange-600'
+                          : 'text-zinc-500'
+                        }`}
                     >
                       {row.targetPct - row.currentPct >= 0 ? '+' : ''}
                       {(row.targetPct - row.currentPct).toFixed(2)}%
@@ -304,11 +320,10 @@ export default function PortfolioManagementTable({
                 <td className="px-3 py-2 text-center">
                   {row.suggestion && (
                     <button
-                      className={`rounded px-2 py-1 text-xs font-bold ${
-                        row.suggestion.action === 'BUY'
-                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
-                      }`}
+                      className={`rounded px-2 py-1 text-xs font-bold ${row.suggestion.action === 'BUY'
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
+                        }`}
                     >
                       {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'} $
                       {row.suggestion.amount.toFixed(0)}

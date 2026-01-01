@@ -107,6 +107,8 @@ export function calculateHoldings(
   });
 }
 
+import { normalizeTicker } from './tickerMapping';
+
 // Calcula sugerencias de rebalanceo basado en la asignación objetivo
 export function calculateRebalancing(
   holdings: AssetPosition[],
@@ -118,30 +120,50 @@ export function calculateRebalancing(
 
   const suggestions: RebalanceSuggestion[] = [];
 
-  Object.entries(targetAllocation).forEach(([ticker, targetPct]) => {
-    const existing = holdings.find((h) => h.ticker === ticker);
-    const currentVal = existing ? existing.currentValue : 0;
+  // 1. Consolidar holdings actuales por ticker normalizado
+  // Mapa: TickerNormalizado -> ValorTotalEnUSD (marketValueGlobal)
+  const consolidatedValues: Record<string, number> = {};
 
-    // Obtenemos el precio real (o fallback al histórico si no hay live)
-    const price =
-      currentPrices[ticker] ||
-      (existing && existing.totalQuantity > 0
-        ? existing.currentValue / existing.totalQuantity
-        : 0);
+  // Extraemos las claves de los targets para ayudar a la inferencia (Inyección de dependencia)
+  const targetKeys = Object.keys(targetAllocation);
+
+  holdings.forEach((h) => {
+    // Aquí pasamos los targets conocidos para que normalizeTicker sepa que VUAAN -> VUAA
+    const normTicker = normalizeTicker(h.ticker, targetKeys);
+
+    // Usamos marketValueGlobal para sumar peras con peras (todo en USD)
+    const val = h.marketValueGlobal || h.currentValue;
+    consolidatedValues[normTicker] =
+      (consolidatedValues[normTicker] || 0) + val;
+  });
+
+  Object.entries(targetAllocation).forEach(([targetTicker, targetPct]) => {
+    // Normalizamos target también para consistencia
+    const normTarget = normalizeTicker(targetTicker, targetKeys);
+
+    // El valor actual es la suma de todas las variantes (NU + NUN + NUN.MX...)
+    const currentVal = consolidatedValues[normTarget] || 0;
+
+    // Precio para calcular "cantidad de acciones":
+    // Intentamos obtener el precio del ticker objetivo específico, o del normalizado
+    // Ojo: Esto es una estimación. Si el usuario compra NUN (pesos) vs NU (dólares), el *número* de acciones diferirá por el tipo de cambio.
+    // Aquí usamos el precio del targetTicker original si existe en currentPrices, sino una media.
+    const price = currentPrices[targetTicker] || currentPrices[normTarget] || 0;
 
     const currentPct = (currentVal / totalPortfolioValue) * 100;
     const targetVal = totalPortfolioValue * (targetPct / 100);
     const diffVal = targetVal - currentVal;
 
+    // Ignorar diferencias menores a $10 USD para evitar ruido
     if (Math.abs(diffVal) < 10) return;
 
     suggestions.push({
-      ticker,
+      ticker: targetTicker, // Mantenemos el nombre que el usuario definió en su target
       currentPct,
       targetPct,
       action: diffVal > 0 ? 'BUY' : 'SELL',
       amount: Math.abs(diffVal),
-      // Calculamos acciones: Dinero / Precio Unitario
+      // Cantidad estimada de acciones a mover
       quantity: price > 0 ? Math.abs(diffVal) / price : 0,
     });
   });

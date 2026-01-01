@@ -116,21 +116,19 @@ export default function PortfolioDashboard({
               <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 self-start md:self-center">
                 <button
                   onClick={() => setCurrency('USD')}
-                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${
-                    currency === 'USD'
+                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
                       ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
+                    }`}
                 >
                   USD
                 </button>
                 <button
                   onClick={() => setCurrency('MXN')}
-                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${
-                    currency === 'MXN'
+                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
                       ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
+                    }`}
                 >
                   MXN
                 </button>
@@ -216,6 +214,7 @@ export default function PortfolioDashboard({
             portfolioId={portfolio.id}
             availableTickers={uniqueTickers}
             totalValue={totalValue}
+            exchangeRate={exchangeRate}
           />
         </section>
 
