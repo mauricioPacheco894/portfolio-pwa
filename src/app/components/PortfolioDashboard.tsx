@@ -14,6 +14,7 @@ import TransactionActions from './TransactionActions';
 import TransactionFilters from './TransactionFilters';
 import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
+import { normalizeTicker } from '@/utils/tickerMapping';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
@@ -89,6 +90,32 @@ export default function PortfolioDashboard({
       currency: currency,
     }).format(val);
 
+  // Consolidación de datos CENTRALIZADA (Base USD)
+  // Esto evita que la tabla y la gráfica calculen cosas diferentes o dupliquen trabajo
+  const consolidatedMapUSD: Record<string, number> = {};
+
+  // Obtenemos keys del target para ayudar a la inferencia
+  const targetKeys = portfolio.target_allocation
+    ? Object.keys(portfolio.target_allocation)
+    : [];
+
+  holdings.forEach((h) => {
+    const normTicker = normalizeTicker(h.ticker, targetKeys);
+    // Base siempre en USD
+    const valUSD = h.marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
+    consolidatedMapUSD[normTicker] = (consolidatedMapUSD[normTicker] || 0) + valUSD;
+  });
+
+  // 1. Datos para la Gráfica (Convertidos a moneda visual)
+  // Filtramos activos con valor casi nulo para evitar saturar la gráfica con etiquetas "0.0%"
+  const consolidatedAssetsForChart = Object.entries(consolidatedMapUSD)
+    .map(([ticker, valUSD]) => ({
+      ticker,
+      currentValue: valUSD * exchangeRate,
+    }))
+    .filter((asset) => asset.currentValue > 0.1) // Filtro: Valor > 10 centavos
+    .sort((a, b) => b.currentValue - a.currentValue); // Ordenar de mayor a menor ayuda al renderizado
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
       <Header />
@@ -117,8 +144,8 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => setCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   USD
@@ -126,8 +153,8 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => setCurrency('MXN')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   MXN
@@ -207,8 +234,17 @@ export default function PortfolioDashboard({
 
         {/* Tabla Maestra de Gestión Unificada */}
         <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            {/* Espaciador. El botón se renderiza flotando a la derecha en el div siguiente */}
+          </div>
+          <div className="flex justify-end mb-2">
+            <PortfolioChartModal holdings={consolidatedAssetsForChart as any} />
+          </div>
+
           <PortfolioManagementTable
             holdings={activeHoldings}
+            // Pasamos los datos pre-calculados para optimizar
+            preCalculatedHoldingsUSD={consolidatedMapUSD}
             currentTarget={portfolio.target_allocation || undefined}
             rebalanceSuggestions={rebalanceSuggestions}
             portfolioId={portfolio.id}
@@ -218,13 +254,12 @@ export default function PortfolioDashboard({
           />
         </section>
 
-        {/* Sección de Posiciones con Gráfica Modal */}
+        {/* Sección de Posiciones */}
         <section className="mb-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
               Mis Posiciones
             </h2>
-            <PortfolioChartModal holdings={activeHoldings} />
           </div>
           <HoldingsTable holdings={activeHoldings} />
         </section>

@@ -17,6 +17,7 @@ interface PortfolioManagementTableProps {
   availableTickers: string[];
   totalValue: number; // Este valor viene convertido en dashboard, pero lo recalculamos internamente en USD para precisión de %
   exchangeRate: number;
+  preCalculatedHoldingsUSD?: Record<string, number>; // Nueva prop opcional optimizada
 }
 
 export default function PortfolioManagementTable({
@@ -27,6 +28,7 @@ export default function PortfolioManagementTable({
   availableTickers,
   totalValue,
   exchangeRate = 1,
+  preCalculatedHoldingsUSD,
 }: PortfolioManagementTableProps) {
   const router = useRouter();
   const [allocation, setAllocation] = useState<Record<string, number>>(
@@ -114,22 +116,28 @@ export default function PortfolioManagementTable({
 
   const total = Object.values(allocation).reduce((a, b) => a + b, 0);
 
-  // 1. Preparar claves de target para ayudar a la normalización
+  // 1. Preparar claves de target
   const targetKeys = Object.keys(allocation);
 
   // 2. Consolidar Holdings (BASE USD)
-  // Mapa: TickerNormalizado -> ValorTotalEnUSD
-  const consolidatedHoldingsUSD: Record<string, number> = {};
+  // Si nos pasan ya el mapa calculado, lo usamos. Si no, lo calculamos aquí (fallback).
+  let consolidatedHoldingsUSD: Record<string, number>;
 
-  holdings.forEach((h) => {
-    const normTicker = normalizeTicker(h.ticker, targetKeys);
-    // Usamos marketValueGlobal que siempre es USD.
-    // Si no existe, fallback a currentValue (que sería local) pero dividido por exchangeRate si es necesario, 
-    // pero idealmente confiamos en que page.tsx ya normalizó a marketValueGlobal.
-    const valUSD = (h as any).marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
+  if (preCalculatedHoldingsUSD) {
+    consolidatedHoldingsUSD = preCalculatedHoldingsUSD;
+  } else {
+    // Lógica legacy por si acaso no pasan la prop
+    consolidatedHoldingsUSD = {};
+    holdings.forEach((h) => {
+      const normTicker = normalizeTicker(h.ticker, targetKeys);
+      // Usamos marketValueGlobal que siempre es USD.
+      // Si no existe, fallback a currentValue (que sería local) pero dividido por exchangeRate si es necesario, 
+      // pero idealmente confiamos en que page.tsx ya normalizó a marketValueGlobal.
+      const valUSD = (h as any).marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
 
-    consolidatedHoldingsUSD[normTicker] = (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
-  });
+      consolidatedHoldingsUSD[normTicker] = (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
+    });
+  }
 
   // Calculamos el totalPortfolioValue en USD sumando los holdings consolidados para tener un denominador base consistente
   const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce((a, b) => a + b, 0);

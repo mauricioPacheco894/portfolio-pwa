@@ -1,5 +1,4 @@
-'use client';
-
+import { useEffect, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface AssetPosition {
@@ -23,6 +22,17 @@ const COLORS = [
 ];
 
 export default function IntegratedChart({ holdings }: IntegratedChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    // Ejecutar al montar
+    checkMobile();
+    // Escuchar cambios
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (holdings.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-400 dark:border-zinc-600 dark:bg-zinc-900">
@@ -33,6 +43,13 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
   const data = holdings.map((h) => ({ name: h.ticker, value: h.currentValue }));
 
+  // Configuración dinámica según dispositivo
+  const innerRadiusVal = isMobile ? '40%' : '50%';
+  const outerRadiusVal = isMobile ? '55%' : '70%'; // Reducido drásticamente en mobile para dar espacio a etiquetas
+  const labelOffsetCodo = isMobile ? 10 : 30; // Línea diagonal más corta en mobile
+  const labelOffsetHoriz = isMobile ? 10 : 20; // Línea horizontal más corta en mobile
+  const fontSize = isMobile ? '10px' : '14px';
+
   return (
     <div className="h-full w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -41,8 +58,8 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius="60%"
-            outerRadius="80%"
+            innerRadius={innerRadiusVal}
+            outerRadius={outerRadiusVal}
             paddingAngle={2}
             dataKey="value"
             label={({
@@ -61,20 +78,19 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             }: any) => {
               // eslint-disable-line @typescript-eslint/no-explicit-any
               const RADIAN = Math.PI / 180;
-              // Cálculos ajustados para tamaño mediano
               const sin = Math.sin(-midAngle * RADIAN);
               const cos = Math.cos(-midAngle * RADIAN);
 
-              // Inicio de línea
+              // Inicio de línea (borde del pastel)
               const sx = cx + outerRadius * cos;
               const sy = cy + outerRadius * sin;
 
-              // Codo
-              const mx = cx + (outerRadius + 8) * cos;
-              const my = cy + (outerRadius + 8) * sin;
+              // Codo (Dinámico)
+              const mx = cx + (outerRadius + labelOffsetCodo) * cos;
+              const my = cy + (outerRadius + labelOffsetCodo) * sin;
 
-              // Línea horizontal
-              const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+              // Línea horizontal (Dinámica)
+              const ex = mx + (cos >= 0 ? 1 : -1) * labelOffsetHoriz;
               const ey = my;
 
               const textAnchor = cos >= 0 ? 'start' : 'end';
@@ -88,12 +104,12 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
                   />
                   <circle cx={ex} cy={ey} r={2} fill="#9ca3af" stroke="none" />
                   <text
-                    x={ex + (cos >= 0 ? 1 : -1) * 6}
+                    x={ex + (cos >= 0 ? 1 : -1) * (isMobile ? 3 : 6)}
                     y={ey}
                     textAnchor={textAnchor}
                     fill="#374151"
                     dy={3}
-                    style={{ fontSize: '14px', fontWeight: 600 }}
+                    style={{ fontSize: fontSize, fontWeight: 600 }}
                   >
                     {`${name}: ${(percent * 100).toFixed(1)}%`}
                   </text>
