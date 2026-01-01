@@ -170,7 +170,24 @@ export default function PortfolioManagementTable({
       targetPct,
       suggestion,
     };
-  });
+  })
+    .filter((row) => {
+      // Filtro Inteligente:
+      // 1. Si tiene valor significativo (> 1 centavo), mostrar.
+      // 2. Si tiene una meta definida (> 0%), mostrar (aunque valga 0, implica que debo comprar).
+      // 3. Si vale 0 y la meta es 0, es basura/residuo/cerrada -> Ocultar.
+      const hasValue = row.currentValue > 0.01;
+      const hasTarget = row.targetPct > 0;
+
+      // Mostramos si cumple cualquiera de las dos condiciones
+      return hasValue || hasTarget;
+    })
+    .sort((a, b) => {
+      // Ordenar: primero los que tienen target (estrategia), luego por valor
+      if (a.targetPct > 0 && b.targetPct === 0) return -1;
+      if (a.targetPct === 0 && b.targetPct > 0) return 1;
+      return b.currentValue - a.currentValue;
+    });
 
   const hasChanges = (() => {
     const initial = currentTarget || {};
