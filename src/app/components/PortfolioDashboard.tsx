@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import AddTransactionForm from './AddTransactionForm';
@@ -44,6 +44,18 @@ export default function PortfolioDashboard({
   pagination,
 }: Props) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('portfolio_currency');
+    if (saved === 'MXN') {
+      setCurrency('MXN');
+    }
+  }, []);
+
+  const updateCurrency = (newCurrency: 'USD' | 'MXN') => {
+    setCurrency(newCurrency);
+    localStorage.setItem('portfolio_currency', newCurrency);
+  };
 
   const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
 
@@ -142,7 +154,7 @@ export default function PortfolioDashboard({
               {/* Selector de Moneda */}
               <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 self-start md:self-center">
                 <button
-                  onClick={() => setCurrency('USD')}
+                  onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
                     ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -151,7 +163,7 @@ export default function PortfolioDashboard({
                   USD
                 </button>
                 <button
-                  onClick={() => setCurrency('MXN')}
+                  onClick={() => updateCurrency('MXN')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
                     ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
