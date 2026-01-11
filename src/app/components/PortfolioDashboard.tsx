@@ -27,6 +27,7 @@ interface Props {
   uniqueTickers: string[];
   rebalanceSuggestions: RebalanceSuggestion[];
   usdMxnRate: number;
+  totalRealizedPnlUSD: number;
   pagination: {
     page: number;
     totalPages: number;
@@ -41,6 +42,7 @@ export default function PortfolioDashboard({
   uniqueTickers,
   rebalanceSuggestions,
   usdMxnRate,
+  totalRealizedPnlUSD,
   pagination,
 }: Props) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
@@ -69,11 +71,8 @@ export default function PortfolioDashboard({
     0
   );
 
-  // Realized PL y Unrealized PL también deben convertirse
-  const realizedPL = holdings.reduce(
-    (sum, h) => sum + (h.realizedPL || 0) * exchangeRate,
-    0
-  );
+  // Realized PL comes from ALL closed positions (prop), converted to display currency
+  const realizedPL = totalRealizedPnlUSD * exchangeRate;
   const unrealizedPL = holdings.reduce(
     (sum, h) => sum + (h.plDollarsGlobal || 0) * exchangeRate,
     0
