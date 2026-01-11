@@ -132,26 +132,26 @@ export default function PortfolioDashboard({
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-b border-zinc-200 pb-6 mb-8 dark:border-zinc-800">
-            <div className="flex items-center justify-between w-full md:w-auto gap-3">
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/"
-                  className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                  aria-label="Volver"
-                >
-                  <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
-                </Link>
-                <PortfolioActions
-                  portfolioId={portfolio.id}
-                  portfolioName={portfolio.name}
-                />
-              </div>
+          <div className="flex flex-col gap-3 border-b border-zinc-200 pb-6 mb-8 dark:border-zinc-800">
+            {/* Fila 1: Botón Back + Título + Acciones */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 shrink-0"
+                aria-label="Volver"
+              >
+                <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
+              </Link>
+              <PortfolioActions
+                portfolioId={portfolio.id}
+                portfolioName={portfolio.name}
+              />
             </div>
 
-            <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:gap-6 w-full md:w-auto">
+            {/* Fila 2: Selector de Moneda + KPIs (grupo compacto) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               {/* Selector de Moneda */}
-              <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 self-start md:self-center">
+              <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 shrink-0">
                 <button
                   onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
@@ -172,31 +172,32 @@ export default function PortfolioDashboard({
                 </button>
               </div>
 
-              {/* KPIs Grid Responsivo -> Flex en Desktop para ancho variable */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 md:flex md:flex-row md:items-center gap-y-2 gap-x-6 md:gap-x-8 text-sm w-full md:w-auto">
-                <div className="flex justify-between md:justify-start items-baseline gap-2">
-                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+
+              {/* KPIs - Formato tabla en mobile, fila en desktop */}
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-6 text-sm w-full sm:w-auto">
+                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
+                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
                     Valor:
                   </span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">
                     {formatTotal(totalValue)}
                   </span>
                 </div>
 
-                <div className="flex justify-between md:justify-start items-baseline gap-2">
-                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
+                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
                     Invertido:
                   </span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">
                     {formatTotal(totalInvested)}
                   </span>
                 </div>
 
-                <div className="flex justify-between md:justify-start items-baseline gap-2">
-                  <span className="text-zinc-500 font-medium dark:text-zinc-400">
+                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
+                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
                     Ganancia:
                   </span>
-                  <div className="relative group cursor-help flex items-baseline gap-1.5 whitespace-nowrap">
+                  <div className="relative group cursor-help flex items-baseline gap-1.5">
                     <div className="flex items-baseline gap-1.5 border-b border-dotted border-zinc-300 dark:border-zinc-700 pb-0.5">
                       <span className={`text-lg font-bold ${profitColor}`}>
                         {formatCurrency(totalProfit)}

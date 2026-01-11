@@ -134,11 +134,10 @@ export default function PortfolioActions({
               setNewName(portfolioName);
             }
           }}
-          className={`rounded-lg border border-zinc-300 bg-white px-2 py-1 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white ${
-            variant === 'page'
-              ? 'text-2xl font-bold'
-              : 'text-lg font-semibold w-full'
-          }`}
+          className={`rounded-lg border border-zinc-300 bg-white px-2 py-1 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white ${variant === 'page'
+            ? 'text-2xl font-bold'
+            : 'text-lg font-semibold w-full'
+            }`}
           autoFocus
         />
         <div className="flex items-center gap-1">
@@ -168,11 +167,16 @@ export default function PortfolioActions({
 
   return (
     <div
-      className={`group flex items-center gap-3 ${variant === 'card' ? 'w-full justify-between' : ''}`}
+      className={`group flex items-center gap-2 ${variant === 'card' ? 'w-full justify-between' : ''}`}
     >
-      <TitleTag className={titleClasses}>{portfolioName}</TitleTag>
+      <TitleTag
+        className={`${titleClasses} overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 max-w-[calc(100vw-180px)] sm:max-w-none`}
+        title={portfolioName}
+      >
+        {portfolioName}
+      </TitleTag>
       <div
-        className={`flex items-center gap-1 ${variant === 'page' ? '' : 'bg-transparent'}`}
+        className={`flex items-center gap-1 shrink-0 ${variant === 'page' ? '' : 'bg-transparent'}`}
       >
         <button
           onClick={(e) => {

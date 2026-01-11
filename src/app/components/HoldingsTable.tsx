@@ -121,7 +121,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   );
 
   return (
-    <div className="overflow-auto max-h-[500px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+    <div className="overflow-auto max-h-[524px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
       <table className="w-full text-left text-sm relative">
         <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
           <tr>
