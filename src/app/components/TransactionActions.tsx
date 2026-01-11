@@ -73,10 +73,10 @@ export default function TransactionActions({
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex items-center justify-center gap-1">
         <button
           onClick={() => setIsEditOpen(true)}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-zinc-500 hover:bg-zinc-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+          className="inline-flex items-center justify-center rounded px-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
           title="Editar"
         >
           <Edit2 size={16} />
@@ -84,7 +84,7 @@ export default function TransactionActions({
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded px-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
           title="Eliminar"
         >
           <Trash2 size={16} />

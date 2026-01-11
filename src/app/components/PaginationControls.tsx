@@ -28,27 +28,27 @@ export default function PaginationControls({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-4 py-4">
+    <div className="flex items-center justify-center gap-3">
       <button
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={!hasPrevPage}
-        className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 disabled:hover:bg-transparent dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 dark:disabled:hover:text-zinc-400"
         aria-label="Página anterior"
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={18} strokeWidth={2} />
       </button>
 
-      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Página {currentPage} de {totalPages}
+      <span className="text-sm text-zinc-500 dark:text-zinc-400 select-none">
+        Página <span className="font-semibold text-zinc-900 dark:text-zinc-100">{currentPage}</span> de {totalPages}
       </span>
 
       <button
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={!hasNextPage}
-        className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 disabled:opacity-50 disabled:hover:bg-transparent dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 dark:disabled:hover:text-zinc-400"
         aria-label="Página siguiente"
       >
-        <ChevronRight size={20} />
+        <ChevronRight size={18} strokeWidth={2} />
       </button>
     </div>
   );

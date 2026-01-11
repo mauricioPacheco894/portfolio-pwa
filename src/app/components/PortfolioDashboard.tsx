@@ -334,42 +334,42 @@ function TabsSection({
             </div>
 
             {/* Table */}
-            <div className="overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+            <div className="px-6 pt-4 overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
               <table className="w-full table-auto text-sm relative">
-                <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
+                <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                   <tr>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    <th className="px-3 py-2 text-left">
                       Fecha
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    <th className="px-3 py-2 text-left">
                       Ticker
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    <th className="px-3 py-2 text-left">
                       Tipo
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    <th className="px-3 py-2 text-right">
                       Cantidad
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    <th className="px-3 py-2 text-right">
                       Precio Unit.
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    <th className="px-3 py-2 text-right">
                       Comisión
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                    <th className="px-3 py-2 text-right">
                       Total
                     </th>
-                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                    <th className="px-3 py-2 text-center">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                   {transactions.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400"
+                        className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
                       >
                         No hay transacciones registradas aún
                       </td>
@@ -382,8 +382,8 @@ function TabsSection({
                       const total = (qty * price + fees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                       return (
-                        <tr key={t.id}>
-                          <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
+                        <tr key={t.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                          <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
                             {(() => {
                               const d = new Date(t.date);
                               return d.toLocaleDateString('es-ES', {
@@ -391,10 +391,10 @@ function TabsSection({
                               });
                             })()}
                           </td>
-                          <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
                             {t.ticker}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             {t.type === 'BUY' ? (
                               <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
                                 Compra
@@ -405,17 +405,17 @@ function TabsSection({
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-right">{qty.toLocaleString('en-US')}</td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">{qty.toLocaleString('en-US')}</td>
+                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
                             ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
                             ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-4 py-3 font-medium text-right">
+                          <td className="px-3 py-2 font-semibold text-right text-zinc-900 dark:text-white">
                             ${total}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2 text-center">
                             <TransactionActions
                               transaction={t}
                               portfolioId={portfolioId}
@@ -430,7 +430,7 @@ function TabsSection({
             </div>
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-700">
+            <div className="px-6 pb-1">
               <PaginationControls
                 currentPage={pagination.page}
                 totalPages={pagination.totalPages}
