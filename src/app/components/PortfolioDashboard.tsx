@@ -265,134 +265,182 @@ export default function PortfolioDashboard({
           />
         </section>
 
-        {/* Sección de Posiciones */}
+        {/* Tabs: Posiciones y Transacciones */}
         <section className="mb-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-              Mis Posiciones
-            </h2>
-          </div>
-          <HoldingsTable holdings={activeHoldings} />
-        </section>
-
-        {/* Transacciones */}
-        <section className="mb-6">
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-              Transacciones
-            </h2>
-            <div className="flex gap-2">
-              <AddTransactionForm portfolioId={portfolio.id} />
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <TransactionFilters />
-          </div>
-
-          <div className="overflow-auto rounded-lg border dark:border-zinc-700 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
-            <table className="w-full table-auto text-sm relative">
-              <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
-                <tr>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
-                    Fecha
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
-                    Ticker
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
-                    Cantidad
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
-                    Precio Unit.
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
-                    Comisión
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
-                    Total
-                  </th>
-                  <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
-                {transactions.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400"
-                    >
-                      No hay transacciones registradas aún
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map((t) => {
-                    const qty = Number(t.quantity);
-                    const price = Number(t.price_per_unit);
-                    const fees = t.fees ? Number(t.fees) : 0;
-                    const total = (qty * price + fees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                    return (
-                      <tr key={t.id}>
-                        <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                          {(() => {
-                            const d = new Date(t.date);
-                            return d.toLocaleDateString('es-ES', {
-                              timeZone: 'UTC',
-                            });
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                          {t.ticker}
-                        </td>
-                        <td className="px-4 py-3">
-                          {t.type === 'BUY' ? (
-                            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                              Compra
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                              Venta
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">{qty.toLocaleString('en-US')}</td>
-                        <td className="px-4 py-3 text-right">
-                          ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-right">
-                          ${total}
-                        </td>
-                        <td className="px-4 py-3">
-                          <TransactionActions
-                            transaction={t}
-                            portfolioId={portfolio.id}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <PaginationControls
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            hasNextPage={pagination.page < pagination.totalPages}
-            hasPrevPage={pagination.page > 1}
+          <TabsSection
+            activeHoldings={activeHoldings}
+            transactions={transactions}
+            portfolioId={portfolio.id}
+            pagination={pagination}
           />
         </section>
       </main>
+    </div>
+  );
+}
+
+// Nuevo componente de Tabs
+function TabsSection({
+  activeHoldings,
+  transactions,
+  portfolioId,
+  pagination,
+}: {
+  activeHoldings: AssetPosition[];
+  transactions: Transaction[];
+  portfolioId: string;
+  pagination: { page: number; totalPages: number };
+}) {
+  const [activeTab, setActiveTab] = useState<'positions' | 'transactions'>('positions');
+
+  return (
+    <div className="rounded-xl border bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      {/* Tab Headers */}
+      <div className="flex border-b border-zinc-200 dark:border-zinc-700">
+        <button
+          onClick={() => setActiveTab('positions')}
+          className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'positions'
+            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+        >
+          Mis Posiciones
+        </button>
+        <button
+          onClick={() => setActiveTab('transactions')}
+          className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'transactions'
+            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+        >
+          Transacciones
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className={activeTab === 'positions' ? 'p-6' : ''}>
+        {activeTab === 'positions' && (
+          <HoldingsTable holdings={activeHoldings} />
+        )}
+
+        {activeTab === 'transactions' && (
+          <div>
+            {/* Controls Header */}
+            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-700">
+              <AddTransactionForm portfolioId={portfolioId} />
+              <div className="flex-1 sm:max-w-md">
+                <TransactionFilters />
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+              <table className="w-full table-auto text-sm relative">
+                <thead className="sticky top-0 z-10 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 shadow-sm dark:bg-zinc-800 dark:text-zinc-400">
+                  <tr>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                      Fecha
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                      Ticker
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                      Cantidad
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                      Precio Unit.
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                      Comisión
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800 text-right">
+                      Total
+                    </th>
+                    <th className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y bg-white dark:divide-zinc-700 dark:bg-zinc-800">
+                  {transactions.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-6 text-center text-zinc-600 dark:text-zinc-400"
+                      >
+                        No hay transacciones registradas aún
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((t) => {
+                      const qty = Number(t.quantity);
+                      const price = Number(t.price_per_unit);
+                      const fees = t.fees ? Number(t.fees) : 0;
+                      const total = (qty * price + fees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                      return (
+                        <tr key={t.id}>
+                          <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
+                            {(() => {
+                              const d = new Date(t.date);
+                              return d.toLocaleDateString('es-ES', {
+                                timeZone: 'UTC',
+                              });
+                            })()}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                            {t.ticker}
+                          </td>
+                          <td className="px-4 py-3">
+                            {t.type === 'BUY' ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                Compra
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                                Venta
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">{qty.toLocaleString('en-US')}</td>
+                          <td className="px-4 py-3 text-right">
+                            ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-right">
+                            ${total}
+                          </td>
+                          <td className="px-4 py-3">
+                            <TransactionActions
+                              transaction={t}
+                              portfolioId={portfolioId}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-700">
+              <PaginationControls
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.page < pagination.totalPages}
+                hasPrevPage={pagination.page > 1}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

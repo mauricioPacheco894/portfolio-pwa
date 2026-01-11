@@ -46,8 +46,8 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => (
     <span
       className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${currency === 'MXN'
-          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
-          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
+        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
         }`}
     >
       {currency || 'USD'}
@@ -121,122 +121,120 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   );
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      <div className="overflow-auto max-h-[500px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
-        <table className="w-full text-left text-sm relative">
-          <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
+    <div className="overflow-auto max-h-[500px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+      <table className="w-full text-left text-sm relative">
+        <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
+          <tr>
+            <HeaderCell columnKey="ticker" label="Activo" align="left" />
+            <HeaderCell columnKey="totalQuantity" label="Cantidad" />
+            <HeaderCell columnKey="averageCost" label="Costo Prom." />
+            <HeaderCell columnKey="marketPrice" label="Precio Actual" />
+            <HeaderCell columnKey="currentValue" label="Valor Mercado" />
+            <HeaderCell columnKey="plDollars" label="Ganancia / Pérdida" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+          {sortedHoldings.length === 0 ? (
             <tr>
-              <HeaderCell columnKey="ticker" label="Activo" align="left" />
-              <HeaderCell columnKey="totalQuantity" label="Cantidad" />
-              <HeaderCell columnKey="averageCost" label="Costo Prom." />
-              <HeaderCell columnKey="marketPrice" label="Precio Actual" />
-              <HeaderCell columnKey="currentValue" label="Valor Mercado" />
-              <HeaderCell columnKey="plDollars" label="Ganancia / Pérdida" />
+              <td
+                colSpan={6}
+                className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
+              >
+                Agrega transacciones para ver tus posiciones.
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {sortedHoldings.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
-                >
-                  Agrega transacciones para ver tus posiciones.
+          ) : (
+            sortedHoldings.map((asset) => (
+              <tr
+                key={asset.ticker}
+                className={`transition-colors ${asset.isNegative
+                  ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                  : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+                  }`}
+              >
+                <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
+                  <div className="flex items-center gap-2">
+                    {asset.isNegative && (
+                      <div
+                        className="text-red-500"
+                        title="Error: Has vendido más de lo que compraste. Revisa tus transacciones."
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                      </div>
+                    )}
+                    {asset.ticker}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                  {asset.totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                  {currencyFormatter(asset.averageCost, asset.currency)}
+                </td>
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                  <div className="flex items-center justify-end gap-1">
+                    {asset.marketPrice
+                      ? currencyFormatter(asset.marketPrice, asset.currency)
+                      : currencyFormatter(
+                        asset.currentValue / asset.totalQuantity,
+                        asset.currency
+                      )}
+
+                    <CurrencyBadge currency={asset.currency} />
+
+                    {asset.marketPrice && (
+                      <span
+                        className="text-[10px] font-bold text-blue-500 ml-0.5"
+                        title="Precio en tiempo real"
+                      >
+                        LIVE
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
+                  {currencyFormatter(asset.currentValue, asset.currency)}
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <div
+                    className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                      }`}
+                  >
+                    <span className="text-sm">
+                      {asset.plPercentage > 0 ? '+' : ''}
+                      {asset.plPercentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                    </span>
+                    <span className="text-xs opacity-80 font-normal">
+                      (
+                      {currencyFormatterWithSign(
+                        asset.plDollars,
+                        asset.currency
+                      )}
+                      )
+                    </span>
+                  </div>
                 </td>
               </tr>
-            ) : (
-              sortedHoldings.map((asset) => (
-                <tr
-                  key={asset.ticker}
-                  className={`transition-colors ${asset.isNegative
-                      ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
-                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
-                    }`}
-                >
-                  <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
-                    <div className="flex items-center gap-2">
-                      {asset.isNegative && (
-                        <div
-                          className="text-red-500"
-                          title="Error: Has vendido más de lo que compraste. Revisa tus transacciones."
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                          </svg>
-                        </div>
-                      )}
-                      {asset.ticker}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                    {asset.totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                    {currencyFormatter(asset.averageCost, asset.currency)}
-                  </td>
-                  <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
-                    <div className="flex items-center justify-end gap-1">
-                      {asset.marketPrice
-                        ? currencyFormatter(asset.marketPrice, asset.currency)
-                        : currencyFormatter(
-                          asset.currentValue / asset.totalQuantity,
-                          asset.currency
-                        )}
-
-                      <CurrencyBadge currency={asset.currency} />
-
-                      {asset.marketPrice && (
-                        <span
-                          className="text-[10px] font-bold text-blue-500 ml-0.5"
-                          title="Precio en tiempo real"
-                        >
-                          LIVE
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
-                    {currencyFormatter(asset.currentValue, asset.currency)}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <div
-                      className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                        }`}
-                    >
-                      <span className="text-sm">
-                        {asset.plPercentage > 0 ? '+' : ''}
-                        {asset.plPercentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
-                      </span>
-                      <span className="text-xs opacity-80 font-normal">
-                        (
-                        {currencyFormatterWithSign(
-                          asset.plDollars,
-                          asset.currency
-                        )}
-                        )
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
