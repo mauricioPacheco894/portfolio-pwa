@@ -284,8 +284,7 @@ export default function PortfolioManagementTable({
             <tr>
               <th className="px-3 py-2 text-left">Activo</th>
               <th className="px-3 py-2 text-right">Valor</th>
-              <th className="px-3 py-2 text-right">% Actual</th>
-              <th className="px-3 py-2 text-right">% Meta</th>
+              <th className="px-3 py-2 text-right">% Actual / Meta</th>
               <th className="px-3 py-2 text-right">Diferencia</th>
               <th className="px-3 py-2 text-center">Acción</th>
             </tr>
@@ -303,26 +302,24 @@ export default function PortfolioManagementTable({
                   ${row.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <div className="h-1.5 w-16 rounded bg-zinc-200 dark:bg-zinc-600">
-                      <div
-                        className="h-full rounded bg-blue-500"
-                        style={{ width: `${Math.min(row.currentPct, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {row.currentPct.toFixed(2)}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 py-2 text-right">
                   {editingTicker === row.ticker ? (
                     <div className="flex items-center justify-end gap-1">
+                      <span className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
+                        ? 'text-zinc-600 dark:text-zinc-400'
+                        : Math.abs(row.currentPct - row.targetPct) <= 0.5
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : row.currentPct < row.targetPct
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-orange-600 dark:text-orange-400'
+                        }`}>
+                        {row.currentPct.toFixed(1)}%
+                      </span>
+                      <span className="text-zinc-400 dark:text-zinc-500">/</span>
                       <input
                         type="number"
                         min="0"
                         max="100"
-                        className="w-16 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                        className="w-14 rounded border border-zinc-300 px-1.5 py-0.5 text-xs text-right dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={(e) => {
@@ -335,38 +332,54 @@ export default function PortfolioManagementTable({
                         onClick={handleSaveEdit}
                         className="text-green-600 hover:text-green-700"
                       >
-                        <Check size={16} />
+                        <Check size={14} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
                         className="text-zinc-400 hover:text-zinc-600"
                       >
-                        <X size={16} />
+                        <X size={14} />
                       </button>
                     </div>
                   ) : (
-                    // ...existing code...
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                        {row.targetPct.toFixed(2)}%
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
+                        ? 'text-zinc-600 dark:text-zinc-400'
+                        : Math.abs(row.currentPct - row.targetPct) <= 0.5
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : row.currentPct < row.targetPct
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-orange-600 dark:text-orange-400'
+                        }`}>
+                        {row.currentPct.toFixed(1)}%
                       </span>
-                      <button
-                        onClick={() =>
-                          handleStartEdit(row.ticker, row.targetPct)
-                        }
-                        className="text-zinc-400 hover:text-blue-500"
-                        title="Editar"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      {/* Check if the ticker is actually part of the strategy before showing delete */}
+                      {row.targetPct > 0 ? (
+                        <>
+                          <span className="text-zinc-300 dark:text-zinc-600">/</span>
+                          <button
+                            onClick={() => handleStartEdit(row.ticker, row.targetPct)}
+                            className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm font-semibold text-zinc-700 hover:bg-blue-100 hover:text-blue-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-blue-900/40 dark:hover:text-blue-300 tabular-nums transition-colors"
+                            title="Editar meta"
+                          >
+                            {row.targetPct.toFixed(0)}%
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleStartEdit(row.ticker, 0)}
+                          className="text-xs text-zinc-400 hover:text-blue-500 dark:text-zinc-500 dark:hover:text-blue-400"
+                          title="Agregar meta"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      )}
                       {allocation[row.ticker] !== undefined && (
                         <button
                           onClick={() => handleDelete(row.ticker)}
-                          className="text-zinc-400 hover:text-red-500"
+                          className="text-zinc-300 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-400"
                           title="Eliminar de estrategia"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} />
                         </button>
                       )}
                     </div>
