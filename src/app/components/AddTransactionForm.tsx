@@ -1,13 +1,19 @@
 'use client';
 
+/**
+ * Add Transaction Form Component
+ * 
+ * Simple trigger button that opens the TransactionFormModal.
+ */
+
 import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 
 import TransactionFormModal from './TransactionFormModal';
 
-type Props = {
+interface Props {
   portfolioId: string;
-};
+}
 
 export default function AddTransactionForm({ portfolioId }: Props) {
   const [isOpen, setIsOpen] = useState(false);

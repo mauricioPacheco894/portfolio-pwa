@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * Holdings Table Component
+ * 
+ * Displays a sortable list of asset positions in the portfolio.
+ * Features include:
+ * - Real-time "LIVE" pricing badges
+ * - Sortable columns (Ticker, Quantity, Cost, Price, Value, P&L)
+ * - Visual warning for negative positions (oversold)
+ * - Automatic currency formatting (USD/MXN)
+ */
+
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AssetPosition } from '@/types/portfolio';
@@ -18,8 +29,8 @@ interface HoldingsTableProps {
 
 export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: 'currentValue', // Por defecto ordenamos por Valor total
-    direction: 'desc', // De mayor a menor
+    key: 'currentValue',
+    direction: 'desc',
   });
 
   const currencyFormatter = (

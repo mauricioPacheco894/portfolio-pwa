@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * Portfolio Actions Component
+ * 
+ * Provides management functions for a specific portfolio, including:
+ * - Inline renaming of the portfolio
+ * - Deletion with confirmation
+ * - Automatic cache invalidation via React Query
+ */
+
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, Edit2, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -34,6 +43,9 @@ export default function PortfolioActions({
       ? 'text-3xl font-bold text-zinc-900 dark:text-white tracking-tight'
       : 'text-xl font-semibold text-zinc-900 dark:text-white';
 
+  /**
+   * Updates the portfolio name in the database.
+   */
   const handleUpdate = async (e?: React.MouseEvent | React.KeyboardEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -74,6 +86,9 @@ export default function PortfolioActions({
     }
   };
 
+  /**
+   * Deletes the portfolio and its associated transactions from the database.
+   */
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

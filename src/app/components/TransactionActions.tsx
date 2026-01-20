@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * Transaction Actions Component
+ * 
+ * Provides contextual actions for a single transaction entry, including:
+ * - Opening the edit modal with current transaction data
+ * - Deleting the transaction with a safety confirmation dialog
+ */
+
 import { Edit2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -26,6 +34,9 @@ export default function TransactionActions({
   const [loading, setLoading] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  /**
+   * Permanently deletes the transaction from the database.
+   */
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta transacción?')) {
       return;
@@ -59,7 +70,7 @@ export default function TransactionActions({
     }
   };
 
-  // Mapear transaction de Supabase a TransactionData del Form
+  /** Map Supabase transaction record to the internal TransactionData format for the modal */
   const transactionData: TransactionData = {
     id: transaction.id,
     ticker: transaction.ticker,

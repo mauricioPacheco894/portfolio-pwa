@@ -1,13 +1,25 @@
-// Mapa de equivalencias manuales: Ticker Local -> Ticker Maestro
-// Úsalo solo para casos excepcionales que no sigan la lógica estándar (ej. IVVPESO -> IVV)
+/**
+ * Ticker Mapping Utilities
+ *
+ * Normalizes ticker symbols to their canonical form.
+ * Handles exchange suffixes (.MX, :BMV) and SIC variants (ticker + "N" suffix).
+ */
+
+/** Manual aliases for exceptional cases that don't follow standard patterns */
 export const TICKER_ALIASES: Record<string, string> = {
   IVVPESO: 'IVV',
 };
 
 /**
- * Normaliza un ticker a su versión "Base" o "Maestra".
- * @param ticker El ticker sucio o local
- * @param knownTargets (Opcional) Lista de tickers "correctos" que el usuario tiene en su target. Ayuda a inferir.
+ * Normalizes a ticker to its canonical "base" version.
+ *
+ * @param ticker - The raw ticker symbol
+ * @param knownTargets - Optional list of target tickers to help with inference
+ * @returns The normalized ticker symbol
+ *
+ * @example
+ * normalizeTicker('VUAAN', ['VUAA']) // Returns 'VUAA'
+ * normalizeTicker('NU.MX', [])       // Returns 'NU'
  */
 export function normalizeTicker(
   ticker: string,
@@ -15,8 +27,7 @@ export function normalizeTicker(
 ): string {
   let clean = ticker.toUpperCase();
 
-  // 1. Quitar Exchange Suffix primero para dejar el symbol "puro"
-  // (.MX, :BMV, etc)
+  // Remove exchange suffixes (.MX, :BMV, etc.)
   if (clean.includes(':')) {
     clean = clean.split(':')[0];
   }
@@ -24,25 +35,22 @@ export function normalizeTicker(
     clean = clean.replace('.MX', '');
   }
 
-  // 2. Revisar alias directos conocidos (hardcoded)
+  // Check direct aliases
   if (TICKER_ALIASES[clean]) {
     return TICKER_ALIASES[clean];
   }
 
-  // 3. Revisar si ya coincide exactamente con un target conocido
+  // Check if it matches a known target exactly
   if (knownTargets.includes(clean)) {
     return clean;
   }
 
-  // 4. Lógica de Inferencia SIC (Sufijo 'N')
-  // Si el ticker termina en "N" y quitándosela coincide con un target conocido, asumimos que es el mismo.
-  // Ej: VUAAN -> VUAA, AMZNN -> AMZN
+  // SIC inference: If ticker ends in "N" and removing it matches a target
   if (clean.endsWith('N')) {
     const withoutN = clean.slice(0, -1);
     if (knownTargets.includes(withoutN)) {
       return withoutN;
     }
-    // O si coincide con un alias tras quitar la N
     if (TICKER_ALIASES[withoutN]) {
       return TICKER_ALIASES[withoutN];
     }

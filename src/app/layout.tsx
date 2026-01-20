@@ -1,3 +1,10 @@
+/**
+ * Root Layout
+ * 
+ * Defines the global HTML structure, fonts, and core metadata for the application.
+ * Includes a theme detection script to prevent FOUC (Flash of Unstyled Content) during theme initialization.
+ */
+
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';

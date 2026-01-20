@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Transaction Filters Component
+ * 
+ * Provides inputs and dropdowns to filter the transactions list by ticker and type.
+ * Updates the URL search parameters to trigger server-side re-fetching.
+ */
+
 import { Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -9,10 +16,12 @@ export default function TransactionFilters() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // Estado local para el input
   const initialTicker = searchParams.get('ticker')?.toString() || '';
   const [tickerValue, setTickerValue] = useState(initialTicker);
 
+  /**
+   * Applies the current filters by updating the URL query parameters.
+   */
   const applyFilters = (ticker: string) => {
     const params = new URLSearchParams(searchParams);
     if (ticker.trim()) {
@@ -52,8 +61,8 @@ export default function TransactionFilters() {
   };
 
   const clearFilters = () => {
-    setTickerValue(''); // Limpiar estado local del input
-    router.replace('?'); // Limpiar URL (quita todos los params)
+    setTickerValue('');
+    router.replace('?');
   };
 
   const hasFilters = searchParams.has('ticker') || searchParams.has('type');
@@ -81,7 +90,7 @@ export default function TransactionFilters() {
 
       <select
         onChange={(e) => handleTypeChange(e.target.value)}
-        value={searchParams.get('type')?.toString() || 'ALL'} // Cambiado a value para control total
+        value={searchParams.get('type')?.toString() || 'ALL'}
         className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
       >
         <option value="ALL">Todos los tipos</option>

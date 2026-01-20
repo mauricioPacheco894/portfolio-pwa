@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * Portfolio Chart Modal
+ * 
+ * A modal dialog that displays side-by-side distribution charts:
+ * - Current Holdings: Actual distribution of assets.
+ * - Target Allocation: Ideal distribution based on user strategy.
+ * 
+ * Helps users visually identify allocation gaps.
+ */
+
 import { PieChart, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,15 +33,12 @@ export default function PortfolioChartModal({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Preparamos datos de la Meta para la gráfica
   const targetHoldings: AssetPosition[] = targetAllocation
     ? Object.entries(targetAllocation).map(([ticker, pct]) => ({
       ticker,
       currentValue: totalValue * (pct / 100),
     }))
-      // Filtramos metas vacías
       .filter((h) => h.currentValue > 0)
-      // Ordenamos por valor
       .sort((a, b) => b.currentValue - a.currentValue)
     : [];
 
@@ -69,7 +76,6 @@ export default function PortfolioChartModal({
 
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className={`grid gap-8 ${targetHoldings.length > 0 ? 'lg:grid-cols-2' : ''} h-full`}>
-                {/* Gráfica Actual */}
                 <div className="flex flex-col h-[400px] lg:h-[500px]">
                   <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
                     Actual
@@ -79,7 +85,6 @@ export default function PortfolioChartModal({
                   </div>
                 </div>
 
-                {/* Gráfica Meta (Solo si existe estrategia) */}
                 {targetHoldings.length > 0 && (
                   <div className="flex flex-col h-[400px] lg:h-[500px]">
                     <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">

@@ -7,11 +7,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { TransactionFormData } from '@/types/portfolio';
 
+/**
+ * Configuration options for the useTransaction hook.
+ */
 interface UseTransactionOptions {
+  /** The ID of the portfolio to which the transaction belongs */
   portfolioId: string;
+  /** Optional callback to fire after a successful operation */
   onSuccess?: () => void;
 }
 
+/**
+ * Hook for managing transaction CRUD operations.
+ * 
+ * Handles state management, Supabase interactions, and cache invalidation
+ * for creating, updating, and deleting transactions.
+ * 
+ * @param options - Hook configuration
+ * @returns Object containing loading state, error, and CRUD functions
+ */
 export function useTransaction({
   portfolioId,
   onSuccess,
@@ -22,6 +36,9 @@ export function useTransaction({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Creates a new transaction entry.
+   */
   const createTransaction = async (
     data: Omit<TransactionFormData, 'id' | 'portfolio_id'>
   ) => {
@@ -73,6 +90,9 @@ export function useTransaction({
     }
   };
 
+  /**
+   * Updates an existing transaction record.
+   */
   const updateTransaction = async (
     id: string,
     data: Partial<TransactionFormData>
@@ -125,6 +145,9 @@ export function useTransaction({
     }
   };
 
+  /**
+   * Permanently deletes a transaction record.
+   */
   const deleteTransaction = async (id: string) => {
     if (!user) {
       toast.error('Debes iniciar sesión');

@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Global Header Component
+ * 
+ * Provides top-level navigation, theme switching (dark/light mode),
+ * and user authentication actions (login/logout).
+ */
+
 import { LogIn, LogOut, Moon, Sun, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,6 +19,9 @@ export function Header() {
   const { theme, toggleTheme, mounted } = useDarkMode();
   const { user, loading, signOut } = useAuth();
 
+  /**
+   * Performs sign-out and redirects to the login page.
+   */
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
@@ -21,7 +31,6 @@ export function Header() {
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        {/* Logo */}
         <Link
           href="/"
           className="flex items-center gap-2 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white"
@@ -30,9 +39,7 @@ export function Header() {
           <Wallet size={28} className="text-blue-600 dark:text-blue-400" />
         </Link>
 
-        {/* Auth Actions */}
         <div className="flex items-center gap-4">
-          {/* Dark Mode Toggle - Only show when mounted to avoid hydration mismatch */}
           {mounted && (
             <button
               onClick={toggleTheme}

@@ -1,14 +1,20 @@
+/**
+ * Route Sync Handler
+ * 
+ * Synchronizes client-side Supabase authentication tokens to HTTP-only cookies.
+ * This enables the use of Server Components and Middleware by ensuring the 
+ * authentication session is available on the server.
+ */
+
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
     const { accessToken, refreshToken } = await request.json();
-
     const cookieStore = await cookies();
 
     if (accessToken) {
-      // Store tokens in cookies so Server Components can access them
       cookieStore.set('sb-access-token', accessToken, {
         maxAge: 60 * 60, // 1 hour
         path: '/',

@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * Generic Modal UI Component
+ * 
+ * A reusable modal window with a backdrop, center alignment, and close functionality.
+ * Supports:
+ * - Closing via Escape key
+ * - Disabling body scroll when open
+ * - Customizable maximum width
+ * - Click-outside to close (backdrop click)
+ */
+
 import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
@@ -27,7 +38,6 @@ export default function Modal({
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -58,7 +68,6 @@ export default function Modal({
         className={`w-full ${maxWidthClasses[maxWidth]} rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
             {title}
@@ -72,7 +81,6 @@ export default function Modal({
           </button>
         </div>
 
-        {/* Content */}
         {children}
       </div>
     </div>

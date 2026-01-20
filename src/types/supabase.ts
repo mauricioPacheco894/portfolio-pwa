@@ -1,12 +1,21 @@
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-// Re-export Supabase User type
+/**
+ * Global Type Definitions for Supabase and Database Entities
+ */
+
+/** Re-export of the core Supabase User type */
 export type User = SupabaseUser;
 
-// Database types
+/**
+ * Main Database Schema Definition
+ */
 export interface Database {
   public: {
     Functions: {
+      /**
+       * Calculates total shares, cost basis, and P&L for a specific portfolio.
+       */
       get_portfolio_positions: {
         Args: {
           p_portfolio_id: string;
@@ -22,6 +31,9 @@ export interface Database {
           currency: string;
         }[];
       };
+      /**
+       * Calculates realized profits/losses for closed or partially closed positions.
+       */
       get_realized_pnl: {
         Args: {
           p_portfolio_id: string;
@@ -36,6 +48,7 @@ export interface Database {
       };
     };
     Tables: {
+      /** Asset price snapshots and historical data */
       asset_prices: {
         Row: {
           ticker: string;
@@ -56,6 +69,7 @@ export interface Database {
           last_updated?: string;
         };
       };
+      /** User-defined portfolio containers */
       portfolios: {
         Row: {
           id: string;
@@ -79,6 +93,7 @@ export interface Database {
           user_id?: string;
         };
       };
+      /** Individual buy/sell transaction records */
       transactions: {
         Row: {
           id: string;
@@ -118,11 +133,13 @@ export interface Database {
         };
       };
     };
-    Views: {
-    };
+    Views: {};
   };
 }
 
+/**
+ * Real-time valuation metadata for a specific asset position.
+ */
 export interface PortfolioValue {
   portfolio_id: string;
   ticker: string;

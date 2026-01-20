@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Toast Notification Provider
+ * 
+ * Provides a global toaster component for displaying success and error messages.
+ * Styled with a dark theme consistent with the app's visual identity.
+ */
+
 import { Toaster } from 'react-hot-toast';
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {

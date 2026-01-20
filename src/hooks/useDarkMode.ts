@@ -1,10 +1,24 @@
 'use client';
 
+/**
+ * Dark Mode Hook
+ * 
+ * Manages the application's color theme (light vs dark).
+ * Synchronizes with localStorage and system preferences.
+ * Includes a 'mounted' state to prevent hydration mismatches for theme-dependent UI.
+ * 
+ * @example
+ * const { theme, toggleTheme, mounted } = useDarkMode();
+ */
+
 import { useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 
-// Function to get initial theme (only runs on client)
+/**
+ * Derives the initial theme from localStorage or system preference.
+ * Only safe to call in a client environment.
+ */
 const getInitialTheme = (): Theme => {
   if (typeof window === 'undefined') return 'light';
 
@@ -13,16 +27,17 @@ const getInitialTheme = (): Theme => {
     return savedTheme;
   }
 
-  // Check system preference
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   return prefersDark ? 'dark' : 'light';
 };
 
 export function useDarkMode() {
-  // Initialize with the actual theme from localStorage or system preference
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [mounted, setMounted] = useState(false);
 
+  /**
+   * Applies the theme class to the document root.
+   */
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
     if (newTheme === 'dark') {
@@ -33,7 +48,6 @@ export function useDarkMode() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

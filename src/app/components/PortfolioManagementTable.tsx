@@ -1,12 +1,23 @@
 'use client';
 
+/**
+ * Portfolio Management Table Component
+ *
+ * Displays holdings with target allocation editing, rebalancing suggestions,
+ * and the ability to add new assets to the strategy.
+ *
+ * Features:
+ * - Inline editing of target percentages
+ * - Live rebalancing suggestions as targets are modified
+ * - Dynamic tolerance bands for buy/sell recommendations
+ * - Ticker consolidation (e.g., NU + NUN → NU)
+ */
+
 import {
   Check,
   Edit2,
   PlusCircle,
   Trash2,
-  TrendingDown,
-  TrendingUp,
   Search,
   X,
 } from 'lucide-react';
@@ -25,10 +36,10 @@ interface PortfolioManagementTableProps {
   rebalanceSuggestions: RebalanceSuggestion[];
   portfolioId: string;
   availableTickers: string[];
-  totalValue: number; // Este valor viene convertido en dashboard, pero lo recalculamos internamente en USD para precisión de %
+  totalValue: number;
   exchangeRate: number;
-  preCalculatedHoldingsUSD?: Record<string, number>; // Nueva prop opcional optimizada
-  headerAction?: React.ReactNode; // Slot para botones extra (ej. Gráfica)
+  preCalculatedHoldingsUSD?: Record<string, number>;
+  headerAction?: React.ReactNode;
 }
 
 export default function PortfolioManagementTable({
@@ -51,7 +62,6 @@ export default function PortfolioManagementTable({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Para agregar nuevos tickers
   const [ticker, setTicker] = useState('');
   const [percentage, setPercentage] = useState('');
 
@@ -127,12 +137,9 @@ export default function PortfolioManagementTable({
   };
 
   const total = Object.values(allocation).reduce((a, b) => a + b, 0);
-
-  // 1. Preparar claves de target (incluye lo que estemos editando)
   const targetKeys = Object.keys(allocation);
 
-  // 2. Consolidar Holdings (BASE USD)
-  // ... (código existente de consolidación) ...
+  // Consolidate holdings in USD
   let consolidatedHoldingsUSD: Record<string, number>;
   if (preCalculatedHoldingsUSD) {
     consolidatedHoldingsUSD = preCalculatedHoldingsUSD;
@@ -140,24 +147,28 @@ export default function PortfolioManagementTable({
     consolidatedHoldingsUSD = {};
     holdings.forEach((h) => {
       const normTicker = normalizeTicker(h.ticker, targetKeys);
-      const valUSD = (h as any).marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
-      consolidatedHoldingsUSD[normTicker] = (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
+      const valUSD =
+        (h as any).marketValueGlobal ||
+        (h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue);
+      consolidatedHoldingsUSD[normTicker] =
+        (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
     });
   }
 
-  // Calculamos el valor total
-  const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce((a, b) => a + b, 0);
+  const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce(
+    (a, b) => a + b,
+    0
+  );
 
-  // >>> NUEVO: Calcular Sugerencias en Tiempo Real <<<
-  // Extraemos precios aproximados para el cálculo (si existen)
+  // Derive prices for rebalancing calculations
   const derivedPrices: Record<string, number> = {};
-  holdings.forEach(h => {
+  holdings.forEach((h) => {
     if (h.totalQuantity > 0) {
       derivedPrices[h.ticker] = h.currentValue / h.totalQuantity;
     }
   });
 
-  // Usamos la utilidad compartida para recalcular basándonos en el allocation ACTUAL (editado)
+  // Calculate live suggestions based on current (edited) allocation
   const liveSuggestions = calculateRebalancing(
     holdings,
     allocation,
@@ -165,47 +176,37 @@ export default function PortfolioManagementTable({
     derivedPrices
   );
 
-  // 3. Crear lista unificada de tickers
+  // Build unified list of all tickers
   const allTickers = new Set([
     ...Object.keys(consolidatedHoldingsUSD),
     ...targetKeys,
   ]);
 
-  const tableData = Array.from(allTickers).map((ticker) => {
-    // Valor Base en USD
-    const valueBaseUSD = consolidatedHoldingsUSD[ticker] || 0;
+  const tableData = Array.from(allTickers)
+    .map((ticker) => {
+      const valueBaseUSD = consolidatedHoldingsUSD[ticker] || 0;
+      const displayValue = valueBaseUSD * exchangeRate;
+      const suggestion = liveSuggestions.find((s) => s.ticker === ticker);
+      const currentPct =
+        totalPortfolioValueUSD > 0
+          ? (valueBaseUSD / totalPortfolioValueUSD) * 100
+          : 0;
+      const targetPct = allocation[ticker] || 0;
 
-    // Convertimos para DISPLAY visual
-    const displayValue = valueBaseUSD * exchangeRate;
-
-    // Usamos la sugerencia EN VIVO, no la prop estática
-    const suggestion = liveSuggestions.find((s) => s.ticker === ticker);
-
-    // Porcentaje siempre calculado sobre la base USD consistente
-    const currentPct = totalPortfolioValueUSD > 0 ? (valueBaseUSD / totalPortfolioValueUSD) * 100 : 0;
-    const targetPct = allocation[ticker] || 0;
-
-    return {
-      ticker,
-      currentValue: displayValue, // Para visualización en moneda seleccionada
-      currentPct, // % real basado en valor (independiente de moneda)
-      targetPct,
-      suggestion,
-    };
-  })
+      return {
+        ticker,
+        currentValue: displayValue,
+        currentPct,
+        targetPct,
+        suggestion,
+      };
+    })
     .filter((row) => {
-      // Filtro Inteligente:
-      // 1. Si tiene valor significativo (> 1 centavo), mostrar.
-      // 2. Si tiene una meta definida (> 0%), mostrar (aunque valga 0, implica que debo comprar).
-      // 3. Si vale 0 y la meta es 0, es basura/residuo/cerrada -> Ocultar.
       const hasValue = row.currentValue > 0.01;
       const hasTarget = row.targetPct > 0;
-
-      // Mostramos si cumple cualquiera de las dos condiciones
       return hasValue || hasTarget;
     })
     .sort((a, b) => {
-      // Ordenar: primero los que tienen target (estrategia), luego por valor
       if (a.targetPct > 0 && b.targetPct === 0) return -1;
       if (a.targetPct === 0 && b.targetPct > 0) return 1;
       return b.currentValue - a.currentValue;
@@ -236,7 +237,6 @@ export default function PortfolioManagementTable({
           <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
             Gestión de Portafolio
           </h3>
-          {/* Aquí renderizamos la acción inyectada (Botón de Gráfica) */}
           {headerAction && <div>{headerAction}</div>}
         </div>
 
@@ -244,8 +244,8 @@ export default function PortfolioManagementTable({
           {hasChanges && (
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums tracking-tight animate-in fade-in zoom-in-95 ${Math.abs(total - 100) < 0.01
-                ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
-                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+                  ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                 }`}
             >
               Total: {total.toFixed(2)}%
@@ -299,19 +299,25 @@ export default function PortfolioManagementTable({
                   {row.ticker}
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
-                  ${row.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {row.currentValue.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {editingTicker === row.ticker ? (
                     <div className="flex items-center justify-end gap-1">
-                      <span className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
-                        ? 'text-zinc-600 dark:text-zinc-400'
-                        : Math.abs(row.currentPct - row.targetPct) <= 0.5
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : row.currentPct < row.targetPct
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-orange-600 dark:text-orange-400'
-                        }`}>
+                      <span
+                        className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
+                            ? 'text-zinc-600 dark:text-zinc-400'
+                            : Math.abs(row.currentPct - row.targetPct) <= 0.5
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : row.currentPct < row.targetPct
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-orange-600 dark:text-orange-400'
+                          }`}
+                      >
                         {row.currentPct.toFixed(1)}%
                       </span>
                       <span className="text-zinc-400 dark:text-zinc-500">/</span>
@@ -344,14 +350,16 @@ export default function PortfolioManagementTable({
                     </div>
                   ) : (
                     <div className="flex items-center justify-end gap-1.5">
-                      <span className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
-                        ? 'text-zinc-600 dark:text-zinc-400'
-                        : Math.abs(row.currentPct - row.targetPct) <= 0.5
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : row.currentPct < row.targetPct
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-orange-600 dark:text-orange-400'
-                        }`}>
+                      <span
+                        className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
+                            ? 'text-zinc-600 dark:text-zinc-400'
+                            : Math.abs(row.currentPct - row.targetPct) <= 0.5
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : row.currentPct < row.targetPct
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-orange-600 dark:text-orange-400'
+                          }`}
+                      >
                         {row.currentPct.toFixed(1)}%
                       </span>
                       {row.targetPct > 0 ? (
@@ -362,7 +370,10 @@ export default function PortfolioManagementTable({
                             className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm font-semibold text-zinc-700 hover:bg-blue-100 hover:text-blue-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-blue-900/40 dark:hover:text-blue-300 tabular-nums transition-colors"
                             title="Editar meta"
                           >
-                            {Number(row.targetPct).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
+                            {Number(row.targetPct).toLocaleString('en-US', {
+                              maximumFractionDigits: 2,
+                            })}
+                            %
                           </button>
                         </>
                       ) : (
@@ -390,10 +401,10 @@ export default function PortfolioManagementTable({
                   {row.targetPct > 0 && (
                     <span
                       className={`text-xs font-semibold ${row.targetPct - row.currentPct > 0
-                        ? 'text-blue-600'
-                        : row.targetPct - row.currentPct < 0
-                          ? 'text-orange-600'
-                          : 'text-zinc-500'
+                          ? 'text-blue-600'
+                          : row.targetPct - row.currentPct < 0
+                            ? 'text-orange-600'
+                            : 'text-zinc-500'
                         }`}
                     >
                       {row.targetPct - row.currentPct >= 0 ? '+' : ''}
@@ -403,7 +414,6 @@ export default function PortfolioManagementTable({
                 </td>
                 <td className="px-3 py-2 text-center align-middle">
                   {Math.abs(total - 100) > 0.1 ? (
-                    // Si el total no cuadra, mostramos aviso en vez de sugerencia engañosa
                     row.targetPct > 0 ? (
                       <div className="flex justify-end">
                         <span className="inline-flex items-center justify-center rounded bg-red-100 w-24 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -415,8 +425,8 @@ export default function PortfolioManagementTable({
                     <div className="flex items-center justify-end gap-2">
                       <span
                         className={`inline-flex w-20 items-center justify-center rounded py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.suggestion.action === 'BUY'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
                           }`}
                       >
                         {row.suggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
@@ -458,7 +468,6 @@ export default function PortfolioManagementTable({
         </table>
       </div>
 
-      {/* Footer separado: Agregar Nuevo */}
       <div className="border-t border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">

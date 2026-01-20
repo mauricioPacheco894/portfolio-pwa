@@ -1,3 +1,13 @@
+/**
+ * Portfolio Detail Page (Server Component)
+ *
+ * Fetches all portfolio data from Supabase RPCs and renders the dashboard.
+ * Data sources:
+ * - get_portfolio_positions: Holdings with unrealized P&L
+ * - get_realized_pnl: Realized gains/losses from closed positions
+ * - asset_prices: Exchange rates (USD-MXN)
+ */
+
 import { notFound } from 'next/navigation';
 import PortfolioDashboard from '@/app/components/PortfolioDashboard';
 import { createClient } from '@/lib/supabaseServer';
@@ -10,7 +20,6 @@ type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
 async function getPortfolio(id: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('portfolios')
     .select('*')
@@ -74,17 +83,15 @@ export default async function Page({ params, searchParams }: Props) {
 
   const page = Number(resolvedSearchParams.page) || 1;
   const pageSize = 10;
-
   const tickerFilter = resolvedSearchParams.ticker as string | undefined;
   const typeFilter = resolvedSearchParams.type as string | undefined;
 
   const portfolio = await getPortfolio(id);
-
   if (!portfolio) {
     return notFound();
   }
 
-  // Perform Data Fetching
+  // Fetch all data in parallel
   const supabase = await createClient();
   const [paginatedResult, rpcResult, rateResult, pnlResult] = await Promise.all([
     getPaginatedTransactions(id, page, pageSize, {
@@ -93,7 +100,7 @@ export default async function Page({ params, searchParams }: Props) {
     }),
     supabase.rpc('get_portfolio_positions', { p_portfolio_id: id }),
     supabase.from('asset_prices').select('price').eq('ticker', 'USD-MXN').maybeSingle(),
-    supabase.rpc('get_realized_pnl', { p_portfolio_id: id })
+    supabase.rpc('get_realized_pnl', { p_portfolio_id: id }),
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
@@ -101,81 +108,67 @@ export default async function Page({ params, searchParams }: Props) {
   const usdMxnRate = rateResult.data?.price || 20.0;
   const pnlValues = pnlResult.data || [];
 
-  const pnlMap = new Map<string, number>();
-  // Calculate total realized PnL in USD (converting MXN positions)
-  let totalRealizedPnlUSD = 0;
-  pnlValues.forEach((p: { ticker: string; realized_pnl: number; currency: string }) => {
-    pnlMap.set(p.ticker, p.realized_pnl);
-    // Normalize to USD
-    const isMxn = p.currency === 'MXN';
-    totalRealizedPnlUSD += isMxn ? p.realized_pnl / usdMxnRate : p.realized_pnl;
-  });
-
   if (rpcResult.error) {
     console.error('Error fetching RPC positions:', rpcResult.error);
   }
 
-  // Mapa de precios para rebalanceo (necesitamos los precios raw)
-  const currentPrices: Record<string, number> = { 'USD-MXN': usdMxnRate };
+  // Build realized P&L map and calculate total in USD
+  const pnlMap = new Map<string, number>();
+  let totalRealizedPnlUSD = 0;
 
-  // Transform RPC data to local AssetPosition format
-  const holdings: AssetPosition[] = positions.map((pos: Database['public']['Functions']['get_portfolio_positions']['Returns'][0]) => {
-    // Currency now comes directly from RPC
-    const currency = pos.currency as 'USD' | 'MXN';
-    const isMxn = currency === 'MXN';
-    const exchangeRate = isMxn ? usdMxnRate : 1.0;
-
-    // Recalculate price if needed (Value / Shares) to populate map
-    // The RPC returns current_value and total_shares, so implied price is safe
-    let marketPrice = 0;
-    if (pos.total_shares > 0) marketPrice = pos.current_value / pos.total_shares;
-
-    currentPrices[pos.ticker] = marketPrice;
-
-    // Realized PnL from RPC Map
-    const realizedPL = pnlMap.get(pos.ticker) || 0;
-
-    // Global Values (USD Base)
-    const marketValueGlobal = (pos.current_value || 0) / exchangeRate;
-    const totalInvestedGlobal = pos.total_invested / exchangeRate;
-    const realizedPLGlobal = realizedPL / exchangeRate;
-    const plDollarsGlobal = marketValueGlobal - totalInvestedGlobal;
-
-    // Unrealized PnL (Now coming from RPC)
-    const plDollars = pos.unrealized_pnl ?? 0;
-    const plPercentage = pos.unrealized_pnl_percent ?? 0;
-
-    return {
-      ticker: pos.ticker,
-      totalQuantity: Number(pos.total_shares),
-      averageCost: Number(pos.average_buy_price),
-      totalInvested: Number(pos.total_invested),
-      currentValue: Number(pos.current_value),
-      marketPrice: marketPrice,
-
-      plDollars: plDollars,
-      plPercentage: plPercentage,
-
-      realizedPL: isMxn ? realizedPLGlobal : realizedPL,
-
-      currency: currency,
-      lastUpdated: undefined,
-
-      marketValueGlobal,
-      totalInvestedGlobal,
-      plDollarsGlobal,
-    } as AssetPosition;
+  pnlValues.forEach((p: { ticker: string; realized_pnl: number; currency: string }) => {
+    pnlMap.set(p.ticker, p.realized_pnl);
+    const isMxn = p.currency === 'MXN';
+    totalRealizedPnlUSD += isMxn ? p.realized_pnl / usdMxnRate : p.realized_pnl;
   });
 
-  const activeHoldings = holdings.filter(
-    (h) => Math.abs(h.totalQuantity) > 0.000001
+  // Build price map for rebalancing calculations
+  const currentPrices: Record<string, number> = { 'USD-MXN': usdMxnRate };
+
+  // Transform RPC positions to AssetPosition format
+  const holdings: AssetPosition[] = positions.map(
+    (pos: Database['public']['Functions']['get_portfolio_positions']['Returns'][0]) => {
+      const currency = pos.currency as 'USD' | 'MXN';
+      const isMxn = currency === 'MXN';
+      const exchangeRate = isMxn ? usdMxnRate : 1.0;
+
+      // Derive market price from value/shares
+      let marketPrice = 0;
+      if (pos.total_shares > 0) {
+        marketPrice = pos.current_value / pos.total_shares;
+      }
+      currentPrices[pos.ticker] = marketPrice;
+
+      const realizedPL = pnlMap.get(pos.ticker) || 0;
+
+      // Normalize all values to USD base
+      const marketValueGlobal = (pos.current_value || 0) / exchangeRate;
+      const totalInvestedGlobal = pos.total_invested / exchangeRate;
+      const realizedPLGlobal = realizedPL / exchangeRate;
+      const plDollarsGlobal = marketValueGlobal - totalInvestedGlobal;
+
+      return {
+        ticker: pos.ticker,
+        totalQuantity: Number(pos.total_shares),
+        averageCost: Number(pos.average_buy_price),
+        totalInvested: Number(pos.total_invested),
+        currentValue: Number(pos.current_value),
+        marketPrice,
+        plDollars: pos.unrealized_pnl ?? 0,
+        plPercentage: pos.unrealized_pnl_percent ?? 0,
+        realizedPL: isMxn ? realizedPLGlobal : realizedPL,
+        currency,
+        lastUpdated: undefined,
+        marketValueGlobal,
+        totalInvestedGlobal,
+        plDollarsGlobal,
+      } as AssetPosition;
+    }
   );
 
-  // Total para rebalancing (en USD)
-  const totalValueUSD = holdings.reduce(
-    (sum, h) => sum + (h.marketValueGlobal || 0),
-    0
-  );
+  const activeHoldings = holdings.filter((h) => Math.abs(h.totalQuantity) > 0.000001);
+
+  const totalValueUSD = holdings.reduce((sum, h) => sum + (h.marketValueGlobal || 0), 0);
 
   const rebalanceSuggestions = calculateRebalancing(
     holdings,
@@ -197,10 +190,7 @@ export default async function Page({ params, searchParams }: Props) {
       rebalanceSuggestions={rebalanceSuggestions}
       usdMxnRate={usdMxnRate}
       totalRealizedPnlUSD={totalRealizedPnlUSD}
-      pagination={{
-        page,
-        totalPages,
-      }}
+      pagination={{ page, totalPages }}
     />
   );
 }

@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * Global Error Boundary Component
+ * 
+ * Catches JavaScript errors anywhere in the child component tree,
+ * logs them to the console, and displays a graceful fallback UI.
+ * Prevents the entire app from crashing due to unexpected runtime errors.
+ */
+
 import { Component, ErrorInfo, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 

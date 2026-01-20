@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Authentication Context
+ *
+ * Provides user authentication state and sign-out functionality.
+ * Uses Supabase Auth with automatic session refresh.
+ */
+
 import { Session, User } from '@supabase/supabase-js';
 import {
   createContext,
@@ -8,29 +15,34 @@ import {
   useState,
   useCallback,
 } from 'react';
-
 import { supabase } from '@/lib/supabase';
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   error: string | null;
   signOut: () => Promise<void>;
-};
+}
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
   error: null,
-  signOut: async () => {},
+  signOut: async () => { },
 });
 
+/** Hook to access authentication state */
 export const useAuth = () => useContext(AuthContext);
 
-const AUTH_TIMEOUT_MS = 10000; // 10 seconds timeout for auth operations
+const AUTH_TIMEOUT_MS = 10000;
 
+/**
+ * Authentication Provider Component
+ *
+ * Wraps the app and provides auth state to all children.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -53,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Set a timeout to prevent infinite loading
         timeoutId = setTimeout(() => {
           if (mounted && loading) {
             console.warn('[AuthContext] Auth initialization timed out');
@@ -94,12 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Single subscription for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

@@ -1,3 +1,17 @@
+'use client';
+
+/**
+ * Integrated Portfolio Chart
+ * 
+ * Renders a responsive pie chart using Recharts to visualize asset distribution.
+ * Adjusts layout (inner/outer radius, label positioning) dynamically for mobile vs desktop views.
+ * 
+ * Features:
+ * - Dynamic SVG labels with "elbow" connectors
+ * - Interactive tooltips
+ * - Mobile-optimized sizing
+ */
+
 import { useEffect, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -11,14 +25,8 @@ interface IntegratedChartProps {
 }
 
 const COLORS = [
-  '#0088FE',
-  '#00C49F',
-  '#FFBB28',
-  '#FF8042',
-  '#8884d8',
-  '#82ca9d',
-  '#ffc658',
-  '#ff7c7c',
+  '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
+  '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c',
 ];
 
 export default function IntegratedChart({ holdings }: IntegratedChartProps) {
@@ -26,9 +34,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    // Ejecutar al montar
     checkMobile();
-    // Escuchar cambios
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -43,11 +49,10 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
   const data = holdings.map((h) => ({ name: h.ticker, value: h.currentValue }));
 
-  // Configuración dinámica según dispositivo
   const innerRadiusVal = isMobile ? '40%' : '35%';
-  const outerRadiusVal = isMobile ? '55%' : '50%'; // Reducido aún más para asegurar que las etiquetas quepan
-  const labelOffsetCodo = isMobile ? 10 : 30; // Línea diagonal más corta en mobile
-  const labelOffsetHoriz = isMobile ? 10 : 20; // Línea horizontal más corta en mobile
+  const outerRadiusVal = isMobile ? '55%' : '50%';
+  const labelOffsetCodo = isMobile ? 10 : 30;
+  const labelOffsetHoriz = isMobile ? 10 : 20;
   const fontSize = isMobile ? '10px' : '14px';
 
   return (
@@ -63,33 +68,16 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             paddingAngle={2}
             dataKey="value"
             label={({
-              cx,
-              cy,
-              midAngle,
-              innerRadius,
-              outerRadius,
-              startAngle,
-              endAngle,
-              fill,
-              payload,
-              percent,
-              value,
-              name,
+              cx, cy, midAngle, outerRadius, percent, name,
             }: any) => {
-              // eslint-disable-line @typescript-eslint/no-explicit-any
               const RADIAN = Math.PI / 180;
               const sin = Math.sin(-midAngle * RADIAN);
               const cos = Math.cos(-midAngle * RADIAN);
 
-              // Inicio de línea (borde del pastel)
               const sx = cx + outerRadius * cos;
               const sy = cy + outerRadius * sin;
-
-              // Codo (Dinámico)
               const mx = cx + (outerRadius + labelOffsetCodo) * cos;
               const my = cy + (outerRadius + labelOffsetCodo) * sin;
-
-              // Línea horizontal (Dinámica)
               const ex = mx + (cos >= 0 ? 1 : -1) * labelOffsetHoriz;
               const ey = my;
 
@@ -97,11 +85,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
               return (
                 <g>
-                  <path
-                    d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
-                    stroke="#9ca3af"
-                    fill="none"
-                  />
+                  <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#9ca3af" fill="none" />
                   <circle cx={ex} cy={ey} r={2} fill="#9ca3af" stroke="none" />
                   <text
                     x={ex + (cos >= 0 ? 1 : -1) * (isMobile ? 3 : 6)}
@@ -119,10 +103,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             labelLine={false}
           >
             {data.map((_, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip

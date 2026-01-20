@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Pagination Controls Component
+ * 
+ * Simple pagination interface with Next/Prev buttons.
+ * Manages the `page` parameter in the URL search params.
+ */
+
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -19,6 +26,9 @@ export default function PaginationControls({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  /**
+   * Updates the URL search parameters to switch to a different page.
+   */
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', newPage.toString());

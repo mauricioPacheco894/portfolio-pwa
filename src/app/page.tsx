@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Main Home Page
+ * 
+ * Displays the user's list of portfolios and provides options to create new ones.
+ * Handles initial authentication state and portfolio fetching via React Query.
+ */
+
 import { Calendar, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -14,10 +21,8 @@ import { Header } from './components/Header';
 import PortfolioActions from './components/PortfolioActions';
 
 export default function Home() {
-  // Usamos el estado global para evitar parpadeos
   const { user, loading: authLoading } = useAuth();
 
-  // Use React Query for portfolios, enabled only when user is authenticated
   const {
     data: portfolios = [],
     isLoading: portfoliosLoading,
@@ -25,7 +30,6 @@ export default function Home() {
     refetch,
   } = usePortfolios({ enabled: !!user });
 
-  // Error handling
   useEffect(() => {
     if (error) {
       toast.error('Error al cargar portafolios');
@@ -112,7 +116,6 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-12 flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div>
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">
@@ -125,7 +128,6 @@ export default function Home() {
           <CreatePortfolioForm onPortfolioCreated={refetch} />
         </div>
 
-        {/* Content */}
         {portfoliosLoading ? (
           showSlowPortfolioLoading ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-dashed border-2 border-zinc-300 dark:border-zinc-700 p-12 text-center animate-fade-in">
@@ -150,7 +152,6 @@ export default function Home() {
             </div>
           )
         ) : portfolios.length === 0 ? (
-          // Empty State
           <div className="flex min-h-96 items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-800">
             <div className="text-center">
               <div className="mb-4 flex justify-center">
@@ -169,7 +170,6 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          // Portfolio Grid
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {portfolios.map((portfolio) => (
               <Link
@@ -177,7 +177,6 @@ export default function Home() {
                 href={`/portfolio/${portfolio.id}`}
                 className="group rounded-xl bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg dark:bg-zinc-800"
               >
-                {/* Card Header */}
                 <div className="mb-4">
                   <PortfolioActions
                     portfolioId={portfolio.id}
@@ -187,7 +186,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Card Body */}
                 <div className="mb-6 space-y-3">
                   {portfolio.target_allocation ? (
                     <div>
@@ -214,7 +212,6 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Card Footer */}
                 <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
                   <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <Calendar size={14} />

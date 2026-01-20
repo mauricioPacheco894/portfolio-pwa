@@ -1,10 +1,16 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+/**
+ * Portfolios Hook
+ *
+ * React Query hook for fetching and managing portfolios.
+ */
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
+/** Fetches all portfolios for the current user */
 export async function fetchPortfolios(): Promise<Portfolio[]> {
   const { data, error } = await supabase
     .from('portfolios')
@@ -19,6 +25,11 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
   return data || [];
 }
 
+/**
+ * Hook to fetch portfolios with caching.
+ *
+ * @param options.enabled - Whether to enable the query
+ */
 export function usePortfolios(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['portfolios'],
@@ -28,6 +39,7 @@ export function usePortfolios(options?: { enabled?: boolean }) {
   });
 }
 
+/** Returns a function to invalidate the portfolios cache */
 export function useInvalidatePortfolios() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ['portfolios'] });

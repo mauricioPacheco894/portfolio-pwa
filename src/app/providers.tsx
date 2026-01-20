@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * Universal Providers Wrapper
+ * 
+ * Composes all frontend context providers including:
+ * - ErrorBoundary for runtime stability
+ * - ReactQueryProvider for server state management
+ * - AuthProvider for user session context
+ * - ToastProvider for user notifications
+ * 
+ * Also handles synchronization of the Supabase session to the server via API routes.
+ */
+
 import { useEffect, useRef } from 'react';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -12,7 +24,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const syncInProgress = useRef(false);
 
   useEffect(() => {
-    // Sync session to server via API route (debounced to prevent race conditions)
+    /**
+     * Synchronizes the client-side session to the server by posting to the auth/sync route.
+     * This allows server-side components to access the authenticated session.
+     */
     const syncSessionToServer = async () => {
       if (syncInProgress.current) return;
       syncInProgress.current = true;
@@ -41,10 +56,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Initial sync
     syncSessionToServer();
 
-    // Subscribe to auth changes for syncing to server only
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event) => {
@@ -53,7 +66,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         event === 'SIGNED_OUT' ||
         event === 'TOKEN_REFRESHED'
       ) {
-        // Small delay to let AuthContext update first
         setTimeout(() => syncSessionToServer(), 100);
       }
     });

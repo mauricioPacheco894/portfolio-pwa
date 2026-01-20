@@ -1,7 +1,13 @@
+/**
+ * Skeleton Loader Components
+ * 
+ * Provides various placeholder loading states (Skeleton Cards, Tables, and Generic content) 
+ * matching the app's visual design system.
+ */
+
 export function SkeletonCard() {
   return (
     <div className="rounded-xl bg-white p-6 shadow-sm dark:bg-zinc-800">
-      {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 h-6 w-3/4 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
@@ -9,7 +15,6 @@ export function SkeletonCard() {
         <div className="h-12 w-12 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
       </div>
 
-      {/* Body */}
       <div className="mb-6 space-y-3">
         <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
         <div className="flex gap-2">
@@ -18,7 +23,6 @@ export function SkeletonCard() {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
         <div className="h-4 w-1/2 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
       </div>

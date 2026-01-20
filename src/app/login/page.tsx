@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Login Page
+ * 
+ * Provides email/password authentication for both sign-in and sign-up flows.
+ * Uses Supabase Auth for identity management.
+ */
+
 import { Lock, LogIn, Mail, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -14,6 +21,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
+  /**
+   * Handles both sign-in and sign-up based on the current state.
+   */
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -21,7 +31,6 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Sign Up
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -33,17 +42,14 @@ export default function LoginPage() {
           return;
         }
 
-        // If Supabase returned a session, the user is already signed in — redirect.
         if (data?.session) {
           router.push('/');
           router.refresh();
           return;
         }
 
-        // Otherwise, show the check-your-email message (confirmation required).
         setError('Verifica tu correo para confirmar la cuenta');
       } else {
-        // Sign In
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -55,7 +61,6 @@ export default function LoginPage() {
           return;
         }
 
-        // Redirect to home
         router.push('/');
         router.refresh();
       }
@@ -71,7 +76,6 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 px-4">
       <div className="w-full max-w-md">
         <div className="rounded-xl bg-white shadow-lg dark:bg-zinc-800 p-8">
-          {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
               Portfolio PWA
@@ -81,9 +85,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleAuth} className="space-y-4">
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Email
@@ -104,7 +106,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Contraseña
@@ -125,14 +126,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
                 {error}
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -152,7 +151,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Toggle Sign Up / Sign In */}
           <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-700">
             <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
               {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}

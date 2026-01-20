@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Transaction Form Modal Component
+ * 
+ * A comprehensive modal for creating or editing transactions.
+ * Handles validation, price derivation, and timezone-safe date processing.
+ */
+
 import { PlusCircle, Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -45,7 +52,6 @@ export default function TransactionFormModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Cargar datos si es edición
   useEffect(() => {
     if (isOpen && initialData) {
       setTicker(initialData.ticker);
@@ -53,12 +59,11 @@ export default function TransactionFormModal({
       setQuantity(initialData.quantity);
       setPrice(initialData.price_per_unit);
       setFees(initialData.fees || 0);
-      // Formatear fecha para input type=date (YYYY-MM-DD)
+
       const dateObj = new Date(initialData.date);
       const formattedDate = dateObj.toISOString().split('T')[0];
       setDate(formattedDate);
     } else if (isOpen && !initialData) {
-      // Reset para nueva transacción
       setTicker('');
       setType('BUY');
       setQuantity('');
@@ -69,6 +74,10 @@ export default function TransactionFormModal({
     setError('');
   }, [isOpen, initialData]);
 
+  /**
+   * Processes and submits the transaction data.
+   * Handles date timezone offsets by forcing noon local time.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -82,13 +91,9 @@ export default function TransactionFormModal({
     setLoading(true);
 
     try {
-      // Corregir problema de timezone: Crear fecha a mediodía local para evitar desfases
-      // El input date regresa YYYY-MM-DD. Si usamos new Date(date), asume UTC 00:00
-      // que en zonas horarias como UTC-6 resulta en el día anterior.
       let submitDate: string;
       if (date) {
         const [y, m, d] = date.split('-').map(Number);
-        // Crear fecha en tiempo local a las 12:00 PM
         const localDate = new Date(y, m - 1, d, 12, 0, 0);
         submitDate = localDate.toISOString();
       } else {
@@ -109,14 +114,12 @@ export default function TransactionFormModal({
       let result;
 
       if (initialData?.id) {
-        // UPDATE
         result = await supabase
           .from('transactions')
           .update(payload)
           .eq('id', initialData.id)
           .select();
       } else {
-        // INSERT
         result = await supabase.from('transactions').insert([payload]).select();
       }
 
@@ -126,20 +129,17 @@ export default function TransactionFormModal({
         throw new Error(opError.message);
       }
 
-      // Verificación de que realmente se guardó algo
       if (opData && opData.length === 0) {
         throw new Error(
           'Operación exitosa pero ningún dato fue modificado. Verifica permisos.'
         );
       }
 
-      // UI Optimista: Éxito inmediato
       toast.success(
         initialData ? 'Transacción actualizada' : 'Transacción agregada'
       );
       onClose();
 
-      // Refresco de datos en segundo plano
       startTransition(() => {
         router.refresh();
       });
@@ -157,12 +157,10 @@ export default function TransactionFormModal({
 
   return (
     <>
-      {/* Overlay Backdrop */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
         onClick={onClose}
       >
-        {/* Modal Content */}
         <div
           className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
@@ -191,7 +189,7 @@ export default function TransactionFormModal({
                   placeholder="Ticker (ej: AAPL)"
                   required
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm font-medium bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500"
-                  autoFocus={!initialData} // No autoFocus en edición para evitar saltos molestos
+                  autoFocus={!initialData}
                   suppressHydrationWarning
                 />
                 <select

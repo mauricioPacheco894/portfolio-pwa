@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Portfolio Dashboard Component
+ *
+ * Main client component for displaying portfolio data with currency toggle.
+ * Handles USD/MXN conversion for display and consolidates holdings for charts.
+ */
+
 import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -61,7 +68,7 @@ export default function PortfolioDashboard({
 
   const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
 
-  // Cálculos dinámicos en la moneda seleccionada
+  // Calculate totals in selected currency
   const totalValue = holdings.reduce(
     (sum, h) => sum + (h.marketValueGlobal || 0) * exchangeRate,
     0
@@ -71,7 +78,6 @@ export default function PortfolioDashboard({
     0
   );
 
-  // Realized PL comes from ALL closed positions (prop), converted to display currency
   const realizedPL = totalRealizedPnlUSD * exchangeRate;
   const unrealizedPL = holdings.reduce(
     (sum, h) => sum + (h.plDollarsGlobal || 0) * exchangeRate,
@@ -79,9 +85,7 @@ export default function PortfolioDashboard({
   );
 
   const totalProfit = realizedPL + unrealizedPL;
-
-  const percentage =
-    totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const percentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
 
   const isProfitable = totalProfit >= 0;
   const profitColor = isProfitable
@@ -101,31 +105,28 @@ export default function PortfolioDashboard({
       currency: currency,
     }).format(val);
 
-  // Consolidación de datos CENTRALIZADA (Base USD)
-  // Esto evita que la tabla y la gráfica calculen cosas diferentes o dupliquen trabajo
+  // Consolidate holdings by normalized ticker for charts (USD base)
   const consolidatedMapUSD: Record<string, number> = {};
-
-  // Obtenemos keys del target para ayudar a la inferencia
   const targetKeys = portfolio.target_allocation
     ? Object.keys(portfolio.target_allocation)
     : [];
 
   holdings.forEach((h) => {
     const normTicker = normalizeTicker(h.ticker, targetKeys);
-    // Base siempre en USD
-    const valUSD = h.marketValueGlobal || ((h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue));
+    const valUSD =
+      h.marketValueGlobal ||
+      (h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue);
     consolidatedMapUSD[normTicker] = (consolidatedMapUSD[normTicker] || 0) + valUSD;
   });
 
-  // 1. Datos para la Gráfica (Convertidos a moneda visual)
-  // Filtramos activos con valor casi nulo para evitar saturar la gráfica con etiquetas "0.0%"
+  // Prepare chart data (converted to display currency, filtered for meaningful values)
   const consolidatedAssetsForChart = Object.entries(consolidatedMapUSD)
     .map(([ticker, valUSD]) => ({
       ticker,
       currentValue: valUSD * exchangeRate,
     }))
-    .filter((asset) => asset.currentValue > 0.1) // Filtro: Valor > 10 centavos
-    .sort((a, b) => b.currentValue - a.currentValue); // Ordenar de mayor a menor ayuda al renderizado
+    .filter((asset) => asset.currentValue > 0.1)
+    .sort((a, b) => b.currentValue - a.currentValue);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -133,7 +134,6 @@ export default function PortfolioDashboard({
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
           <div className="flex flex-col gap-3 border-b border-zinc-200 pb-6 mb-8 dark:border-zinc-800">
-            {/* Fila 1: Botón Back + Título + Acciones */}
             <div className="flex items-center gap-3">
               <Link
                 href="/"
@@ -148,15 +148,13 @@ export default function PortfolioDashboard({
               />
             </div>
 
-            {/* Fila 2: Selector de Moneda + KPIs (grupo compacto) */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              {/* Selector de Moneda */}
               <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 shrink-0">
                 <button
                   onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   USD
@@ -164,16 +162,14 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => updateCurrency('MXN')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   MXN
                 </button>
               </div>
 
-
-              {/* KPIs - Formato tabla en mobile, fila en desktop */}
               <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-6 text-sm w-full sm:w-auto">
                 <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
                   <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
@@ -207,7 +203,6 @@ export default function PortfolioDashboard({
                       </span>
                     </div>
 
-                    {/* Tooltip Detallado */}
                     <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-white dark:bg-zinc-800 p-4 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-zinc-600 dark:text-zinc-300 whitespace-normal text-left">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Latente (Actual):</span>
@@ -233,8 +228,6 @@ export default function PortfolioDashboard({
                           {formatCurrency(totalProfit)}
                         </span>
                       </div>
-
-                      {/* Flecha del tooltip */}
                       <div className="absolute bottom-full right-8 md:right-1/2 md:translate-x-1/2 border-8 border-transparent border-b-white dark:border-b-zinc-800"></div>
                     </div>
                   </div>
@@ -244,11 +237,9 @@ export default function PortfolioDashboard({
           </div>
         </div>
 
-        {/* Tabla Maestra de Gestión Unificada */}
         <section className="mb-6">
           <PortfolioManagementTable
             holdings={activeHoldings}
-            // Pasamos los datos pre-calculados para optimizar
             preCalculatedHoldingsUSD={consolidatedMapUSD}
             currentTarget={portfolio.target_allocation || undefined}
             rebalanceSuggestions={rebalanceSuggestions}
@@ -266,7 +257,6 @@ export default function PortfolioDashboard({
           />
         </section>
 
-        {/* Tabs: Posiciones y Transacciones */}
         <section className="mb-6">
           <TabsSection
             activeHoldings={activeHoldings}
@@ -280,7 +270,7 @@ export default function PortfolioDashboard({
   );
 }
 
-// Nuevo componente de Tabs
+/** Tabbed section for Positions and Transactions */
 function TabsSection({
   activeHoldings,
   transactions,
@@ -296,13 +286,12 @@ function TabsSection({
 
   return (
     <div className="rounded-xl border bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      {/* Tab Headers */}
       <div className="flex border-b border-zinc-200 dark:border-zinc-700">
         <button
           onClick={() => setActiveTab('positions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'positions'
-            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
         >
           Mis Posiciones
@@ -310,15 +299,14 @@ function TabsSection({
         <button
           onClick={() => setActiveTab('transactions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'transactions'
-            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
         >
           Transacciones
         </button>
       </div>
 
-      {/* Tab Content */}
       <div className={activeTab === 'positions' ? 'p-6' : ''}>
         {activeTab === 'positions' && (
           <HoldingsTable holdings={activeHoldings} />
@@ -326,7 +314,6 @@ function TabsSection({
 
         {activeTab === 'transactions' && (
           <div>
-            {/* Controls Header */}
             <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-700">
               <AddTransactionForm portfolioId={portfolioId} />
               <div className="flex-1 sm:max-w-md">
@@ -334,35 +321,18 @@ function TabsSection({
               </div>
             </div>
 
-            {/* Table */}
             <div className="px-6 pt-4 overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
               <table className="w-full table-auto text-sm relative">
                 <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                   <tr>
-                    <th className="px-3 py-2 text-left">
-                      Fecha
-                    </th>
-                    <th className="px-3 py-2 text-left">
-                      Ticker
-                    </th>
-                    <th className="px-3 py-2 text-left">
-                      Tipo
-                    </th>
-                    <th className="px-3 py-2 text-right">
-                      Cantidad
-                    </th>
-                    <th className="px-3 py-2 text-right">
-                      Precio Unit.
-                    </th>
-                    <th className="px-3 py-2 text-right">
-                      Comisión
-                    </th>
-                    <th className="px-3 py-2 text-right">
-                      Total
-                    </th>
-                    <th className="px-3 py-2 text-center">
-                      Acciones
-                    </th>
+                    <th className="px-3 py-2 text-left">Fecha</th>
+                    <th className="px-3 py-2 text-left">Ticker</th>
+                    <th className="px-3 py-2 text-left">Tipo</th>
+                    <th className="px-3 py-2 text-right">Cantidad</th>
+                    <th className="px-3 py-2 text-right">Precio Unit.</th>
+                    <th className="px-3 py-2 text-right">Comisión</th>
+                    <th className="px-3 py-2 text-right">Total</th>
+                    <th className="px-3 py-2 text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -380,14 +350,12 @@ function TabsSection({
                       const qty = Number(t.quantity);
                       const price = Number(t.price_per_unit);
                       const fees = t.fees ? Number(t.fees) : 0;
-
-                      // Calculate net total based on transaction type
-                      // BUY: Amount + Fees (Cost)
-                      // SELL: Amount - Fees (Proceeds)
                       const amount = qty * price;
                       const netTotal = t.type === 'BUY' ? amount + fees : amount - fees;
-
-                      const total = netTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      const total = netTotal.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
 
                       return (
                         <tr key={t.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
@@ -413,7 +381,9 @@ function TabsSection({
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">{qty.toLocaleString('en-US')}</td>
+                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                            {qty.toLocaleString('en-US')}
+                          </td>
                           <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
                             ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
@@ -437,7 +407,6 @@ function TabsSection({
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="px-6 pb-1">
               <PaginationControls
                 currentPage={pagination.page}

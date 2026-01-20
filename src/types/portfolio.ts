@@ -1,12 +1,18 @@
-// Shared portfolio-related types
+/**
+ * Portfolio Types
+ *
+ * Shared type definitions for portfolio-related data structures.
+ */
 
 import { Database } from './supabase';
 
-// Database row types
+/** Transaction row from database */
 export type Transaction = Database['public']['Tables']['transactions']['Row'];
+
+/** Portfolio row from database */
 export type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
-// Calculated position for a single asset
+/** Calculated position for a single asset */
 export interface AssetPosition {
   ticker: string;
   totalQuantity: number;
@@ -19,13 +25,16 @@ export interface AssetPosition {
   plPercentage: number;
   isNegative?: boolean;
   currency?: 'USD' | 'MXN';
-  marketValueGlobal?: number; // Valor normalizado a moneda base (USD) para totales
-  totalInvestedGlobal?: number; // Costo base normalizado a USD
-  plDollarsGlobal?: number; // Ganancia normalizada a USD
+  /** Market value normalized to USD for consistent totals */
+  marketValueGlobal?: number;
+  /** Cost basis normalized to USD */
+  totalInvestedGlobal?: number;
+  /** P&L normalized to USD */
+  plDollarsGlobal?: number;
   lastUpdated?: string;
 }
 
-// Rebalancing suggestion
+/** Rebalancing suggestion for a single asset */
 export interface RebalanceSuggestion {
   ticker: string;
   currentPct: number;
@@ -35,7 +44,7 @@ export interface RebalanceSuggestion {
   quantity: number;
 }
 
-// Transaction form data (for create/edit)
+/** Transaction form data for create/edit operations */
 export interface TransactionFormData {
   id?: string;
   ticker: string;
@@ -47,7 +56,7 @@ export interface TransactionFormData {
   portfolio_id: string;
 }
 
-// Portfolio totals (calculated from holdings)
+/** Aggregated portfolio totals */
 export interface PortfolioTotals {
   totalValue: number;
   totalInvested: number;
@@ -55,7 +64,12 @@ export interface PortfolioTotals {
   plPercentage: number;
 }
 
-// Helper function to calculate totals from holdings
+/**
+ * Calculates aggregated totals from an array of holdings.
+ *
+ * @param holdings - Array of asset positions
+ * @returns Aggregated portfolio totals
+ */
 export function calculatePortfolioTotals(
   holdings: AssetPosition[]
 ): PortfolioTotals {

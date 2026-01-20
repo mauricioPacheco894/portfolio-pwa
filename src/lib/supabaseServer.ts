@@ -3,6 +3,15 @@ import { cookies } from 'next/headers';
 
 import { env } from '@/env';
 
+/**
+ * Supabase Server Client Factory
+ * 
+ * Creates an authenticated Supabase client for use in Server Components,
+ * Server Actions, and Route Handlers. Automatically handles session state
+ * using Next.js cookies.
+ * 
+ * @returns An authenticated Supabase client instance.
+ */
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -20,18 +29,18 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Server Components can't write cookies
+            // Note: Server Components cannot write cookies during rendering
           }
         },
       },
     }
   );
 
-  // Check if user is authenticated
   const {
     data: { user },
     error,
   } = await client.auth.getUser();
+
   if (error) {
     console.error('[supabaseServer] Auth error:', error.message);
   }
