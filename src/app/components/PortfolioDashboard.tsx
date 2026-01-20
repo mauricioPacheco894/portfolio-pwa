@@ -380,7 +380,14 @@ function TabsSection({
                       const qty = Number(t.quantity);
                       const price = Number(t.price_per_unit);
                       const fees = t.fees ? Number(t.fees) : 0;
-                      const total = (qty * price + fees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                      // Calculate net total based on transaction type
+                      // BUY: Amount + Fees (Cost)
+                      // SELL: Amount - Fees (Proceeds)
+                      const amount = qty * price;
+                      const netTotal = t.type === 'BUY' ? amount + fees : amount - fees;
+
+                      const total = netTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                       return (
                         <tr key={t.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">

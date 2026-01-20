@@ -25,20 +25,6 @@ async function getPortfolio(id: string) {
   return data as Portfolio;
 }
 
-async function getAllTransactions(portfolioId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('portfolio_id', portfolioId);
-
-  if (error) {
-    console.error('Error fetching all transactions', error);
-    return [];
-  }
-  return data as Transaction[];
-}
-
 async function getPaginatedTransactions(
   portfolioId: string,
   page: number,

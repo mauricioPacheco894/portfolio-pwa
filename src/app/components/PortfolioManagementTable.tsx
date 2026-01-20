@@ -319,6 +319,7 @@ export default function PortfolioManagementTable({
                         type="number"
                         min="0"
                         max="100"
+                        step="0.01"
                         className="w-14 rounded border border-zinc-300 px-1.5 py-0.5 text-xs text-right dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
@@ -361,7 +362,7 @@ export default function PortfolioManagementTable({
                             className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm font-semibold text-zinc-700 hover:bg-blue-100 hover:text-blue-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-blue-900/40 dark:hover:text-blue-300 tabular-nums transition-colors"
                             title="Editar meta"
                           >
-                            {row.targetPct.toFixed(0)}%
+                            {Number(row.targetPct).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
                           </button>
                         </>
                       ) : (
@@ -487,6 +488,7 @@ export default function PortfolioManagementTable({
                 placeholder="Meta"
                 min="0"
                 max="100"
+                step="0.01"
                 className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-3 pr-7 text-right text-xs font-medium text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
                 value={percentage}
                 onChange={(e) => setPercentage(e.target.value)}
