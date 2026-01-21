@@ -14,6 +14,8 @@ import toast from 'react-hot-toast';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { KNOWN_TICKERS } from '@/constants/tickers';
+import TickerAutocomplete from './TickerAutocomplete';
 
 export interface TransactionData {
   id?: string;
@@ -31,6 +33,7 @@ type Props = {
   onClose: () => void;
   portfolioId: string;
   initialData?: TransactionData | null;
+  availableTickers?: string[];
 };
 
 export default function TransactionFormModal({
@@ -38,6 +41,7 @@ export default function TransactionFormModal({
   onClose,
   portfolioId,
   initialData,
+  availableTickers = [],
 }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -201,14 +205,13 @@ export default function TransactionFormModal({
                 Activo
               </label>
               <div className="flex gap-3">
-                <input
+                <TickerAutocomplete
                   value={ticker}
-                  onChange={(e) => setTicker(e.target.value)}
+                  onChange={setTicker}
+                  suggestions={[...KNOWN_TICKERS, ...availableTickers]}
                   placeholder="Ticker (ej: AAPL)"
-                  required
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm font-medium bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500"
                   autoFocus={!initialData}
-                  suppressHydrationWarning
                 />
                 <select
                   value={type}

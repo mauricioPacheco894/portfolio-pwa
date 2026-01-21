@@ -264,6 +264,7 @@ export default function PortfolioDashboard({
             transactions={transactions}
             portfolioId={portfolio.id}
             pagination={pagination}
+            uniqueTickers={uniqueTickers}
           />
         </section>
       </main>
@@ -277,11 +278,13 @@ function TabsSection({
   transactions,
   portfolioId,
   pagination,
+  uniqueTickers,
 }: {
   activeHoldings: AssetPosition[];
   transactions: Transaction[];
   portfolioId: string;
   pagination: { page: number; totalPages: number };
+  uniqueTickers: string[];
 }) {
   const [activeTab, setActiveTab] = useState<'positions' | 'transactions'>('positions');
 
@@ -316,7 +319,7 @@ function TabsSection({
         {activeTab === 'transactions' && (
           <div>
             <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-700">
-              <AddTransactionForm portfolioId={portfolioId} />
+              <AddTransactionForm portfolioId={portfolioId} availableTickers={uniqueTickers} />
               <div className="flex-1 sm:max-w-md">
                 <TransactionFilters />
               </div>

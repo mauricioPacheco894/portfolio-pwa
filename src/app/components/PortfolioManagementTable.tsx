@@ -16,7 +16,6 @@ import {
   ChevronDown,
   Edit2,
   PlusCircle,
-  Search,
   Trash2,
   X,
 } from 'lucide-react';
@@ -31,6 +30,8 @@ import {
   calculateSmartDeposit,
   prepareRebalanceItems,
 } from '@/utils/portfolioMath';
+import { KNOWN_TICKERS } from '@/constants/tickers';
+import TickerAutocomplete from './TickerAutocomplete';
 
 import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 
@@ -566,24 +567,15 @@ export default function PortfolioManagementTable({
 
       <div className="border-t border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="NUEVO ACTIVO (TICKER)"
-              className="w-full rounded-md border border-zinc-300 bg-white py-1.5 pl-9 pr-4 text-xs font-medium uppercase text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
+          <div className="flex-1">
+            <TickerAutocomplete
               value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-              list="available-tickers"
-              suppressHydrationWarning
+              onChange={setTicker}
+              suggestions={[...KNOWN_TICKERS, ...availableTickers]}
+              placeholder="NUEVO ACTIVO (TICKER)"
+              className="w-full rounded-md border border-zinc-300 bg-white py-1.5 px-3 text-xs font-medium uppercase text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:border-white dark:focus:ring-white"
+              onEnter={handleAdd}
             />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-              <Search size={14} />
-            </div>
-            <datalist id="available-tickers">
-              {availableTickers.map((t) => (
-                <option key={t} value={t} />
-              ))}
-            </datalist>
           </div>
 
           <div className="flex items-center gap-2">

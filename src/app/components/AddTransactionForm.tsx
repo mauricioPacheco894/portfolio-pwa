@@ -13,9 +13,10 @@ import TransactionFormModal from './TransactionFormModal';
 
 interface Props {
   portfolioId: string;
+  availableTickers?: string[];
 }
 
-export default function AddTransactionForm({ portfolioId }: Props) {
+export default function AddTransactionForm({ portfolioId, availableTickers = [] }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -33,6 +34,7 @@ export default function AddTransactionForm({ portfolioId }: Props) {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         portfolioId={portfolioId}
+        availableTickers={availableTickers}
       />
     </>
   );
