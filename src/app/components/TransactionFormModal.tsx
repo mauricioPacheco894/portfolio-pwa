@@ -52,6 +52,8 @@ export default function TransactionFormModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [isGBM, setIsGBM] = useState(false);
+
   useEffect(() => {
     if (isOpen && initialData) {
       setTicker(initialData.ticker);
@@ -70,9 +72,25 @@ export default function TransactionFormModal({
       setPrice('');
       setFees('');
       setDate(new Date().toISOString().split('T')[0]);
+      setIsGBM(false);
     }
     setError('');
   }, [isOpen, initialData]);
+
+  // Auto-calculate fees for GBM
+  useEffect(() => {
+    if (isGBM && quantity && price) {
+      const q = Number(quantity);
+      const p = Number(price);
+      if (!isNaN(q) && !isNaN(p)) {
+        // GBM Fee: 0.25% + 16% IVA = 0.29%
+        const commission = q * p * 0.0025;
+        const iva = commission * 0.16;
+        const totalFee = commission + iva;
+        setFees(Number(totalFee.toFixed(2)));
+      }
+    }
+  }, [isGBM, quantity, price]);
 
   /**
    * Processes and submits the transaction data.
@@ -248,9 +266,41 @@ export default function TransactionFormModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
-                  Comisión
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                    Comisión
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={isGBM}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setIsGBM(checked);
+                          if (!checked) setFees('');
+                        }}
+                        className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-zinc-300 bg-white checked:bg-blue-600 checked:border-blue-600 transition-all dark:border-zinc-600 dark:bg-zinc-800"
+                      />
+                      <svg
+                        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white"
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                      GBM
+                    </span>
+                  </label>
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-zinc-400">
                     $
@@ -259,11 +309,12 @@ export default function TransactionFormModal({
                     type="number"
                     step="0.01"
                     value={fees}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFees(
                         e.target.value === '' ? '' : Number(e.target.value)
-                      )
-                    }
+                      );
+                      setIsGBM(false);
+                    }}
                     placeholder="0.00"
                     className="w-full rounded-lg border border-zinc-300 py-2.5 pl-7 pr-3 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   />
