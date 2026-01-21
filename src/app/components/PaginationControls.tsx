@@ -7,7 +7,7 @@
  * Manages the `page` parameter in the URL search params.
  */
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface PaginationControlsProps {
@@ -40,6 +40,15 @@ export default function PaginationControls({
   return (
     <div className="flex items-center justify-center gap-3">
       <button
+        onClick={() => handlePageChange(1)}
+        disabled={currentPage === 1}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 dark:disabled:hover:text-zinc-400"
+        aria-label="Ir al inicio"
+      >
+        <ChevronsLeft size={18} strokeWidth={2} />
+      </button>
+
+      <button
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={!hasPrevPage}
         className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 dark:disabled:hover:text-zinc-400"
@@ -48,7 +57,7 @@ export default function PaginationControls({
         <ChevronLeft size={18} strokeWidth={2} />
       </button>
 
-      <span className="text-sm text-zinc-500 dark:text-zinc-400 select-none">
+      <span className="text-sm text-zinc-500 dark:text-zinc-400 select-none px-2 min-w-[5rem] text-center">
         Página <span className="font-semibold text-zinc-900 dark:text-zinc-100">{currentPage}</span> de {totalPages}
       </span>
 
@@ -59,6 +68,15 @@ export default function PaginationControls({
         aria-label="Página siguiente"
       >
         <ChevronRight size={18} strokeWidth={2} />
+      </button>
+
+      <button
+        onClick={() => handlePageChange(totalPages)}
+        disabled={currentPage === totalPages}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 dark:disabled:hover:text-zinc-400"
+        aria-label="Ir al final"
+      >
+        <ChevronsRight size={18} strokeWidth={2} />
       </button>
     </div>
   );
