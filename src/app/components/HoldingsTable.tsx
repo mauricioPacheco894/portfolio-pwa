@@ -141,7 +141,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
             <HeaderCell columnKey="averageCost" label="Costo Prom." />
             <HeaderCell columnKey="marketPrice" label="Precio Actual" />
             <HeaderCell columnKey="currentValue" label="Valor Mercado" />
-            <HeaderCell columnKey="plDollars" label="Ganancia / Pérdida" />
+            <HeaderCell columnKey="plPercentage" label="Ganancia / Pérdida" />
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -205,14 +205,10 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                         asset.currency
                       )}
 
-                    <CurrencyBadge currency={asset.currency} />
-
                     {asset.marketPrice && (
-                      <span
-                        className="text-[10px] font-bold text-blue-500 ml-0.5"
-                        title="Precio en tiempo real"
-                      >
-                        LIVE
+                      <span className="relative flex h-2 w-2 ml-1.5" title="Precio en tiempo real">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                       </span>
                     )}
                   </div>
