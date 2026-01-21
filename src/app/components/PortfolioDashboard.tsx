@@ -153,8 +153,8 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   USD
@@ -162,8 +162,8 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => updateCurrency('MXN')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                      ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                     }`}
                 >
                   MXN
@@ -247,6 +247,7 @@ export default function PortfolioDashboard({
             availableTickers={uniqueTickers}
             totalValue={totalValue}
             exchangeRate={exchangeRate}
+            currencySymbol={currency === 'USD' ? '$' : 'MX$'}
             headerAction={
               <PortfolioChartModal
                 holdings={consolidatedAssetsForChart as any}
@@ -290,8 +291,8 @@ function TabsSection({
         <button
           onClick={() => setActiveTab('positions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'positions'
-              ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
         >
           Mis Posiciones
@@ -299,8 +300,8 @@ function TabsSection({
         <button
           onClick={() => setActiveTab('transactions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'transactions'
-              ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
         >
           Transacciones
