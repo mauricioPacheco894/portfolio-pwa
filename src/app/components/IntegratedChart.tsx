@@ -10,6 +10,7 @@
  * - Dynamic SVG labels with "elbow" connectors
  * - Interactive tooltips
  * - Mobile-optimized sizing
+ * - Smart label visibility (hides labels for small slices)
  */
 
 import { useEffect, useState } from 'react';
@@ -18,15 +19,17 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 interface AssetPosition {
   ticker: string;
   currentValue: number;
+  color?: string;
 }
 
 interface IntegratedChartProps {
   holdings: AssetPosition[];
 }
 
-const COLORS = [
+const DEFAULT_COLORS = [
   '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
   '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c',
+  '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1',
 ];
 
 export default function IntegratedChart({ holdings }: IntegratedChartProps) {
@@ -47,18 +50,23 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
     );
   }
 
-  const data = holdings.map((h) => ({ name: h.ticker, value: h.currentValue }));
+  const data = holdings.map((h) => ({
+    name: h.ticker,
+    value: h.currentValue,
+    color: h.color
+  }));
 
-  const innerRadiusVal = isMobile ? '40%' : '35%';
-  const outerRadiusVal = isMobile ? '55%' : '50%';
-  const labelOffsetCodo = isMobile ? 10 : 30;
-  const labelOffsetHoriz = isMobile ? 10 : 20;
-  const fontSize = isMobile ? '10px' : '14px';
+  const innerRadiusVal = isMobile ? '35%' : '30%';
+  const outerRadiusVal = isMobile ? '50%' : '45%';
+
+  const labelOffsetCodo = isMobile ? 15 : 25;
+  const labelOffsetHoriz = isMobile ? 15 : 30;
+  const fontSize = isMobile ? '10px' : '12px';
 
   return (
     <div className="h-full w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <PieChart>
+        <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
           <Pie
             data={data}
             cx="50%"
@@ -70,6 +78,8 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             label={({
               cx, cy, midAngle, outerRadius, percent, name,
             }: any) => {
+              if (percent < 0.03) return null;
+
               const RADIAN = Math.PI / 180;
               const sin = Math.sin(-midAngle * RADIAN);
               const cos = Math.cos(-midAngle * RADIAN);
@@ -102,15 +112,19 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             }}
             labelLine={false}
           >
-            {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]}
+                strokeWidth={1}
+              />
             ))}
           </Pie>
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 return (
-                  <div className="rounded-lg bg-white px-3 py-2 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10">
+                  <div className="rounded-lg bg-white px-3 py-2 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10 z-50">
                     <p className="text-xs font-bold text-zinc-900 dark:text-white mb-0.5">
                       {payload[0].name}
                     </p>

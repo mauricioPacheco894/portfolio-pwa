@@ -11,13 +11,14 @@
  */
 
 import { PieChart, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import IntegratedChart from './IntegratedChart';
 
 interface AssetPosition {
   ticker: string;
   currentValue: number;
+  color?: string;
 }
 
 interface Props {
@@ -26,6 +27,12 @@ interface Props {
   totalValue?: number;
 }
 
+const CHART_COLORS = [
+  '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
+  '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c',
+  '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1',
+];
+
 export default function PortfolioChartModal({
   holdings,
   targetAllocation,
@@ -33,14 +40,51 @@ export default function PortfolioChartModal({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const targetHoldings: AssetPosition[] = targetAllocation
-    ? Object.entries(targetAllocation).map(([ticker, pct]) => ({
-      ticker,
-      currentValue: totalValue * (pct / 100),
-    }))
-      .filter((h) => h.currentValue > 0)
-      .sort((a, b) => b.currentValue - a.currentValue)
-    : [];
+  // Calculate synchronized data for both charts
+  const { sortedActualHoldings, sortedTargetHoldings } = useMemo(() => {
+    const actualTickers = holdings.map(h => h.ticker);
+    const targetTickers = targetAllocation ? Object.keys(targetAllocation) : [];
+    const allTickers = Array.from(new Set([...actualTickers, ...targetTickers]));
+
+    allTickers.sort((a, b) => {
+      const targetA = targetAllocation?.[a] || 0;
+      const targetB = targetAllocation?.[b] || 0;
+      if (targetB !== targetA) return targetB - targetA;
+      return a.localeCompare(b);
+    });
+
+    const colorMap = new Map<string, string>();
+    allTickers.forEach((ticker, index) => {
+      colorMap.set(ticker, CHART_COLORS[index % CHART_COLORS.length]);
+    });
+
+    const tData = allTickers
+      .map(ticker => {
+        const pct = targetAllocation?.[ticker] || 0;
+        return {
+          ticker,
+          currentValue: totalValue * (pct / 100),
+          color: colorMap.get(ticker)
+        };
+      })
+      .filter(h => h.currentValue > 0);
+
+    const aData = allTickers
+      .map(ticker => {
+        const holding = holdings.find(h => h.ticker === ticker);
+        return {
+          ticker,
+          currentValue: holding ? holding.currentValue : 0,
+          color: colorMap.get(ticker)
+        };
+      })
+      .filter(h => h.currentValue > 0);
+
+    return {
+      sortedActualHoldings: aData,
+      sortedTargetHoldings: tData
+    };
+  }, [holdings, targetAllocation, totalValue]);
 
   return (
     <>
@@ -58,7 +102,7 @@ export default function PortfolioChartModal({
           onClick={() => setIsOpen(false)}
         >
           <div
-            className={`w-full ${targetHoldings.length > 0 ? 'max-w-6xl' : 'max-w-4xl'
+            className={`w-full ${sortedTargetHoldings.length > 0 ? 'max-w-6xl' : 'max-w-4xl'
               } rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -75,23 +119,23 @@ export default function PortfolioChartModal({
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0">
-              <div className={`grid gap-8 ${targetHoldings.length > 0 ? 'lg:grid-cols-2' : ''} h-full`}>
+              <div className={`grid gap-8 ${sortedTargetHoldings.length > 0 ? 'lg:grid-cols-2' : ''} h-full`}>
                 <div className="flex flex-col h-[400px] lg:h-[500px]">
                   <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
                     Actual
                   </h4>
                   <div className="flex-1 min-h-0 bg-zinc-50/50 dark:bg-zinc-800/20 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700/50 p-2">
-                    <IntegratedChart holdings={holdings} />
+                    <IntegratedChart holdings={sortedActualHoldings} />
                   </div>
                 </div>
 
-                {targetHoldings.length > 0 && (
+                {sortedTargetHoldings.length > 0 && (
                   <div className="flex flex-col h-[400px] lg:h-[500px]">
                     <h4 className="text-center text-sm font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
                       Meta (Estrategia)
                     </h4>
                     <div className="flex-1 min-h-0 bg-blue-50/30 dark:bg-blue-900/10 rounded-xl border border-dashed border-blue-200 dark:border-blue-800/30 p-2">
-                      <IntegratedChart holdings={targetHoldings} />
+                      <IntegratedChart holdings={sortedTargetHoldings} />
                     </div>
                   </div>
                 )}
