@@ -7,18 +7,20 @@
  */
 
 import { Loader, Plus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 interface CreatePortfolioFormProps {
-  onPortfolioCreated: () => void;
+  onPortfolioCreated?: () => void;
 }
 
 export function CreatePortfolioForm({
   onPortfolioCreated,
 }: CreatePortfolioFormProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
@@ -56,7 +58,8 @@ export function CreatePortfolioForm({
 
       setName('');
       setIsOpen(false);
-      onPortfolioCreated();
+      router.refresh();
+      onPortfolioCreated?.();
     } catch (err) {
       setError('Error inesperado al crear portafolio');
       console.error(err);
