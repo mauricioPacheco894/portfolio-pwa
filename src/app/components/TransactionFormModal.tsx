@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { KNOWN_TICKERS } from '@/constants/tickers';
 import TickerAutocomplete from './TickerAutocomplete';
+import { syncSingleTickerPrice } from '@/app/actions/syncPrice';
 
 export interface TransactionData {
   id?: string;
@@ -155,6 +156,13 @@ export default function TransactionFormModal({
         throw new Error(
           'Operación exitosa pero ningún dato fue modificado. Verifica permisos.'
         );
+      }
+
+      // Sincronizar el precio de Yahoo de manera inmediata
+      try {
+        await syncSingleTickerPrice(payload.ticker);
+      } catch (invokeError) {
+        console.warn('Excepción al llamar al Server Action:', invokeError);
       }
 
       toast.success(
