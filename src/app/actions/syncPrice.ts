@@ -28,6 +28,9 @@ function getExchangesForTicker(ticker: string): string[] {
     return ['NASDAQ', 'NYSE', 'BMV', 'NYSEARCA']
 }
 
+// EXPRESIÓN REGULAR HOISTEADA (Regla js-hoist-regexp)
+const PRICE_REGEX = /class="YMlKec fxKbKc">\$?([0-9,.]+)</;
+
 /**
  * Scraper optimizado con Regex para máxima velocidad.
  */
@@ -49,9 +52,8 @@ async function fetchPriceFromGoogle(ticker: string): Promise<{ price: number, cu
 
             const html = await response.text()
 
-            // BÚSQUEDA POR REGEX (Ultra rápida)
-            const priceRegex = /class="YMlKec fxKbKc">\$?([0-9,.]+)</;
-            const match = html.match(priceRegex);
+            // BÚSQUEDA POR REGEX (Súper rápida con regex pre-compilada)
+            const match = html.match(PRICE_REGEX);
             let price: number | null = null;
 
             if (match?.[1]) {
@@ -81,9 +83,9 @@ async function fetchPriceFromGoogle(ticker: string): Promise<{ price: number, cu
 
 /**
  * Server Action to sync a specific price on-demand.
- * Now runs directly on the server side for maximum speed, 
+ * Now runs directly on the server side for maximum speed,
  * avoiding the cold start of Edge Functions.
- * 
+ *
  * @param ticker The symbol of the asset to sync.
  * @returns Object indicating success or failure.
  */
@@ -99,30 +101,27 @@ export async function syncSingleTickerPrice(ticker: string) {
 
         console.log(`🚀 Fast Sync (Server Side) for ${upperTicker}...`);
 
-        // Ejecutar el scraper directamente en el servidor de Next.js
-        const result = await fetchPriceFromGoogle(upperTicker);
+        // Regla async-parallel: Ejecutar el scraper y la consulta de la DB en paralelo para eliminar el waterfall
+        const isMexican = upperTicker.endsWith('.MX') ||
+            upperTicker.endsWith(':BMV') ||
+            upperTicker === 'USD-MXN';
+
+        const [result, existingCurrencyData] = await Promise.all([
+            fetchPriceFromGoogle(upperTicker),
+            !isMexican ? supabase
+                .from('asset_prices')
+                .select('currency')
+                .eq('ticker', upperTicker)
+                .single() : Promise.resolve({ data: null })
+        ]);
 
         if (result && result.price > 0) {
-            // Lógica de auto-corrección de moneda (MXN para activos BMV)
-            const isMexican = upperTicker.endsWith('.MX') ||
-                upperTicker.endsWith(':BMV') ||
-                upperTicker === 'USD-MXN';
-
             let finalCurrency = result.currency;
 
             if (isMexican) {
                 finalCurrency = 'MXN';
-            } else {
-                // Respetar lo que ya existe si no es mexicano
-                const { data: existing } = await supabase
-                    .from('asset_prices')
-                    .select('currency')
-                    .eq('ticker', upperTicker)
-                    .single();
-
-                if (existing?.currency) {
-                    finalCurrency = existing.currency;
-                }
+            } else if (existingCurrencyData?.data?.currency) {
+                finalCurrency = existingCurrencyData.data.currency;
             }
 
             const payload = {

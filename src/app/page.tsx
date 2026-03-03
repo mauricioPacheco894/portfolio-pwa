@@ -71,7 +71,7 @@ export default function Home() {
         <main className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-12">
           <div className="text-center">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-500"></div>
-            <p className="text-sm text-zinc-400">Verificando sesión...</p>
+            <p className="text-sm text-zinc-400">Verificando sesión…</p>
 
             {showSlowLoadingMessage && (
               <div className="mt-4 animate-fade-in text-sm text-zinc-500 dark:text-zinc-400">

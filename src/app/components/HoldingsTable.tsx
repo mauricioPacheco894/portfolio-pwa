@@ -190,13 +190,13 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     {asset.ticker}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
                   {asset.totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
                   {currencyFormatter(asset.averageCost, asset.currency)}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400">
+                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
                   <div className="flex items-center justify-end gap-1">
                     {asset.marketPrice
                       ? currencyFormatter(asset.marketPrice, asset.currency)
@@ -213,12 +213,12 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white">
+                <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white tabular-nums">
                   {currencyFormatter(asset.currentValue, asset.currency)}
                 </td>
                 <td className="px-4 py-2 text-right">
                   <div
-                    className={`flex items-center justify-end gap-1.5 font-semibold ${asset.plDollars >= 0
+                    className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums ${asset.plDollars >= 0
                       ? 'text-green-600 dark:text-green-400'
                       : 'text-red-600 dark:text-red-400'
                       }`}
