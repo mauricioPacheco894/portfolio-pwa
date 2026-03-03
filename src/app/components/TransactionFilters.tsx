@@ -71,18 +71,18 @@ export default function TransactionFilters() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="relative flex-1 flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
           <input
             value={tickerValue}
             onChange={(e) => setTickerValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Buscar ticker (ej: AAPL)..."
-            className="w-full rounded-lg border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400"
+            className="w-full rounded-lg border border-border py-2 pl-9 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-card text-foreground placeholder:text-muted-foreground/50"
           />
         </div>
         <button
           onClick={handleSearchClick}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 transition-colors"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 active:scale-95 transition-all"
         >
           {isPending ? '...' : 'Buscar'}
         </button>
@@ -91,7 +91,7 @@ export default function TransactionFilters() {
       <select
         onChange={(e) => handleTypeChange(e.target.value)}
         value={searchParams.get('type')?.toString() || 'ALL'}
-        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground"
       >
         <option value="ALL">Todos los tipos</option>
         <option value="BUY">Compras</option>

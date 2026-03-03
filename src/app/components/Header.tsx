@@ -29,18 +29,18 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+    <header className="border-b border-border bg-white dark:bg-card">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white group"
+          className="flex items-center gap-2.5 text-foreground transition-opacity hover:opacity-80 group"
           aria-label="Inicio"
         >
-          <div className="flex items-center justify-center p-1.5 bg-blue-600 rounded-lg group-hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center justify-center p-1.5 bg-primary rounded-lg group-hover:scale-105 transition-transform duration-300 shadow-lg">
             <Wallet size={20} className="text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight font-display">
-            Portfolio<span className="text-blue-600 dark:text-blue-400">.</span>
+            Portfolio<span className="text-primary">.</span>
           </span>
         </Link>
 
@@ -48,7 +48,7 @@ export function Header() {
           {mounted && (
             <button
               onClick={toggleTheme}
-              className="rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted"
               aria-label="Toggle dark mode"
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -57,7 +57,7 @@ export function Header() {
 
           {!loading && user ? (
             <>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
               <button
@@ -71,7 +71,7 @@ export function Header() {
           ) : !loading ? (
             <Link
               href="/login"
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:opacity-90 shadow-md"
             >
               <LogIn size={18} />
               Iniciar Sesión

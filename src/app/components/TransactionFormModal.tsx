@@ -192,16 +192,16 @@ export default function TransactionFormModal({
         onClick={onClose}
       >
         <div
-          className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 animate-in zoom-in-95 duration-200"
+          className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+            <h3 className="text-xl font-bold text-foreground">
               {initialData ? 'Editar Transacción' : 'Nueva Transacción'}
             </h3>
             <button
               onClick={onClose}
-              className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X size={20} />
             </button>
@@ -209,7 +209,7 @@ export default function TransactionFormModal({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                 Activo
               </label>
               <div className="flex gap-3">
@@ -218,13 +218,13 @@ export default function TransactionFormModal({
                   onChange={setTicker}
                   suggestions={[...KNOWN_TICKERS, ...availableTickers]}
                   placeholder="Ticker (ej: AAPL)"
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm font-medium bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                   autoFocus={!initialData}
                 />
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as 'BUY' | 'SELL')}
-                  className="rounded-lg border border-zinc-300 px-3 py-2.5 text-sm font-bold bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  className="rounded-lg border border-border px-3 py-2.5 text-sm font-bold bg-muted text-foreground"
                 >
                   <option value="BUY">BUY</option>
                   <option value="SELL">SELL</option>
@@ -234,7 +234,7 @@ export default function TransactionFormModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                   Cantidad
                 </label>
                 <input
@@ -247,15 +247,15 @@ export default function TransactionFormModal({
                   }
                   placeholder="0.00"
                   required
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                   Precio
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-zinc-400">
+                  <span className="absolute left-3 top-2.5 text-muted-foreground/60">
                     $
                   </span>
                   <input
@@ -269,7 +269,7 @@ export default function TransactionFormModal({
                     }
                     placeholder="0.00"
                     required
-                    className="w-full rounded-lg border border-zinc-300 py-2.5 pl-7 pr-3 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    className="w-full rounded-lg border border-border py-2.5 pl-7 pr-3 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default function TransactionFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                  <label className="block text-xs font-semibold uppercase text-muted-foreground">
                     Comisión
                   </label>
                   <label className="flex items-center gap-1.5 cursor-pointer group">
@@ -291,7 +291,7 @@ export default function TransactionFormModal({
                           setIsGBM(checked);
                           if (!checked) setFees('');
                         }}
-                        className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-zinc-300 bg-white checked:bg-blue-600 checked:border-blue-600 transition-all dark:border-zinc-600 dark:bg-zinc-800"
+                        className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-border bg-background checked:bg-primary checked:border-primary transition-all"
                       />
                       <svg
                         className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white"
@@ -307,13 +307,13 @@ export default function TransactionFormModal({
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                       GBM
                     </span>
                   </label>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-zinc-400">
+                  <span className="absolute left-3 top-2.5 text-muted-foreground/60">
                     $
                   </span>
                   <input
@@ -327,19 +327,19 @@ export default function TransactionFormModal({
                       setIsGBM(false);
                     }}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-zinc-300 py-2.5 pl-7 pr-3 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    className="w-full rounded-lg border border-border py-2.5 pl-7 pr-3 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                   Fecha
                 </label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:[color-scheme:dark]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 dark:[color-scheme:dark]"
                 />
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function TransactionFormModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 hover:shadow-blue-500/30 disabled:opacity-50 transition-all active:scale-[0.98]"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
               >
                 {loading ? (
                   <>

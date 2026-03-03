@@ -73,26 +73,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-background dark:to-zinc-900/50 px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-xl bg-white shadow-lg dark:bg-zinc-800 p-8">
+        <div className="rounded-xl bg-card shadow-lg ring-1 ring-border p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-foreground">
               Portfolio PWA
             </h1>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-muted-foreground">
               {isSignUp ? 'Crea tu cuenta' : 'Inicia sesión'}
             </p>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Email
               </label>
               <div className="relative">
                 <Mail
-                  className="absolute left-3 top-3 text-zinc-400"
+                  className="absolute left-3 top-3 text-muted-foreground/50"
                   size={20}
                 />
                 <input
@@ -101,18 +101,18 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
                   required
-                  className="w-full rounded-lg border border-zinc-300 bg-white pl-10 pr-4 py-2 text-zinc-900 placeholder-zinc-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-border bg-background pl-10 pr-4 py-2 text-foreground placeholder-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Contraseña
               </label>
               <div className="relative">
                 <Lock
-                  className="absolute left-3 top-3 text-zinc-400"
+                  className="absolute left-3 top-3 text-muted-foreground/50"
                   size={20}
                 />
                 <input
@@ -121,7 +121,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-lg border border-zinc-300 bg-white pl-10 pr-4 py-2 text-zinc-900 placeholder-zinc-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-border bg-background pl-10 pr-4 py-2 text-foreground placeholder-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-blue-600 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600 flex items-center justify-center gap-2 mt-6"
+              className="w-full rounded-lg bg-primary py-2 font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
             >
               {isSignUp ? (
                 <>
@@ -151,8 +151,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-700">
-            <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="mt-6 border-t border-border pt-6">
+            <p className="text-center text-sm text-muted-foreground">
               {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
               <button
                 type="button"
@@ -160,7 +160,7 @@ export default function LoginPage() {
                   setIsSignUp(!isSignUp);
                   setError('');
                 }}
-                className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="font-medium text-primary hover:opacity-80 transition-opacity"
               >
                 {isSignUp ? 'Inicia sesión' : 'Regístrate'}
               </button>

@@ -128,7 +128,7 @@ export default function TickerAutocomplete({
             {isOpen && filteredSuggestions.length > 0 && (
                 <div
                     ref={dropdownRef}
-                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-zinc-300 bg-white shadow-lg dark:border-zinc-600 dark:bg-zinc-800"
+                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-border bg-card shadow-lg ring-1 ring-border"
                 >
                     {filteredSuggestions.map((ticker, index) => (
                         <button
@@ -136,8 +136,8 @@ export default function TickerAutocomplete({
                             type="button"
                             onClick={() => handleSelect(ticker)}
                             className={`w-full px-3 py-2 text-left text-sm font-medium transition-colors ${index === selectedIndex
-                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                                : 'text-zinc-900 hover:bg-zinc-50 dark:text-white dark:hover:bg-zinc-700'
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-foreground hover:bg-muted'
                                 }`}
                         >
                             {ticker}

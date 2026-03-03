@@ -129,15 +129,15 @@ export default function PortfolioDashboard({
     .sort((a, b) => b.currentValue - a.currentValue);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-background dark:to-zinc-900/50">
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <div className="flex flex-col gap-3 border-b border-zinc-200 pb-6 mb-8 dark:border-zinc-800">
+          <div className="flex flex-col gap-3 border-b border-border pb-6 mb-8">
             <div className="flex items-center gap-3">
               <Link
                 href="/"
-                className="group flex items-center justify-center rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 shrink-0"
+                className="group flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted shrink-0"
                 aria-label="Volver"
               >
                 <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
@@ -149,12 +149,12 @@ export default function PortfolioDashboard({
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <div className="flex items-center bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 shrink-0">
+              <div className="flex items-center bg-muted rounded-lg p-1 shrink-0">
                 <button
                   onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   USD
@@ -162,8 +162,8 @@ export default function PortfolioDashboard({
                 <button
                   onClick={() => updateCurrency('MXN')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                    ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   MXN
@@ -172,29 +172,29 @@ export default function PortfolioDashboard({
 
               <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-6 text-sm w-full sm:w-auto">
                 <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
+                  <span className="text-base text-muted-foreground font-medium">
                     Valor:
                   </span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                  <span className="text-lg font-bold text-foreground">
                     {formatTotal(totalValue)}
                   </span>
                 </div>
 
                 <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
+                  <span className="text-base text-muted-foreground font-medium">
                     Invertido:
                   </span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                  <span className="text-lg font-bold text-foreground">
                     {formatTotal(totalInvested)}
                   </span>
                 </div>
 
                 <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-zinc-500 font-medium dark:text-zinc-400">
+                  <span className="text-base text-muted-foreground font-medium">
                     Ganancia:
                   </span>
                   <div className="relative group cursor-help flex items-baseline gap-1.5">
-                    <div className="flex items-baseline gap-1.5 border-b border-dotted border-zinc-300 dark:border-zinc-700 pb-0.5">
+                    <div className="flex items-baseline gap-1.5 border-b border-dotted border-border pb-0.5">
                       <span className={`text-lg font-bold ${profitColor}`}>
                         {formatCurrency(totalProfit)}
                       </span>
@@ -203,7 +203,7 @@ export default function PortfolioDashboard({
                       </span>
                     </div>
 
-                    <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-white dark:bg-zinc-800 p-4 shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-zinc-600 dark:text-zinc-300 whitespace-normal text-left">
+                    <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-card p-4 shadow-xl ring-1 ring-border text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-foreground whitespace-normal text-left">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Latente (Actual):</span>
                         <span
@@ -222,13 +222,13 @@ export default function PortfolioDashboard({
                           {formatCurrency(realizedPL)}
                         </span>
                       </div>
-                      <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex justify-between items-center font-bold text-zinc-900 dark:text-white">
+                      <div className="border-t border-border pt-2 flex justify-between items-center font-bold text-foreground">
                         <span>Total Neto:</span>
                         <span className={`font-mono text-sm ${profitColor}`}>
                           {formatCurrency(totalProfit)}
                         </span>
                       </div>
-                      <div className="absolute bottom-full right-8 md:right-1/2 md:translate-x-1/2 border-8 border-transparent border-b-white dark:border-b-zinc-800"></div>
+                      <div className="absolute bottom-full right-8 md:right-1/2 md:translate-x-1/2 border-8 border-transparent border-b-white dark:border-b-card"></div>
                     </div>
                   </div>
                 </div>
@@ -289,13 +289,13 @@ function TabsSection({
   const [activeTab, setActiveTab] = useState<'positions' | 'transactions'>('positions');
 
   return (
-    <div className="rounded-xl border bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      <div className="flex border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab('positions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'positions'
-            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
             }`}
         >
           Mis Posiciones
@@ -303,8 +303,8 @@ function TabsSection({
         <button
           onClick={() => setActiveTab('transactions')}
           className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${activeTab === 'transactions'
-            ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
             }`}
         >
           Transacciones
@@ -318,7 +318,7 @@ function TabsSection({
 
         {activeTab === 'transactions' && (
           <div>
-            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-700">
+            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-border">
               <AddTransactionForm portfolioId={portfolioId} availableTickers={uniqueTickers} />
               <div className="flex-1 sm:max-w-md">
                 <TransactionFilters />
@@ -327,7 +327,7 @@ function TabsSection({
 
             <div className="px-6 pt-4 overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
               <table className="w-full table-auto text-sm relative">
-                <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+                <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left">Fecha</th>
                     <th className="px-3 py-2 text-left">Ticker</th>
@@ -339,12 +339,12 @@ function TabsSection({
                     <th className="px-3 py-2 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                <tbody className="divide-y divide-border">
                   {transactions.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
+                        className="px-3 py-4 text-center text-muted-foreground"
                       >
                         No hay transacciones registradas aún
                       </td>
@@ -362,8 +362,8 @@ function TabsSection({
                       });
 
                       return (
-                        <tr key={t.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                          <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                        <tr key={t.id} className="hover:bg-muted transition-colors">
+                          <td className="px-3 py-2 text-muted-foreground">
                             {(() => {
                               const d = new Date(t.date);
                               return d.toLocaleDateString('es-ES', {
@@ -371,7 +371,7 @@ function TabsSection({
                               });
                             })()}
                           </td>
-                          <td className="px-3 py-2 font-bold text-zinc-900 dark:text-white">
+                          <td className="px-3 py-2 font-bold text-foreground">
                             {t.ticker}
                           </td>
                           <td className="px-3 py-2">
@@ -385,16 +385,16 @@ function TabsSection({
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
                             {qty.toLocaleString('en-US')}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
                             ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
                             ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-3 py-2 font-semibold text-right text-zinc-900 dark:text-white">
+                          <td className="px-3 py-2 font-semibold text-right text-foreground">
                             ${total}
                           </td>
                           <td className="px-3 py-2 text-center">

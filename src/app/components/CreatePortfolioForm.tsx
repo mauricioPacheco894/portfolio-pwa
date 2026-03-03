@@ -72,22 +72,22 @@ export function CreatePortfolioForm({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+        className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:opacity-90 shadow-md"
       >
         <Plus size={20} />
         Nuevo Portafolio
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-lg dark:bg-zinc-800">
-            <div className="flex items-center justify-between border-b border-zinc-200 p-6 dark:border-zinc-700">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl bg-card shadow-lg ring-1 ring-border">
+            <div className="flex items-center justify-between border-b border-border p-6">
+              <h2 className="text-xl font-bold text-foreground">
                 Crear Nuevo Portafolio
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X size={24} />
               </button>
@@ -95,7 +95,7 @@ export function CreatePortfolioForm({
 
             <form onSubmit={handleSubmit} className="space-y-4 p-6">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Nombre del Portafolio
                 </label>
                 <input
@@ -105,7 +105,7 @@ export function CreatePortfolioForm({
                   placeholder="Ej: Mi Portafolio de Acciones…"
                   required
                   autoComplete="off"
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground/60 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
@@ -119,14 +119,14 @@ export function CreatePortfolioForm({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 rounded-lg border border-zinc-300 py-2 font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  className="flex-1 rounded-lg border border-border py-2 font-medium text-foreground transition-colors hover:bg-muted"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading || !name.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
                 >
                   {loading ? (
                     <>

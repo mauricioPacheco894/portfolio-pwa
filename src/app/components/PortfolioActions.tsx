@@ -40,8 +40,8 @@ export default function PortfolioActions({
   const TitleTag = variant === 'page' ? 'h1' : 'h3';
   const titleClasses =
     variant === 'page'
-      ? 'text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tighter sm:text-4xl'
-      : 'text-xl font-bold text-zinc-900 dark:text-white tracking-tight';
+      ? 'text-3xl font-extrabold text-foreground tracking-tighter sm:text-4xl'
+      : 'text-xl font-bold text-foreground tracking-tight';
 
   /**
    * Updates the portfolio name in the database.
@@ -149,7 +149,7 @@ export default function PortfolioActions({
               setNewName(portfolioName);
             }
           }}
-          className={`rounded-lg border border-zinc-300 bg-white px-2 py-1 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white ${variant === 'page'
+          className={`rounded-lg border border-border bg-card px-2 py-1 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${variant === 'page'
             ? 'text-2xl font-bold'
             : 'text-lg font-semibold w-full'
             }`}
@@ -199,14 +199,14 @@ export default function PortfolioActions({
             e.stopPropagation();
             setIsEditing(true);
           }}
-          className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
           title="Renombrar portafolio"
         >
           <Edit2 size={16} />
         </button>
         <button
           onClick={handleDelete}
-          className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
           title="Eliminar portafolio"
         >
           <Trash2 size={16} />

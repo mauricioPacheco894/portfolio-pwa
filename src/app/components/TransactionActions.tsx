@@ -87,7 +87,7 @@ export default function TransactionActions({
       <div className="flex items-center justify-center gap-1">
         <button
           onClick={() => setIsEditOpen(true)}
-          className="inline-flex items-center justify-center rounded px-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-blue-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+          className="inline-flex items-center justify-center rounded px-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
           title="Editar"
         >
           <Edit2 size={16} />
