@@ -33,10 +33,15 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex items-center gap-2 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white"
+          className="flex items-center gap-2.5 text-zinc-900 transition-opacity hover:opacity-80 dark:text-white group"
           aria-label="Inicio"
         >
-          <Wallet size={28} className="text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center justify-center p-1.5 bg-blue-600 rounded-lg group-hover:scale-105 transition-transform duration-300">
+            <Wallet size={20} className="text-white" />
+          </div>
+          <span className="text-xl font-bold tracking-tight font-display">
+            Portfolio<span className="text-blue-600 dark:text-blue-400">.</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-4">

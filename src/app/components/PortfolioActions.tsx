@@ -40,8 +40,8 @@ export default function PortfolioActions({
   const TitleTag = variant === 'page' ? 'h1' : 'h3';
   const titleClasses =
     variant === 'page'
-      ? 'text-3xl font-bold text-zinc-900 dark:text-white tracking-tight'
-      : 'text-xl font-semibold text-zinc-900 dark:text-white';
+      ? 'text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tighter sm:text-4xl'
+      : 'text-xl font-bold text-zinc-900 dark:text-white tracking-tight';
 
   /**
    * Updates the portfolio name in the database.
