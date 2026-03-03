@@ -12,6 +12,7 @@
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  MinusCircle,
   Check,
   ChevronDown,
   Edit2,
@@ -422,7 +423,8 @@ export default function PortfolioManagementTable({
                 {!showProjectedColumn && (
                   <th className="px-4 py-3 text-right">Diferencia</th>
                 )}
-                <th className="px-4 py-3 text-right pr-6">Acción</th>
+                <th className="px-4 py-3 text-right">Acción</th>
+                <th className="px-4 py-3 text-right">Monto</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -552,13 +554,11 @@ export default function PortfolioManagementTable({
                       </td>
                     )}
 
-                    <td className="px-4 py-2 text-center align-middle">
-                      {calcMode === 'strategy' ? (
-                        renderStrategyAction(row, total, exchangeRate, currencySymbol)
-                      ) : (
-                        renderRebalanceAction(proposal, exchangeRate, currencySymbol)
-                      )}
-                    </td>
+                    {calcMode === 'strategy' ? (
+                      renderStrategyAction(row, total, exchangeRate, currencySymbol)
+                    ) : (
+                      renderRebalanceAction(proposal, exchangeRate, currencySymbol)
+                    )}
                   </tr>
                 );
               })}
@@ -627,63 +627,86 @@ function renderStrategyAction(
   exchangeRate: number,
   currencySymbol: string
 ) {
-  if (Math.abs(total - 100) > 0.1) {
-    return row.targetPct > 0 ? (
-      <span className="inline-flex items-center justify-center rounded bg-red-100 w-24 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
-        AJUSTAR %
-      </span>
-    ) : null;
+  const isIncorrectStrategy = Math.abs(total - 100) > 0.1;
+
+  if (isIncorrectStrategy && row.targetPct > 0) {
+    return (
+      <>
+        <td className="px-4 py-2 text-right">
+          <span className="inline-flex w-24 items-center justify-center rounded bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            AJUSTAR %
+          </span>
+        </td>
+        <td className="px-4 py-2 text-right text-sm text-muted-foreground/40 italic">
+          Inválido
+        </td>
+      </>
+    );
   }
 
-  if (row.strategySuggestion) {
+  if (row.strategySuggestion && row.strategySuggestion.action !== 'HOLD') {
     return (
-      <div className="flex items-center justify-end gap-2">
-        <span
-          className={`inline-flex w-20 items-center justify-center rounded py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
-            ? 'bg-primary/20 text-primary'
-            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-            }`}
-        >
-          {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
-        </span>
-        <span className="w-16 text-right text-sm font-medium text-muted-foreground">
+      <>
+        <td className="px-4 py-2 text-right">
+          <span
+            className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
+              ? 'bg-primary/20 text-primary'
+              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+              }`}
+          >
+            {row.strategySuggestion.action === 'BUY' ? <ArrowUpCircle size={10} /> : <ArrowDownCircle size={10} />}
+            {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
+          </span>
+        </td>
+        <td className="px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
           {currencySymbol}
           {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           })}
-        </span>
-      </div>
+        </td>
+      </>
     );
   }
 
   if (row.targetPct > 0 && row.currentValue < 0.01) {
     return (
-      <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-20 items-center justify-center rounded bg-primary/20 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-          Comprar
-        </span>
-        <span className="w-16 text-right text-sm font-medium text-muted-foreground">
+      <>
+        <td className="px-4 py-2 text-right">
+          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+            <ArrowUpCircle size={10} />
+            Comprar
+          </span>
+        </td>
+        <td className="px-4 py-2 text-right text-sm font-medium text-muted-foreground tabular-nums">
           ---
-        </span>
-      </div>
+        </td>
+      </>
     );
   }
 
   if (row.targetPct > 0) {
     return (
-      <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-20 items-center justify-center rounded bg-muted py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          Mantener
-        </span>
-        <span className="w-16 text-right text-[11px] text-muted-foreground/60 leading-tight">
+      <>
+        <td className="px-4 py-2 text-right">
+          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            <MinusCircle size={10} />
+            Mantener
+          </span>
+        </td>
+        <td className="px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
           En rango
-        </span>
-      </div>
+        </td>
+      </>
     );
   }
 
-  return null;
+  return (
+    <>
+      <td className="px-4 py-2"></td>
+      <td className="px-4 py-2"></td>
+    </>
+  );
 }
 
 // Helper: Render deposit/rebalance mode action
@@ -692,47 +715,51 @@ function renderRebalanceAction(
   exchangeRate: number,
   currencySymbol: string
 ) {
-  if (!proposal) return null;
+  if (!proposal) return (
+    <>
+      <td className="px-4 py-2"></td>
+      <td className="px-4 py-2"></td>
+    </>
+  );
 
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
-      <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-24 items-center justify-center rounded bg-muted py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          Mantener
-        </span>
-      </div>
+      <>
+        <td className="px-4 py-2 text-right">
+          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            <MinusCircle size={10} />
+            Mantener
+          </span>
+        </td>
+        <td className="px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
+          En rango
+        </td>
+      </>
     );
   }
 
   const amountDisplay = proposal.amount * exchangeRate;
 
   return (
-    <div className="flex items-center justify-end gap-2">
-      <span className="text-sm font-medium text-muted-foreground">
+    <>
+      <td className="px-4 py-2 text-right">
+        <span
+          className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
+            ? 'bg-primary/20 text-primary'
+            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+            }`}
+        >
+          {proposal.action === 'BUY' ? <ArrowUpCircle size={10} /> : <ArrowDownCircle size={10} />}
+          {proposal.action === 'BUY' ? 'Comprar' : 'Vender'}
+        </span>
+      </td>
+      <td className="px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
         {currencySymbol}
         {amountDisplay.toLocaleString('en-US', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
         })}
-      </span>
-      <span
-        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
-          ? 'bg-primary/20 text-primary'
-          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-          }`}
-      >
-        {proposal.action === 'BUY' ? (
-          <>
-            <ArrowUpCircle size={10} />
-            Comprar
-          </>
-        ) : (
-          <>
-            <ArrowDownCircle size={10} />
-            Vender
-          </>
-        )}
-      </span>
-    </div>
+      </td>
+    </>
   );
 }
