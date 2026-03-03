@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import withPWA from 'next-pwa';
+import withPWA from '@ducanh2912/next-pwa';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
 export default withPWA({
   dest: 'public',
   register: true,
-  skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  buildExcludes: [/middleware-manifest\.json$/],
+  workboxOptions: {
+    disableDevLogs: true,
+  },
 })(nextConfig);
