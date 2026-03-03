@@ -408,203 +408,205 @@ export default function PortfolioManagementTable({
         </div>
       )}
 
-      <div className="max-h-96 overflow-y-auto px-2">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-muted text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 text-left">Activo</th>
-              <th className="px-3 py-2 text-right">Valor</th>
-              <th className="px-3 py-2 text-right">% Actual / Meta</th>
-              {showProjectedColumn && (
-                <th className="px-3 py-2 text-right">Después</th>
-              )}
-              {!showProjectedColumn && (
-                <th className="px-3 py-2 text-right">Diferencia</th>
-              )}
-              <th className="px-3 py-2 text-right pr-6">Acción</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {tableData.map((row) => {
-              const proposal = calcMode === 'deposit' ? row.depositProposal : row.rebalanceProposal;
+      <div className="p-6">
+        <div className="max-h-[500px] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm">
+              <tr>
+                <th className="px-4 py-3 text-left">Activo</th>
+                <th className="px-4 py-3 text-right">Valor</th>
+                <th className="px-4 py-3 text-right">% Actual / Meta</th>
+                {showProjectedColumn && (
+                  <th className="px-4 py-3 text-right">Después</th>
+                )}
+                {!showProjectedColumn && (
+                  <th className="px-4 py-3 text-right">Diferencia</th>
+                )}
+                <th className="px-4 py-3 text-right pr-6">Acción</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {tableData.map((row) => {
+                const proposal = calcMode === 'deposit' ? row.depositProposal : row.rebalanceProposal;
 
-              return (
-                <tr
-                  key={row.ticker}
-                  className="hover:bg-muted transition-all"
-                >
-                  <td className="px-3 py-2 font-bold text-foreground">
-                    {row.ticker}
-                  </td>
+                return (
+                  <tr
+                    key={row.ticker}
+                    className="hover:bg-muted transition-colors"
+                  >
+                    <td className="px-4 py-2 font-bold text-foreground text-sm">
+                      {row.ticker}
+                    </td>
 
-                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">
-                    {currencySymbol}
-                    {row.currentValue.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
+                    <td className="px-4 py-2 text-right text-muted-foreground text-sm tabular-nums">
+                      {currencySymbol}
+                      {row.currentValue.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
 
-                  <td className="px-3 py-2 text-right">
-                    {editingTicker === row.ticker ? (
-                      <div className="flex items-center justify-end gap-1">
-                        <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                          {row.currentPct.toFixed(1)}%
-                        </span>
-                        <span className="text-muted-foreground/40">/</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          className="w-14 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveEdit();
-                            if (e.key === 'Escape') handleCancelEdit();
-                          }}
-                          autoFocus
-                        />
-                        <button onClick={handleSaveEdit} className="text-emerald-600 hover:text-emerald-700 transition-colors">
-                          <Check size={14} />
-                        </button>
-                        <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-foreground transition-colors">
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span
-                          className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
-                            ? 'text-muted-foreground'
-                            : Math.abs(row.currentPct - row.targetPct) <= 0.5
-                              ? 'text-emerald-500'
-                              : row.currentPct < row.targetPct
-                                ? 'text-primary'
-                                : 'text-orange-500'
-                            }`}
-                        >
-                          {row.currentPct.toFixed(1)}%
-                        </span>
-                        {row.targetPct > 0 ? (
-                          <>
-                            <span className="text-border">/</span>
-                            <button
-                              onClick={() => handleStartEdit(row.ticker, row.targetPct)}
-                              className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-foreground hover:bg-primary/20 hover:text-primary tabular-nums transition-colors"
-                              title="Editar meta"
-                            >
-                              {Number(row.targetPct).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleStartEdit(row.ticker, 0)}
-                            className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
-                            title="Agregar meta"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                        )}
-                        {allocation[row.ticker] !== undefined && (
-                          <button
-                            onClick={() => handleDelete(row.ticker)}
-                            className="text-muted-foreground/30 hover:text-red-500 transition-colors"
-                            title="Eliminar de estrategia"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-
-                  {showProjectedColumn ? (
-                    <td className="px-3 py-2 text-right">
-                      {proposal && row.targetPct > 0 && (
+                    <td className="px-4 py-2 text-right">
+                      {editingTicker === row.ticker ? (
                         <div className="flex items-center justify-end gap-1">
-                          <span className="text-xs font-semibold text-foreground">
-                            {proposal.projectedPct?.toFixed(1)}%
+                          <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                            {row.currentPct.toFixed(1)}%
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            / {row.targetPct.toFixed(1)}%
+                          <span className="text-muted-foreground/40">/</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            className="w-14 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit();
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                            autoFocus
+                          />
+                          <button onClick={handleSaveEdit} className="text-emerald-600 hover:text-emerald-700 transition-colors">
+                            <Check size={14} />
+                          </button>
+                          <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-foreground transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span
+                            className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
+                              ? 'text-muted-foreground'
+                              : Math.abs(row.currentPct - row.targetPct) <= 0.5
+                                ? 'text-emerald-500'
+                                : row.currentPct < row.targetPct
+                                  ? 'text-primary'
+                                  : 'text-orange-500'
+                              }`}
+                          >
+                            {row.currentPct.toFixed(1)}%
                           </span>
+                          {row.targetPct > 0 ? (
+                            <>
+                              <span className="text-border">/</span>
+                              <button
+                                onClick={() => handleStartEdit(row.ticker, row.targetPct)}
+                                className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-foreground hover:bg-primary/20 hover:text-primary tabular-nums transition-colors"
+                                title="Editar meta"
+                              >
+                                {Number(row.targetPct).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleStartEdit(row.ticker, 0)}
+                              className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+                              title="Agregar meta"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          )}
+                          {allocation[row.ticker] !== undefined && (
+                            <button
+                              onClick={() => handleDelete(row.ticker)}
+                              className="text-muted-foreground/30 hover:text-red-500 transition-colors"
+                              title="Eliminar de estrategia"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
-                  ) : (
-                    <td className="px-3 py-2 text-right">
-                      {row.targetPct > 0 && (
-                        <span
-                          className={`text-xs font-semibold ${row.targetPct - row.currentPct > 0
-                            ? 'text-primary'
-                            : row.targetPct - row.currentPct < 0
-                              ? 'text-orange-500'
-                              : 'text-muted-foreground'
-                            }`}
-                        >
-                          {row.targetPct - row.currentPct >= 0 ? '+' : ''}
-                          {(row.targetPct - row.currentPct).toFixed(2)}%
-                        </span>
+
+                    {showProjectedColumn ? (
+                      <td className="px-4 py-2 text-right">
+                        {proposal && row.targetPct > 0 && (
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-sm font-semibold text-foreground">
+                              {proposal.projectedPct?.toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              / {row.targetPct.toFixed(1)}%
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                    ) : (
+                      <td className="px-4 py-2 text-right">
+                        {row.targetPct > 0 && (
+                          <span
+                            className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
+                              ? 'text-primary'
+                              : row.targetPct - row.currentPct < 0
+                                ? 'text-orange-500'
+                                : 'text-muted-foreground'
+                              }`}
+                          >
+                            {row.targetPct - row.currentPct >= 0 ? '+' : ''}
+                            {(row.targetPct - row.currentPct).toFixed(2)}%
+                          </span>
+                        )}
+                      </td>
+                    )}
+
+                    <td className="px-4 py-2 text-center align-middle">
+                      {calcMode === 'strategy' ? (
+                        renderStrategyAction(row, total, exchangeRate, currencySymbol)
+                      ) : (
+                        renderRebalanceAction(proposal, exchangeRate, currencySymbol)
                       )}
                     </td>
-                  )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-                  <td className="px-3 py-2 text-center align-middle">
-                    {calcMode === 'strategy' ? (
-                      renderStrategyAction(row, total, exchangeRate, currencySymbol)
-                    ) : (
-                      renderRebalanceAction(proposal, exchangeRate, currencySymbol)
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div >
-
-      <div className="border-t border-border bg-muted p-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex-1">
-            <TickerAutocomplete
-              value={ticker}
-              onChange={setTicker}
-              suggestions={[...KNOWN_TICKERS, ...availableTickers]}
-              placeholder="NUEVO ACTIVO (TICKER)"
-              className="w-full rounded-md border border-border bg-background py-1.5 px-3 text-xs font-medium uppercase text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              onEnter={handleAdd}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-24">
-              <input
-                type="number"
-                placeholder="Meta"
-                min="0"
-                max="100"
-                step="0.01"
-                className="w-full rounded-md border border-border bg-background py-1.5 pl-3 pr-7 text-right text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                value={percentage}
-                onChange={(e) => setPercentage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                suppressHydrationWarning
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <TickerAutocomplete
+                value={ticker}
+                onChange={setTicker}
+                suggestions={[...KNOWN_TICKERS, ...availableTickers]}
+                placeholder="NUEVO ACTIVO (TICKER)"
+                className="w-full rounded-md border border-border bg-background py-1.5 px-3 text-xs font-medium uppercase text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                onEnter={handleAdd}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/50">
-                %
-              </div>
             </div>
 
-            <button
-              onClick={handleAdd}
-              disabled={!ticker || !percentage}
-              className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:opacity-90 shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <PlusCircle size={14} />
-              <span>AGREGAR</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-24">
+                <input
+                  type="number"
+                  placeholder="Meta"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="w-full rounded-md border border-border bg-background py-1.5 pl-3 pr-7 text-right text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={percentage}
+                  onChange={(e) => setPercentage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                  suppressHydrationWarning
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/50">
+                  %
+                </div>
+              </div>
+
+              <button
+                onClick={handleAdd}
+                disabled={!ticker || !percentage}
+                className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:opacity-90 shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <PlusCircle size={14} />
+                <span>AGREGAR</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -627,7 +629,7 @@ function renderStrategyAction(
 ) {
   if (Math.abs(total - 100) > 0.1) {
     return row.targetPct > 0 ? (
-      <span className="inline-flex items-center justify-center rounded bg-red-100 w-24 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
+      <span className="inline-flex items-center justify-center rounded bg-red-100 w-24 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
         AJUSTAR %
       </span>
     ) : null;
@@ -637,14 +639,14 @@ function renderStrategyAction(
     return (
       <div className="flex items-center justify-end gap-2">
         <span
-          className={`inline-flex w-20 items-center justify-center rounded py-0.5 text-[10px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
+          className={`inline-flex w-20 items-center justify-center rounded py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
             ? 'bg-primary/20 text-primary'
             : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
             }`}
         >
           {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
         </span>
-        <span className="w-16 text-right text-xs font-medium text-muted-foreground">
+        <span className="w-16 text-right text-sm font-medium text-muted-foreground">
           {currencySymbol}
           {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
             minimumFractionDigits: 0,
@@ -658,10 +660,10 @@ function renderStrategyAction(
   if (row.targetPct > 0 && row.currentValue < 0.01) {
     return (
       <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-20 items-center justify-center rounded bg-primary/20 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+        <span className="inline-flex w-20 items-center justify-center rounded bg-primary/20 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
           Comprar
         </span>
-        <span className="w-16 text-right text-xs font-medium text-muted-foreground">
+        <span className="w-16 text-right text-sm font-medium text-muted-foreground">
           ---
         </span>
       </div>
@@ -671,10 +673,10 @@ function renderStrategyAction(
   if (row.targetPct > 0) {
     return (
       <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-20 items-center justify-center rounded bg-muted py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="inline-flex w-20 items-center justify-center rounded bg-muted py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
           Mantener
         </span>
-        <span className="w-16 text-right text-[10px] text-muted-foreground/60">
+        <span className="w-16 text-right text-[11px] text-muted-foreground/60 leading-tight">
           En rango
         </span>
       </div>
@@ -695,7 +697,7 @@ function renderRebalanceAction(
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
       <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex w-24 items-center justify-center rounded bg-muted py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="inline-flex w-24 items-center justify-center rounded bg-muted py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
           Mantener
         </span>
       </div>
@@ -706,7 +708,7 @@ function renderRebalanceAction(
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <span className="text-xs font-medium text-muted-foreground">
+      <span className="text-sm font-medium text-muted-foreground">
         {currencySymbol}
         {amountDisplay.toLocaleString('en-US', {
           minimumFractionDigits: 0,
@@ -714,7 +716,7 @@ function renderRebalanceAction(
         })}
       </span>
       <span
-        className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
+        className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
           ? 'bg-primary/20 text-primary'
           : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
           }`}
