@@ -27,9 +27,14 @@ interface IntegratedChartProps {
 }
 
 const DEFAULT_COLORS = [
-  '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
-  '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c',
-  '#a4de6c', '#d0ed57', '#83a6ed', '#8dd1e1',
+  '#2563eb', // Blue 600
+  '#3b82f6', // Blue 500
+  '#06b6d4', // Cyan 500
+  '#10b981', // Emerald 500
+  '#f59e0b', // Amber 500
+  '#f97316', // Orange 500
+  '#ef4444', // Red 500
+  '#ec4899', // Pink 500
 ];
 
 export default function IntegratedChart({ holdings }: IntegratedChartProps) {
@@ -44,7 +49,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
   if (holdings.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-400 dark:border-zinc-600 dark:bg-zinc-900">
+      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border bg-muted text-sm text-muted-foreground">
         No hay datos para graficar
       </div>
     );
@@ -95,13 +100,14 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
 
               return (
                 <g>
-                  <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#9ca3af" fill="none" />
-                  <circle cx={ex} cy={ey} r={2} fill="#9ca3af" stroke="none" />
+                  <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="currentColor" strokeOpacity={0.3} fill="none" />
+                  <circle cx={ex} cy={ey} r={2} fill="currentColor" fillOpacity={0.5} stroke="none" />
                   <text
                     x={ex + (cos >= 0 ? 1 : -1) * (isMobile ? 3 : 6)}
                     y={ey}
                     textAnchor={textAnchor}
-                    fill="#374151"
+                    fill="currentColor"
+                    fillOpacity={0.8}
                     dy={3}
                     style={{ fontSize: fontSize, fontWeight: 600 }}
                   >
@@ -111,6 +117,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
               );
             }}
             labelLine={false}
+            className="text-foreground"
           >
             {data.map((entry, index) => (
               <Cell
@@ -124,8 +131,8 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 return (
-                  <div className="rounded-lg bg-white px-3 py-2 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10 z-50">
-                    <p className="text-xs font-bold text-zinc-900 dark:text-white mb-0.5">
+                  <div className="rounded-lg bg-card px-3 py-2 shadow-xl ring-1 ring-border z-50">
+                    <p className="text-xs font-bold text-foreground mb-0.5">
                       {payload[0].name}
                     </p>
                     <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">

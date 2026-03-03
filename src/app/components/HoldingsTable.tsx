@@ -97,13 +97,13 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
     if (sortConfig.key !== columnKey) {
       return (
-        <ArrowUpDown className="ml-1 h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-50 transition-opacity" />
+        <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground opacity-30 group-hover:opacity-100 transition-opacity" />
       );
     }
     return sortConfig.direction === 'asc' ? (
-      <ArrowUp className="ml-1 h-3 w-3 text-blue-500" />
+      <ArrowUp className="ml-1 h-3 w-3 text-primary" />
     ) : (
-      <ArrowDown className="ml-1 h-3 w-3 text-blue-500" />
+      <ArrowDown className="ml-1 h-3 w-3 text-primary" />
     );
   };
 
@@ -117,7 +117,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
     align?: 'left' | 'right';
   }) => (
     <th
-      className={`cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-200 select-none group hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${align === 'left' ? 'text-left' : 'text-right'
+      className={`cursor-pointer px-4 py-3 bg-muted font-semibold text-foreground select-none group hover:bg-muted/80 transition-colors ${align === 'left' ? 'text-left' : 'text-right'
         }`}
       onClick={() => handleSort(columnKey)}
     >
@@ -134,7 +134,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   return (
     <div className="overflow-auto max-h-[524px] scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
       <table className="w-full text-left text-sm relative">
-        <thead className="sticky top-0 z-10 bg-zinc-50 text-xs uppercase text-zinc-500 shadow-sm dark:bg-zinc-900 dark:text-zinc-400">
+        <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-muted-foreground shadow-sm">
           <tr>
             <HeaderCell columnKey="ticker" label="Activo" align="left" />
             <HeaderCell columnKey="totalQuantity" label="Cantidad" />
@@ -144,12 +144,12 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
             <HeaderCell columnKey="plPercentage" label="Ganancia / Pérdida" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+        <tbody className="divide-y divide-border">
           {sortedHoldings.length === 0 ? (
             <tr>
               <td
                 colSpan={6}
-                className="px-3 py-4 text-center text-zinc-500 dark:text-zinc-400"
+                className="px-3 py-4 text-center text-muted-foreground"
               >
                 Agrega transacciones para ver tus posiciones.
               </td>
@@ -159,11 +159,11 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
               <tr
                 key={asset.ticker}
                 className={`transition-colors ${asset.isNegative
-                  ? 'bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20'
-                  : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+                  ? 'bg-red-500/5 hover:bg-red-500/10'
+                  : 'hover:bg-muted'
                   }`}
               >
-                <td className="px-4 py-2 font-bold text-zinc-900 dark:text-white text-left">
+                <td className="px-4 py-2 font-bold text-foreground text-left">
                   <div className="flex items-center gap-2">
                     {asset.isNegative && (
                       <div
@@ -190,13 +190,13 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     {asset.ticker}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
+                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
                   {asset.totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
+                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
                   {currencyFormatter(asset.averageCost, asset.currency)}
                 </td>
-                <td className="px-4 py-2 text-right text-zinc-600 dark:text-zinc-400 tabular-nums">
+                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
                   <div className="flex items-center justify-end gap-1">
                     {asset.marketPrice
                       ? currencyFormatter(asset.marketPrice, asset.currency)
@@ -207,20 +207,20 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
 
                     {asset.marketPrice && (
                       <span className="relative flex h-2 w-2 ml-1.5" title="Precio en tiempo real">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right font-semibold text-zinc-900 dark:text-white tabular-nums">
+                <td className="px-4 py-2 text-right font-semibold text-foreground tabular-nums">
                   {currencyFormatter(asset.currentValue, asset.currency)}
                 </td>
                 <td className="px-4 py-2 text-right">
                   <div
                     className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums ${asset.plDollars >= 0
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-red-500 dark:text-red-400'
                       }`}
                   >
                     <span className="text-sm">
@@ -242,6 +242,6 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
           )}
         </tbody>
       </table>
-    </div>
+    </div >
   );
 }
