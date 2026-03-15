@@ -57,7 +57,7 @@ export function Header() {
 
           {!loading && user ? (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="hidden sm:inline text-sm text-muted-foreground">
                 {user.email}
               </span>
               <button

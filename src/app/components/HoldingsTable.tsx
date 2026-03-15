@@ -34,36 +34,41 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
   });
 
   const currencyFormatter = (
-    value: number,
-    currency: 'USD' | 'MXN' = 'USD'
+    value: number
   ) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: 'USD', // Still use USD style for the $ symbol
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
   const currencyFormatterWithSign = (
-    value: number,
-    currency: 'USD' | 'MXN' = 'USD'
+    value: number
   ) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: 'USD',
       signDisplay: 'always',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
-  const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => (
-    <span
-      className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${currency === 'MXN'
-        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
-        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-        }`}
-    >
-      {currency || 'USD'}
-    </span>
-  );
+  const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => {
+    if (!currency) return null;
+    return (
+      <span
+        className={`text-[9px] font-bold px-1 py-0 rounded transition-colors ${currency === 'MXN'
+          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/50'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-700/50'
+          }`}
+      >
+        {currency}
+      </span>
+    );
+  };
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
@@ -111,14 +116,16 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
     columnKey,
     label,
     align = 'right',
+    className = '',
   }: {
     columnKey: SortKey;
     label: string;
     align?: 'left' | 'right';
+    className?: string;
   }) => (
     <th
-      className={`cursor-pointer px-4 py-3 bg-muted font-semibold text-foreground select-none group hover:bg-muted/80 transition-colors ${align === 'left' ? 'text-left' : 'text-right'
-        }`}
+      className={`cursor-pointer px-3 sm:px-4 py-2 bg-muted font-semibold text-foreground select-none group hover:bg-muted/80 transition-colors ${align === 'left' ? 'text-left' : 'text-right'
+        } ${className}`}
       onClick={() => handleSort(columnKey)}
     >
       <div
@@ -137,11 +144,11 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
         <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-muted-foreground shadow-sm">
           <tr>
             <HeaderCell columnKey="ticker" label="Activo" align="left" />
-            <HeaderCell columnKey="totalQuantity" label="Cantidad" />
-            <HeaderCell columnKey="averageCost" label="Costo Prom." />
-            <HeaderCell columnKey="marketPrice" label="Precio Actual" />
-            <HeaderCell columnKey="currentValue" label="Valor Mercado" />
-            <HeaderCell columnKey="plPercentage" label="Ganancia / Pérdida" />
+            <HeaderCell columnKey="totalQuantity" label="Cant." align="right" className="hidden sm:table-cell" />
+            <HeaderCell columnKey="averageCost" label="Costo" align="right" className="hidden lg:table-cell" />
+            <HeaderCell columnKey="marketPrice" label="Precio" align="right" className="hidden md:table-cell" />
+            <HeaderCell columnKey="currentValue" label="Valor" align="right" />
+            <HeaderCell columnKey="plPercentage" label="G/P" align="right" />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -163,7 +170,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                   : 'hover:bg-muted'
                   }`}
               >
-                <td className="px-4 py-2 font-bold text-foreground text-left">
+                <td className="px-3 sm:px-4 py-1.5 font-bold text-foreground text-left">
                   <div className="flex items-center gap-2">
                     {asset.isNegative && (
                       <div
@@ -188,21 +195,21 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                       </div>
                     )}
                     {asset.ticker}
+                    <CurrencyBadge currency={asset.currency} />
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
+                <td className="px-3 sm:px-4 py-1.5 text-right text-muted-foreground tabular-nums hidden sm:table-cell">
                   {asset.totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
-                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
-                  {currencyFormatter(asset.averageCost, asset.currency)}
+                <td className="px-3 sm:px-4 py-1.5 text-right text-muted-foreground tabular-nums hidden lg:table-cell">
+                  {currencyFormatter(asset.averageCost)}
                 </td>
-                <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">
+                <td className="px-3 sm:px-4 py-1.5 text-right text-muted-foreground tabular-nums hidden md:table-cell">
                   <div className="flex items-center justify-end gap-1">
                     {asset.marketPrice
-                      ? currencyFormatter(asset.marketPrice, asset.currency)
+                      ? currencyFormatter(asset.marketPrice)
                       : currencyFormatter(
-                        asset.currentValue / asset.totalQuantity,
-                        asset.currency
+                        asset.currentValue / asset.totalQuantity
                       )}
 
                     {asset.marketPrice && (
@@ -213,27 +220,22 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right font-semibold text-foreground tabular-nums">
-                  {currencyFormatter(asset.currentValue, asset.currency)}
+                <td className="px-3 sm:px-4 py-1.5 text-right font-semibold text-foreground tabular-nums">
+                  {currencyFormatter(asset.currentValue)}
                 </td>
-                <td className="px-4 py-2 text-right">
+                <td className="px-3 sm:px-4 py-1.5 text-right">
                   <div
-                    className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums ${asset.plDollars >= 0
+                    className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums whitespace-nowrap ${asset.plDollars >= 0
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-red-500 dark:text-red-400'
                       }`}
                   >
                     <span className="text-sm">
                       {asset.plPercentage > 0 ? '+' : ''}
-                      {asset.plPercentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                      {asset.plPercentage.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                     </span>
-                    <span className="text-xs opacity-80 font-normal">
-                      (
-                      {currencyFormatterWithSign(
-                        asset.plDollars,
-                        asset.currency
-                      )}
-                      )
+                    <span className="text-[11px] opacity-70 font-normal">
+                      ({currencyFormatterWithSign(asset.plDollars)})
                     </span>
                   </div>
                 </td>

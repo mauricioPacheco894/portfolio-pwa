@@ -262,7 +262,6 @@ export default function PortfolioDashboard({
             availableTickers={uniqueTickers}
             totalValue={totalValue}
             exchangeRate={exchangeRate}
-            currencySymbol={currency === 'USD' ? '$' : 'MX$'}
             headerAction={
               <PortfolioChartModal
                 holdings={consolidatedAssetsForChart as any}
@@ -281,6 +280,7 @@ export default function PortfolioDashboard({
             pagination={pagination}
             uniqueTickers={uniqueTickers}
             usdMxnRate={usdMxnRate}
+            holdings={holdings}
           />
         </section>
       </main>
@@ -289,6 +289,20 @@ export default function PortfolioDashboard({
 }
 
 /** Tabbed section for Positions and Transactions */
+const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => {
+  if (!currency) return null;
+  return (
+    <span
+      className={`text-[9px] font-bold px-1 py-0 rounded transition-colors inline-flex items-center ${currency === 'MXN'
+        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/50'
+        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-700/50'
+        }`}
+    >
+      {currency}
+    </span>
+  );
+};
+
 function TabsSection({
   activeHoldings,
   transactions,
@@ -296,6 +310,7 @@ function TabsSection({
   pagination,
   uniqueTickers,
   usdMxnRate,
+  holdings,
 }: {
   activeHoldings: AssetPosition[];
   transactions: Transaction[];
@@ -303,6 +318,7 @@ function TabsSection({
   pagination: { page: number; totalPages: number };
   uniqueTickers: string[];
   usdMxnRate: number;
+  holdings: AssetPosition[];
 }) {
   const [activeTab, setActiveTab] = useState<'positions' | 'transactions'>('positions');
 
@@ -329,21 +345,21 @@ function TabsSection({
         </button>
       </div>
 
-      <div className={activeTab === 'positions' ? 'p-6' : ''}>
+      <div className="p-4 sm:p-6">
         {activeTab === 'positions' && (
           <HoldingsTable holdings={activeHoldings} />
         )}
 
         {activeTab === 'transactions' && (
-          <div>
-            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-border">
+          <div className="overflow-x-hidden">
+            <div className="pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-border">
               <AddTransactionForm portfolioId={portfolioId} availableTickers={uniqueTickers} usdMxnRate={usdMxnRate} />
               <div className="flex-1 sm:max-w-md">
                 <TransactionFilters />
               </div>
             </div>
 
-            <div className="px-6 pt-4 overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
+            <div className="pt-4 overflow-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-600">
               <table className="w-full table-auto text-sm relative">
                 <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-muted-foreground">
                   <tr>
@@ -380,9 +396,13 @@ function TabsSection({
                         maximumFractionDigits: 2,
                       });
 
+                      // Determine currency for badge
+                      const assetFromHoldings = holdings.find(h => h.ticker === t.ticker);
+                      const tCurrency = assetFromHoldings?.currency || (Number(t.fx_rate) > 1 ? 'USD' : 'MXN');
+
                       return (
                         <tr key={t.id} className="hover:bg-muted transition-colors">
-                          <td className="px-3 py-2 text-muted-foreground">
+                          <td className="px-3 py-1.5 text-muted-foreground">
                             {(() => {
                               const d = new Date(t.date);
                               return d.toLocaleDateString('es-ES', {
@@ -390,10 +410,13 @@ function TabsSection({
                               });
                             })()}
                           </td>
-                          <td className="px-3 py-2 font-bold text-foreground">
-                            {t.ticker}
+                          <td className="px-3 py-1.5 font-bold text-foreground">
+                            <div className="flex items-center gap-1.5">
+                              {t.ticker}
+                              <CurrencyBadge currency={tCurrency as any} />
+                            </div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-1.5">
                             {t.type === 'BUY' ? (
                               <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/20 dark:text-green-400">
                                 Compra
@@ -404,16 +427,16 @@ function TabsSection({
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
+                          <td className="px-3 py-1.5 text-right font-mono text-foreground/80">
                             {qty.toLocaleString('en-US')}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
+                          <td className="px-3 py-1.5 text-right font-mono text-foreground/80">
                             ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
+                          <td className="px-3 py-1.5 text-right font-mono text-foreground/80">
                             ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
+                          <td className="px-3 py-1.5 text-right font-mono text-foreground/80">
                             {t.fx_rate !== 1 ? (
                               <span className="text-indigo-600 dark:text-indigo-400 font-medium">
                                 {Number(t.fx_rate).toFixed(2)}
@@ -422,10 +445,10 @@ function TabsSection({
                               <span className="text-muted-foreground/40">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2 font-semibold text-right text-foreground">
+                          <td className="px-3 py-1.5 font-semibold text-right text-foreground">
                             ${total}
                           </td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-3 py-1.5 text-center">
                             <TransactionActions
                               transaction={t}
                               portfolioId={portfolioId}

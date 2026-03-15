@@ -54,8 +54,8 @@ interface PortfolioManagementTableProps {
   exchangeRate: number;
   preCalculatedHoldingsUSD?: Record<string, number>;
   headerAction?: React.ReactNode;
-  currencySymbol?: string;
 }
+
 
 export default function PortfolioManagementTable({
   holdings,
@@ -65,7 +65,6 @@ export default function PortfolioManagementTable({
   exchangeRate = 1,
   preCalculatedHoldingsUSD,
   headerAction,
-  currencySymbol = '$',
 }: PortfolioManagementTableProps) {
   const router = useRouter();
   const [calcMode, setCalcMode] = useState<CalcMode>('strategy');
@@ -298,7 +297,7 @@ export default function PortfolioManagementTable({
   const showProjectedColumn = calcMode !== 'strategy' && hasTargets;
 
   const formatCurrency = (value: number) => {
-    return `${currencySymbol}${value.toLocaleString('en-US', {
+    return `$${value.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })}`;
@@ -355,14 +354,13 @@ export default function PortfolioManagementTable({
               <span className="text-sm text-muted-foreground">·</span>
               <div className="relative">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground/50">
-                  {currencySymbol}
+                  $
                 </span>
                 <input
                   type="number"
                   min="0"
                   step="100"
-                  className={`w-36 rounded-lg border border-border bg-background py-1 pr-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${currencySymbol.length > 1 ? 'pl-10' : 'pl-6'
-                    }`}
+                  className="w-36 rounded-lg border border-border bg-background py-1 pr-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary pl-6"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
                 />
@@ -409,22 +407,22 @@ export default function PortfolioManagementTable({
         </div>
       )}
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm">
               <tr>
-                <th className="px-4 py-3 text-left">Activo</th>
-                <th className="px-4 py-3 text-right">Valor</th>
-                <th className="px-4 py-3 text-right">% Actual / Meta</th>
+                <th className="px-3 sm:px-4 py-2 text-left">Activo</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Valor</th>
+                <th className="px-3 sm:px-4 py-2 text-right">% Actual / Meta</th>
                 {showProjectedColumn && (
-                  <th className="px-4 py-3 text-right">Después</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">Después</th>
                 )}
                 {!showProjectedColumn && (
-                  <th className="px-4 py-3 text-right">Diferencia</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">Diferencia</th>
                 )}
-                <th className="px-4 py-3 text-right">Acción</th>
-                <th className="px-4 py-3 text-right">Monto</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Acción</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Monto</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -436,19 +434,19 @@ export default function PortfolioManagementTable({
                     key={row.ticker}
                     className="hover:bg-muted transition-colors"
                   >
-                    <td className="px-4 py-2 font-bold text-foreground text-sm">
+                    <td className="px-3 sm:px-4 py-1.5 font-bold text-foreground text-sm">
                       {row.ticker}
                     </td>
 
-                    <td className="px-4 py-2 text-right text-muted-foreground text-sm tabular-nums">
-                      {currencySymbol}
+                    <td className="px-3 sm:px-4 py-1.5 text-right text-muted-foreground text-sm tabular-nums">
+                      $
                       {row.currentValue.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
                     </td>
 
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-3 sm:px-4 py-1.5 text-right">
                       {editingTicker === row.ticker ? (
                         <div className="flex items-center justify-end gap-1">
                           <span className="text-sm font-semibold tabular-nums text-muted-foreground">
@@ -524,7 +522,7 @@ export default function PortfolioManagementTable({
                     </td>
 
                     {showProjectedColumn ? (
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-3 sm:px-4 py-1.5 text-right">
                         {proposal && row.targetPct > 0 && (
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-sm font-semibold text-foreground">
@@ -537,7 +535,7 @@ export default function PortfolioManagementTable({
                         )}
                       </td>
                     ) : (
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-3 sm:px-4 py-1.5 text-right">
                         {row.targetPct > 0 && (
                           <span
                             className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
@@ -555,9 +553,9 @@ export default function PortfolioManagementTable({
                     )}
 
                     {calcMode === 'strategy' ? (
-                      renderStrategyAction(row, total, exchangeRate, currencySymbol)
+                      renderStrategyAction(row, total, exchangeRate)
                     ) : (
-                      renderRebalanceAction(proposal, exchangeRate, currencySymbol)
+                      renderRebalanceAction(proposal, exchangeRate)
                     )}
                   </tr>
                 );
@@ -624,20 +622,19 @@ function renderStrategyAction(
     strategySuggestion?: RebalanceSuggestion;
   },
   total: number,
-  exchangeRate: number,
-  currencySymbol: string
+  exchangeRate: number
 ) {
   const isIncorrectStrategy = Math.abs(total - 100) > 0.1;
 
   if (isIncorrectStrategy && row.targetPct > 0) {
     return (
       <>
-        <td className="px-4 py-2 text-right">
+        <td className="px-3 sm:px-4 py-1.5 text-right">
           <span className="inline-flex w-24 items-center justify-center rounded bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
             AJUSTAR %
           </span>
         </td>
-        <td className="px-4 py-2 text-right text-sm text-muted-foreground/40 italic">
+        <td className="px-3 sm:px-4 py-1.5 text-right text-sm text-muted-foreground/40 italic">
           Inválido
         </td>
       </>
@@ -647,7 +644,7 @@ function renderStrategyAction(
   if (row.strategySuggestion && row.strategySuggestion.action !== 'HOLD') {
     return (
       <>
-        <td className="px-4 py-2 text-right">
+        <td className="px-3 sm:px-4 py-1.5 text-right">
           <span
             className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
               ? 'bg-primary/20 text-primary'
@@ -658,8 +655,8 @@ function renderStrategyAction(
             {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
           </span>
         </td>
-        <td className="px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
-          {currencySymbol}
+        <td className="px-3 sm:px-4 py-1.5 text-right text-sm font-medium text-foreground tabular-nums">
+          $
           {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
@@ -672,13 +669,13 @@ function renderStrategyAction(
   if (row.targetPct > 0 && row.currentValue < 0.01) {
     return (
       <>
-        <td className="px-4 py-2 text-right">
+        <td className="px-3 sm:px-4 py-1.5 text-right">
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
             <ArrowUpCircle size={10} />
             Comprar
           </span>
         </td>
-        <td className="px-4 py-2 text-right text-sm font-medium text-muted-foreground tabular-nums">
+        <td className="px-3 sm:px-4 py-1.5 text-right text-sm font-medium text-muted-foreground tabular-nums">
           ---
         </td>
       </>
@@ -688,13 +685,13 @@ function renderStrategyAction(
   if (row.targetPct > 0) {
     return (
       <>
-        <td className="px-4 py-2 text-right">
+        <td className="px-3 sm:px-4 py-2 text-right">
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
         </td>
-        <td className="px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
+        <td className="px-3 sm:px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
           En rango
         </td>
       </>
@@ -703,8 +700,8 @@ function renderStrategyAction(
 
   return (
     <>
-      <td className="px-4 py-2"></td>
-      <td className="px-4 py-2"></td>
+      <td className="px-3 sm:px-4 py-2"></td>
+      <td className="px-3 sm:px-4 py-2"></td>
     </>
   );
 }
@@ -712,26 +709,25 @@ function renderStrategyAction(
 // Helper: Render deposit/rebalance mode action
 function renderRebalanceAction(
   proposal: { action: 'BUY' | 'SELL' | 'HOLD'; amount: number } | undefined,
-  exchangeRate: number,
-  currencySymbol: string
+  exchangeRate: number
 ) {
   if (!proposal) return (
     <>
-      <td className="px-4 py-2"></td>
-      <td className="px-4 py-2"></td>
+      <td className="px-3 sm:px-4 py-2"></td>
+      <td className="px-3 sm:px-4 py-2"></td>
     </>
   );
 
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
       <>
-        <td className="px-4 py-2 text-right">
+        <td className="px-3 sm:px-4 py-2 text-right">
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
         </td>
-        <td className="px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
+        <td className="px-3 sm:px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
           En rango
         </td>
       </>
@@ -742,7 +738,7 @@ function renderRebalanceAction(
 
   return (
     <>
-      <td className="px-4 py-2 text-right">
+      <td className="px-3 sm:px-4 py-2 text-right">
         <span
           className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
             ? 'bg-primary/20 text-primary'
@@ -753,8 +749,8 @@ function renderRebalanceAction(
           {proposal.action === 'BUY' ? 'Comprar' : 'Vender'}
         </span>
       </td>
-      <td className="px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
-        {currencySymbol}
+      <td className="px-3 sm:px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
+        $
         {amountDisplay.toLocaleString('en-US', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,

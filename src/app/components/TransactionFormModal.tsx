@@ -198,11 +198,11 @@ export default function TransactionFormModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6 animate-in fade-in duration-200"
         onClick={onClose}
       >
         <div
-          className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200"
+          className="w-full max-w-lg overflow-hidden rounded-2xl bg-card p-4 sm:p-6 shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="mb-6 flex items-center justify-between">
@@ -285,7 +285,8 @@ export default function TransactionFormModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Comisión */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold uppercase text-muted-foreground">
@@ -337,10 +338,12 @@ export default function TransactionFormModal({
                       setIsGBM(false);
                     }}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-border py-2.5 pl-7 pr-3 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-border py-2.5 pl-7 pr-2 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
+
+              {/* Fecha */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                   Fecha
@@ -349,57 +352,52 @@ export default function TransactionFormModal({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 dark:[color-scheme:dark]"
+                  className="w-full rounded-lg border border-border px-2 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 dark:[color-scheme:dark]"
                 />
               </div>
-            </div>
 
-            {/* Foreign Currency FX Rate Field */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">
-                  Tipo de Cambio (FX)
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer group">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isForeignCurrency}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setIsForeignCurrency(checked);
-                        if (checked) {
-                          setFxRate(usdMxnRate);
-                          setIsGBM(false);
-                        } else {
-                          setFxRate('');
-                        }
-                      }}
-                      className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-border bg-background checked:bg-indigo-600 checked:border-indigo-600 transition-all"
-                    />
-                    <svg
-                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white"
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                    Inversión en USD
-                  </span>
-                </label>
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground/60 text-xs">
-                  MXN/USD
-                </span>
+              {/* T. Cambio */}
+              <div className="col-span-2 sm:col-span-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold uppercase text-muted-foreground">
+                    T. Cambio
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={isForeignCurrency}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setIsForeignCurrency(checked);
+                          if (checked) {
+                            setFxRate(usdMxnRate);
+                            setIsGBM(false);
+                          } else {
+                            setFxRate('');
+                          }
+                        }}
+                        className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-border bg-background checked:bg-indigo-600 checked:border-indigo-600 transition-all"
+                      />
+                      <svg
+                        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white"
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                      USD
+                    </span>
+                  </label>
+                </div>
                 <input
                   type="number"
                   step="0.01"
@@ -411,14 +409,10 @@ export default function TransactionFormModal({
                   }}
                   placeholder={usdMxnRate.toFixed(2)}
                   disabled={!isForeignCurrency}
-                  className={`w-full rounded-lg border border-border py-2.5 pl-16 pr-3 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 ${!isForeignCurrency ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  title={isForeignCurrency ? `Spot actual: $${usdMxnRate.toFixed(2)} — Ingresa el TC aplicado` : 'Activa "USD" para ingresar el tipo de cambio'}
+                  className={`w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 ${!isForeignCurrency ? 'opacity-40 cursor-not-allowed' : 'border-indigo-300 dark:border-indigo-700'}`}
                 />
               </div>
-              {isForeignCurrency && (
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  Spot actual: ${usdMxnRate.toFixed(2)} — Ingresa el TC aplicado
-                </p>
-              )}
             </div>
 
             {error && (
