@@ -148,23 +148,25 @@ export default function PortfolioDashboard({
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <div className="flex flex-col gap-3 border-b border-border pb-6 mb-8">
-            <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="group flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted shrink-0"
-                aria-label="Volver"
-              >
-                <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <PortfolioActions
-                portfolioId={portfolio.id}
-                portfolioName={portfolio.name}
-              />
-            </div>
+          <div className="flex flex-col gap-3 sm:gap-6 border-b border-border pb-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-start sm:items-center gap-3 w-full">
+                <Link
+                  href="/"
+                  className="group flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted shrink-0 mt-1 sm:mt-0"
+                  aria-label="Volver"
+                >
+                  <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-0.5" />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <PortfolioActions
+                    portfolioId={portfolio.id}
+                    portfolioName={portfolio.name}
+                  />
+                </div>
+              </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <div className="flex items-center bg-muted rounded-lg p-1 shrink-0">
+              <div className="flex items-center bg-muted rounded-lg p-1 shrink-0 self-end sm:self-auto">
                 <button
                   onClick={() => updateCurrency('USD')}
                   className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
@@ -184,41 +186,42 @@ export default function PortfolioDashboard({
                   MXN
                 </button>
               </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-6 text-sm w-full sm:w-auto">
-                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-muted-foreground font-medium">
-                    Valor:
-                  </span>
-                  <span className="text-lg font-bold text-foreground">
-                    {formatTotal(totalValue)}
-                  </span>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-start gap-0.5 sm:gap-3 sm:gap-x-8 text-sm w-full">
+              <div className="flex justify-between sm:justify-start items-baseline gap-2 w-full sm:w-auto whitespace-nowrap">
+                <span className="text-base text-muted-foreground font-medium">
+                  Valor:
+                </span>
+                <span className="text-lg font-bold text-foreground">
+                  {formatTotal(totalValue)}
+                </span>
+              </div>
 
-                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-muted-foreground font-medium">
-                    Invertido:
-                  </span>
-                  <span className="text-lg font-bold text-foreground">
-                    {formatTotal(totalInvested)}
-                  </span>
-                </div>
+              <div className="flex justify-between sm:justify-start items-baseline gap-2 w-full sm:w-auto whitespace-nowrap">
+                <span className="text-base text-muted-foreground font-medium">
+                  Invertido:
+                </span>
+                <span className="text-lg font-bold text-foreground">
+                  {formatTotal(totalInvested)}
+                </span>
+              </div>
 
-                <div className="flex justify-between sm:justify-start items-baseline gap-1.5 sm:gap-2 w-full sm:w-auto whitespace-nowrap">
-                  <span className="text-base text-muted-foreground font-medium">
-                    Ganancia:
-                  </span>
-                  <div className="relative group cursor-help flex items-baseline gap-1.5">
-                    <div className="flex items-baseline gap-1.5 border-b border-dotted border-border pb-0.5">
-                      <span className={`text-lg font-bold ${profitColor}`}>
-                        {formatCurrency(totalProfit)}
-                      </span>
-                      <span className={`text-sm font-bold ${profitColor}`}>
-                        ({percentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
-                      </span>
-                    </div>
+              <div className="flex justify-between sm:justify-start items-baseline gap-2 w-full sm:w-auto whitespace-nowrap">
+                <span className="text-base text-muted-foreground font-medium">
+                  Ganancia:
+                </span>
+                <div className="relative group cursor-help flex items-baseline gap-1.5">
+                  <div className="flex items-baseline gap-1.5 border-b border-dotted border-border pb-0.5">
+                    <span className={`text-lg font-bold ${profitColor}`}>
+                      {formatCurrency(totalProfit)}
+                    </span>
+                    <span className={`text-sm font-bold ${profitColor}`}>
+                      ({percentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                    </span>
+                  </div>
 
-                    <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-card p-4 shadow-xl ring-1 ring-border text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-foreground whitespace-normal text-left">
+                  <div className="absolute top-full right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto mt-2 w-56 rounded-xl bg-card p-4 shadow-xl ring-1 ring-border text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0 text-foreground whitespace-normal text-left">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Latente (Actual):</span>
                         <span
@@ -250,7 +253,6 @@ export default function PortfolioDashboard({
               </div>
             </div>
           </div>
-        </div>
 
         <section className="mb-6">
           <PortfolioManagementTable

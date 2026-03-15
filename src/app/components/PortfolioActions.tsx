@@ -182,16 +182,16 @@ export default function PortfolioActions({
 
   return (
     <div
-      className={`group flex items-center gap-2 ${variant === 'card' ? 'w-full justify-between' : ''}`}
+      className={`group flex items-start sm:items-center gap-2 ${variant === 'card' ? 'w-full justify-between' : 'w-full justify-between sm:w-auto sm:justify-start'}`}
     >
       <TitleTag
-        className={`${titleClasses} overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 max-w-[calc(100vw-180px)] sm:max-w-none`}
+        className={`${titleClasses} min-w-0 ${variant === 'card' ? 'flex-1 overflow-hidden whitespace-nowrap text-ellipsis' : 'flex-1 sm:flex-none break-words'}`}
         title={portfolioName}
       >
         {portfolioName}
       </TitleTag>
       <div
-        className={`flex items-center gap-1 shrink-0 ${variant === 'page' ? '' : 'bg-transparent'}`}
+        className={`flex items-center gap-1 shrink-0 mt-1 sm:mt-0 ${variant === 'page' ? '' : 'bg-transparent'}`}
       >
         <button
           onClick={(e) => {
