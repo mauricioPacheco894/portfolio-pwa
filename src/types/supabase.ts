@@ -29,6 +29,7 @@ export interface Database {
           unrealized_pnl: number;
           unrealized_pnl_percent: number;
           currency: string;
+          total_invested_mxn: number;
         }[];
       };
       /**
@@ -44,6 +45,9 @@ export interface Database {
           total_cost_basis: number;
           realized_pnl: number;
           currency: string;
+          total_cost_basis_mxn: number;
+          total_sold_amount_mxn: number;
+          realized_pnl_mxn: number;
         }[];
       };
     };
@@ -104,6 +108,7 @@ export interface Database {
           quantity: number;
           price_per_unit: number;
           fees: number | null;
+          fx_rate: number;
           date: string;
           created_at: string;
         };
@@ -116,6 +121,7 @@ export interface Database {
           quantity: number;
           price_per_unit: number;
           fees?: number | null;
+          fx_rate?: number;
           date: string;
           created_at?: string;
         };
@@ -128,6 +134,7 @@ export interface Database {
           quantity?: number;
           price_per_unit?: number;
           fees?: number | null;
+          fx_rate?: number;
           date?: string;
           created_at?: string;
         };

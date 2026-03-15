@@ -35,6 +35,7 @@ interface Props {
   rebalanceSuggestions: RebalanceSuggestion[];
   usdMxnRate: number;
   totalRealizedPnlUSD: number;
+  totalRealizedPnlMXN: number;
   pagination: {
     page: number;
     totalPages: number;
@@ -50,6 +51,7 @@ export default function PortfolioDashboard({
   rebalanceSuggestions,
   usdMxnRate,
   totalRealizedPnlUSD,
+  totalRealizedPnlMXN,
   pagination,
 }: Props) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
@@ -74,13 +76,26 @@ export default function PortfolioDashboard({
     0
   );
   const totalInvested = holdings.reduce(
-    (sum, h) => sum + (h.totalInvestedGlobal || 0) * exchangeRate,
+    (sum, h) => {
+      if (currency === 'MXN') {
+        // Use FX-adjusted historic cost basis for MXN display
+        return sum + (h.totalInvestedMxn ?? (h.totalInvestedGlobal || 0) * exchangeRate);
+      }
+      return sum + (h.totalInvestedGlobal || 0);
+    },
     0
   );
 
-  const realizedPL = totalRealizedPnlUSD * exchangeRate;
+  const realizedPL = currency === 'MXN' ? totalRealizedPnlMXN : totalRealizedPnlUSD;
   const unrealizedPL = holdings.reduce(
-    (sum, h) => sum + (h.plDollarsGlobal || 0) * exchangeRate,
+    (sum, h) => {
+      if (currency === 'MXN') {
+        const valueMxn = (h.marketValueGlobal || 0) * exchangeRate;
+        const costMxn = h.totalInvestedMxn ?? (h.totalInvestedGlobal || 0) * exchangeRate;
+        return sum + (valueMxn - costMxn);
+      }
+      return sum + (h.plDollarsGlobal || 0);
+    },
     0
   );
 
@@ -265,6 +280,7 @@ export default function PortfolioDashboard({
             portfolioId={portfolio.id}
             pagination={pagination}
             uniqueTickers={uniqueTickers}
+            usdMxnRate={usdMxnRate}
           />
         </section>
       </main>
@@ -279,12 +295,14 @@ function TabsSection({
   portfolioId,
   pagination,
   uniqueTickers,
+  usdMxnRate,
 }: {
   activeHoldings: AssetPosition[];
   transactions: Transaction[];
   portfolioId: string;
   pagination: { page: number; totalPages: number };
   uniqueTickers: string[];
+  usdMxnRate: number;
 }) {
   const [activeTab, setActiveTab] = useState<'positions' | 'transactions'>('positions');
 
@@ -319,7 +337,7 @@ function TabsSection({
         {activeTab === 'transactions' && (
           <div>
             <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-b border-border">
-              <AddTransactionForm portfolioId={portfolioId} availableTickers={uniqueTickers} />
+              <AddTransactionForm portfolioId={portfolioId} availableTickers={uniqueTickers} usdMxnRate={usdMxnRate} />
               <div className="flex-1 sm:max-w-md">
                 <TransactionFilters />
               </div>
@@ -335,6 +353,7 @@ function TabsSection({
                     <th className="px-3 py-2 text-right">Cantidad</th>
                     <th className="px-3 py-2 text-right">Precio Unit.</th>
                     <th className="px-3 py-2 text-right">Comisión</th>
+                    <th className="px-3 py-2 text-right">T. Cambio</th>
                     <th className="px-3 py-2 text-right">Total</th>
                     <th className="px-3 py-2 text-center">Acciones</th>
                   </tr>
@@ -343,7 +362,7 @@ function TabsSection({
                   {transactions.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="px-3 py-4 text-center text-muted-foreground"
                       >
                         No hay transacciones registradas aún
@@ -394,6 +413,15 @@ function TabsSection({
                           <td className="px-3 py-2 text-right font-mono text-foreground/80">
                             ${fees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
+                          <td className="px-3 py-2 text-right font-mono text-foreground/80">
+                            {t.fx_rate !== 1 ? (
+                              <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                                {Number(t.fx_rate).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </td>
                           <td className="px-3 py-2 font-semibold text-right text-foreground">
                             ${total}
                           </td>
@@ -401,6 +429,7 @@ function TabsSection({
                             <TransactionActions
                               transaction={t}
                               portfolioId={portfolioId}
+                              usdMxnRate={usdMxnRate}
                             />
                           </td>
                         </tr>

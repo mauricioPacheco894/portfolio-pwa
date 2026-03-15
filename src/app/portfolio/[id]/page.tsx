@@ -112,14 +112,16 @@ export default async function Page({ params, searchParams }: Props) {
     console.error('Error fetching RPC positions:', rpcResult.error);
   }
 
-  // Build realized P&L map and calculate total in USD
+  // Build realized P&L map and calculate total in USD and MXN
   const pnlMap = new Map<string, number>();
   let totalRealizedPnlUSD = 0;
+  let totalRealizedPnlMXN = 0;
 
-  pnlValues.forEach((p: { ticker: string; realized_pnl: number; currency: string }) => {
+  pnlValues.forEach((p: Database['public']['Functions']['get_realized_pnl']['Returns'][0]) => {
     pnlMap.set(p.ticker, p.realized_pnl);
     const isMxn = p.currency === 'MXN';
     totalRealizedPnlUSD += isMxn ? p.realized_pnl / usdMxnRate : p.realized_pnl;
+    totalRealizedPnlMXN += isMxn ? p.realized_pnl : (Number(p.realized_pnl_mxn) ?? p.realized_pnl * usdMxnRate);
   });
 
   // Build price map for rebalancing calculations
@@ -162,6 +164,7 @@ export default async function Page({ params, searchParams }: Props) {
         marketValueGlobal,
         totalInvestedGlobal,
         plDollarsGlobal,
+        totalInvestedMxn: Number(pos.total_invested_mxn),
       } as AssetPosition;
     }
   );
@@ -190,6 +193,7 @@ export default async function Page({ params, searchParams }: Props) {
       rebalanceSuggestions={rebalanceSuggestions}
       usdMxnRate={usdMxnRate}
       totalRealizedPnlUSD={totalRealizedPnlUSD}
+      totalRealizedPnlMXN={totalRealizedPnlMXN}
       pagination={{ page, totalPages }}
     />
   );

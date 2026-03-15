@@ -31,6 +31,8 @@ export interface AssetPosition {
   totalInvestedGlobal?: number;
   /** P&L normalized to USD */
   plDollarsGlobal?: number;
+  /** Cost basis in MXN using actual fx_rate from transactions */
+  totalInvestedMxn?: number;
   lastUpdated?: string;
 }
 
@@ -52,6 +54,7 @@ export interface TransactionFormData {
   quantity: number;
   price_per_unit: number;
   fees: number;
+  fx_rate: number;
   date: string;
   portfolio_id: string;
 }

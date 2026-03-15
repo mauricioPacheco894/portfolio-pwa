@@ -23,11 +23,13 @@ type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Props = {
   transaction: Transaction;
   portfolioId: string;
+  usdMxnRate?: number;
 };
 
 export default function TransactionActions({
   transaction,
   portfolioId,
+  usdMxnRate,
 }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -78,6 +80,7 @@ export default function TransactionActions({
     quantity: transaction.quantity,
     price_per_unit: transaction.price_per_unit,
     fees: transaction.fees || 0,
+    fx_rate: transaction.fx_rate,
     date: transaction.date,
     portfolio_id: portfolioId,
   };
@@ -107,6 +110,7 @@ export default function TransactionActions({
         onClose={() => setIsEditOpen(false)}
         portfolioId={portfolioId}
         initialData={transactionData}
+        usdMxnRate={usdMxnRate}
       />
     </>
   );

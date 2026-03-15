@@ -25,6 +25,7 @@ export interface TransactionData {
   quantity: number;
   price_per_unit: number;
   fees: number;
+  fx_rate: number;
   date: string;
   portfolio_id: string;
 }
@@ -35,6 +36,7 @@ type Props = {
   portfolioId: string;
   initialData?: TransactionData | null;
   availableTickers?: string[];
+  usdMxnRate?: number;
 };
 
 export default function TransactionFormModal({
@@ -43,6 +45,7 @@ export default function TransactionFormModal({
   portfolioId,
   initialData,
   availableTickers = [],
+  usdMxnRate = 20,
 }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -53,11 +56,13 @@ export default function TransactionFormModal({
   const [quantity, setQuantity] = useState<number | ''>('');
   const [price, setPrice] = useState<number | ''>('');
   const [fees, setFees] = useState<number | ''>('');
+  const [fxRate, setFxRate] = useState<number | ''>('');
   const [date, setDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [isGBM, setIsGBM] = useState(false);
+  const [isForeignCurrency, setIsForeignCurrency] = useState(false);
 
   useEffect(() => {
     if (isOpen && initialData) {
@@ -66,6 +71,8 @@ export default function TransactionFormModal({
       setQuantity(initialData.quantity);
       setPrice(initialData.price_per_unit);
       setFees(initialData.fees || 0);
+      setFxRate(initialData.fx_rate ?? 1);
+      setIsForeignCurrency(initialData.fx_rate != null && initialData.fx_rate !== 1);
 
       const dateObj = new Date(initialData.date);
       const formattedDate = dateObj.toISOString().split('T')[0];
@@ -76,8 +83,10 @@ export default function TransactionFormModal({
       setQuantity('');
       setPrice('');
       setFees('');
+      setFxRate('');
       setDate(new Date().toISOString().split('T')[0]);
       setIsGBM(false);
+      setIsForeignCurrency(false);
     }
     setError('');
   }, [isOpen, initialData]);
@@ -131,6 +140,7 @@ export default function TransactionFormModal({
         quantity: Number(quantity),
         price_per_unit: Number(price),
         fees: fees ? Number(fees) : 0,
+        fx_rate: isForeignCurrency && fxRate ? Number(fxRate) : 1,
         date: submitDate,
       };
 
@@ -342,6 +352,73 @@ export default function TransactionFormModal({
                   className="w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 dark:[color-scheme:dark]"
                 />
               </div>
+            </div>
+
+            {/* Foreign Currency FX Rate Field */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase text-muted-foreground">
+                  Tipo de Cambio (FX)
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer group">
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={isForeignCurrency}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsForeignCurrency(checked);
+                        if (checked) {
+                          setFxRate(usdMxnRate);
+                          setIsGBM(false);
+                        } else {
+                          setFxRate('');
+                        }
+                      }}
+                      className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-border bg-background checked:bg-indigo-600 checked:border-indigo-600 transition-all"
+                    />
+                    <svg
+                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white"
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    Inversión en USD
+                  </span>
+                </label>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-muted-foreground/60 text-xs">
+                  MXN/USD
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={fxRate}
+                  onChange={(e) => {
+                    setFxRate(
+                      e.target.value === '' ? '' : Number(e.target.value)
+                    );
+                  }}
+                  placeholder={usdMxnRate.toFixed(2)}
+                  disabled={!isForeignCurrency}
+                  className={`w-full rounded-lg border border-border py-2.5 pl-16 pr-3 text-sm bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 ${!isForeignCurrency ? 'opacity-40 cursor-not-allowed' : ''}`}
+                />
+              </div>
+              {isForeignCurrency && (
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Spot actual: ${usdMxnRate.toFixed(2)} — Ingresa el TC aplicado
+                </p>
+              )}
             </div>
 
             {error && (
