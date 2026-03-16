@@ -307,8 +307,8 @@ export default function PortfolioManagementTable({
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <h3 className="text-base font-semibold text-foreground">
             Gestión de Portafolio
           </h3>
@@ -351,7 +351,7 @@ export default function PortfolioManagementTable({
 
           {calcMode === 'deposit' && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">·</span>
+              <span className="hidden sm:inline-block text-sm text-muted-foreground">·</span>
               <div className="relative">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground/50">
                   $
@@ -360,7 +360,7 @@ export default function PortfolioManagementTable({
                   type="number"
                   min="0"
                   step="100"
-                  className="w-36 rounded-lg border border-border bg-background py-1 pr-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary pl-6"
+                  className="w-28 sm:w-36 rounded-lg border border-border bg-background py-1 pr-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary pl-6"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
                 />
@@ -408,8 +408,8 @@ export default function PortfolioManagementTable({
       )}
 
       <div className="p-4 sm:p-6">
-        <div className="max-h-[500px] overflow-y-auto">
-          <table className="w-full text-sm">
+        <div className="max-h-[500px] overflow-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm">
               <tr>
                 <th className="px-3 sm:px-4 py-2 text-left">Activo</th>
@@ -448,7 +448,7 @@ export default function PortfolioManagementTable({
 
                     <td className="px-3 sm:px-4 py-1.5 text-right">
                       {editingTicker === row.ticker ? (
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                           <span className="text-sm font-semibold tabular-nums text-muted-foreground">
                             {row.currentPct.toFixed(1)}%
                           </span>
@@ -475,7 +475,7 @@ export default function PortfolioManagementTable({
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                           <span
                             className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
                               ? 'text-muted-foreground'
@@ -524,7 +524,7 @@ export default function PortfolioManagementTable({
                     {showProjectedColumn ? (
                       <td className="px-3 sm:px-4 py-1.5 text-right">
                         {proposal && row.targetPct > 0 && (
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             <span className="text-sm font-semibold text-foreground">
                               {proposal.projectedPct?.toFixed(1)}%
                             </span>
@@ -535,7 +535,7 @@ export default function PortfolioManagementTable({
                         )}
                       </td>
                     ) : (
-                      <td className="px-3 sm:px-4 py-1.5 text-right">
+                      <td className="px-3 sm:px-4 py-1.5 text-right whitespace-nowrap">
                         {row.targetPct > 0 && (
                           <span
                             className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
