@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import AddTransactionForm from './AddTransactionForm';
 import { Header } from './Header';
@@ -55,13 +55,24 @@ export default function PortfolioDashboard({
   pagination,
 }: Props) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
+  const [showValues, setShowValues] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem('portfolio_currency');
     if (saved === 'MXN') {
       setCurrency('MXN');
     }
+    const savedVis = localStorage.getItem('portfolio_visibility');
+    if (savedVis === 'hidden') {
+      setShowValues(false);
+    }
   }, []);
+
+  const toggleVisibility = () => {
+    const newVal = !showValues;
+    setShowValues(newVal);
+    localStorage.setItem('portfolio_visibility', newVal ? 'visible' : 'hidden');
+  };
 
   const updateCurrency = (newCurrency: 'USD' | 'MXN') => {
     setCurrency(newCurrency);
@@ -107,18 +118,22 @@ export default function PortfolioDashboard({
     ? 'text-emerald-600 dark:text-emerald-400'
     : 'text-red-600 dark:text-red-400';
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('en-US', {
+  const formatCurrency = (val: number) => {
+    if (!showValues) return '****';
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       signDisplay: 'always',
     }).format(val);
+  };
 
-  const formatTotal = (val: number) =>
-    new Intl.NumberFormat('en-US', {
+  const formatTotal = (val: number) => {
+    if (!showValues) return '****';
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
     }).format(val);
+  };
 
   // Consolidate holdings by normalized ticker for charts (USD base)
   const consolidatedMapUSD: Record<string, number> = {};
@@ -166,25 +181,35 @@ export default function PortfolioDashboard({
                 </div>
               </div>
 
-              <div className="flex items-center bg-muted rounded-lg p-1 shrink-0 self-end sm:self-auto">
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                 <button
-                  onClick={() => updateCurrency('USD')}
-                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
-                    ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                  onClick={toggleVisibility}
+                  className="flex items-center justify-center p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  aria-label={showValues ? 'Ocultar valores' : 'Mostrar valores'}
+                  title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
                 >
-                  USD
+                  {showValues ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
-                <button
-                  onClick={() => updateCurrency('MXN')}
-                  className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
-                    ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                >
-                  MXN
-                </button>
+                <div className="flex items-center bg-muted rounded-lg p-1">
+                  <button
+                    onClick={() => updateCurrency('USD')}
+                    className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'USD'
+                      ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    USD
+                  </button>
+                  <button
+                    onClick={() => updateCurrency('MXN')}
+                    className={`px-3 py-1 rounded-md text-sm font-semibold transition-all ${currency === 'MXN'
+                      ? 'bg-white dark:bg-primary text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    MXN
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -217,7 +242,7 @@ export default function PortfolioDashboard({
                       {formatCurrency(totalProfit)}
                     </span>
                     <span className={`text-sm font-bold ${profitColor}`}>
-                      ({percentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                      ({showValues ? `${percentage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '***'})
                     </span>
                   </div>
 
