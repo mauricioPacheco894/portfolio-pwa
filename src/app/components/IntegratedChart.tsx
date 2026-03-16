@@ -83,7 +83,7 @@ export default function IntegratedChart({ holdings }: IntegratedChartProps) {
             label={({
               cx, cy, midAngle, outerRadius, percent, name,
             }: any) => {
-              if (percent < 0.03) return null;
+              if (percent < 0.01) return null;
 
               const RADIAN = Math.PI / 180;
               const sin = Math.sin(-midAngle * RADIAN);
