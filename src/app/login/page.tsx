@@ -7,7 +7,7 @@
  * Uses Supabase Auth for identity management.
  */
 
-import { Lock, LogIn, Mail, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Lock, LogIn, Mail, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   /**
    * Handles both sign-in and sign-up based on the current state.
@@ -116,13 +117,21 @@ export default function LoginPage() {
                   size={20}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-lg border border-border bg-background pl-10 pr-4 py-2 text-foreground placeholder-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border bg-background pl-10 pr-10 py-2 text-foreground placeholder-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[10px] text-muted-foreground/50 hover:text-foreground transition-colors focus:outline-none"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
