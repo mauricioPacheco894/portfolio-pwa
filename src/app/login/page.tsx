@@ -165,6 +165,16 @@ export default function LoginPage() {
                 {isSignUp ? 'Inicia sesión' : 'Regístrate'}
               </button>
             </p>
+            {!isSignUp && (
+              <p className="mt-2 text-center text-sm">
+                <a
+                  href="/forgot-password"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </p>
+            )}
           </div>
         </div>
       </div>
