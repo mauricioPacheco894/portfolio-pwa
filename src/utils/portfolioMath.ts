@@ -267,15 +267,24 @@ export function calculateRebalancing(
     const targetVal = totalPortfolioValue * (targetPct / 100);
     const diffVal = targetVal - currentVal;
 
-    // Dynamic tolerance based on position size
-    const tolerance = targetPct <= 6.0 ? 2.5 : 3.0;
-    const sellThreshold = targetPct + tolerance;
+    // Tolerancia base: 20% del porcentaje meta
+    const relativeTolerance = 0.20;
+    const calculatedTolerance = targetPct * relativeTolerance;
+    
+    // Límite para la tolerancia inferior (compra): entre 1.5% y 5.0% absoluto
+    const lowerTolerance = Math.max(1.5, Math.min(calculatedTolerance, 5.0));
+    
+    // Banda superior más amplia: 1.5 veces la inferior para dejar "correr" más las ganancias
+    const upperTolerance = lowerTolerance * 1.5;
+
+    const sellThreshold = targetPct + upperTolerance;
+    const buyThreshold = targetPct - lowerTolerance;
 
     let action: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
 
     if (currentPct >= sellThreshold) {
       action = 'SELL';
-    } else if (currentPct < targetPct) {
+    } else if (currentPct <= buyThreshold) {
       action = 'BUY';
     }
 
