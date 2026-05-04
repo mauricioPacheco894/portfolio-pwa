@@ -52,6 +52,7 @@ export default function TransactionFormModal({
   const [isPending, startTransition] = useTransition();
 
   const [ticker, setTicker] = useState('');
+  const [exchange, setExchange] = useState('');
   const [type, setType] = useState<'BUY' | 'SELL'>('BUY');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [price, setPrice] = useState<number | ''>('');
@@ -66,7 +67,19 @@ export default function TransactionFormModal({
 
   useEffect(() => {
     if (isOpen && initialData) {
-      setTicker(initialData.ticker);
+      let initTicker = initialData.ticker;
+      let initExchange = '';
+      if (initTicker.includes(':')) {
+        const parts = initTicker.split(':');
+        initTicker = parts[0];
+        initExchange = ':' + parts[1];
+      } else if (initTicker.endsWith('.MX')) {
+        initTicker = initTicker.replace('.MX', '');
+        initExchange = ':BMV';
+      }
+
+      setTicker(initTicker);
+      setExchange(initExchange);
       setType(initialData.type);
       setQuantity(initialData.quantity);
       setPrice(initialData.price_per_unit);
@@ -79,6 +92,7 @@ export default function TransactionFormModal({
       setDate(formattedDate);
     } else if (isOpen && !initialData) {
       setTicker('');
+      setExchange('');
       setType('BUY');
       setQuantity('');
       setPrice('');
@@ -132,10 +146,16 @@ export default function TransactionFormModal({
         submitDate = new Date().toISOString();
       }
 
+      let cleanTicker = ticker.toUpperCase().trim();
+      if (cleanTicker.includes(':')) {
+        cleanTicker = cleanTicker.split(':')[0];
+      }
+      const finalTicker = `${cleanTicker}${exchange}`;
+
       const payload = {
         portfolio_id: portfolioId,
         user_id: user.id,
-        ticker: ticker.toUpperCase(),
+        ticker: finalTicker,
         type,
         quantity: Number(quantity),
         price_per_unit: Number(price),
@@ -222,15 +242,30 @@ export default function TransactionFormModal({
               <label className="mb-1.5 block text-xs font-semibold uppercase text-muted-foreground">
                 Activo
               </label>
-              <div className="flex gap-3">
-                <TickerAutocomplete
-                  value={ticker}
-                  onChange={setTicker}
-                  suggestions={[...KNOWN_TICKERS, ...availableTickers]}
-                  placeholder="Ticker (ej: AAPL)"
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  autoFocus={!initialData}
-                />
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-1">
+                  <TickerAutocomplete
+                    value={ticker}
+                    onChange={setTicker}
+                    suggestions={Array.from(new Set([...KNOWN_TICKERS, ...availableTickers].map(t => {
+                      let clean = t;
+                      if (clean.includes(':')) clean = clean.split(':')[0];
+                      if (clean.endsWith('.MX')) clean = clean.replace('.MX', '');
+                      return clean;
+                    })))}
+                    placeholder="Ticker (ej: AAPL)"
+                    className="w-full rounded-lg border border-border px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    autoFocus={!initialData}
+                  />
+                </div>
+                <select
+                  value={exchange}
+                  onChange={(e) => setExchange(e.target.value)}
+                  className="rounded-lg border border-border px-2 sm:px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">US</option>
+                  <option value=":BMV">MX</option>
+                </select>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as 'BUY' | 'SELL')}
