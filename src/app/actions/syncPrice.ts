@@ -28,57 +28,60 @@ function getExchangesForTicker(ticker: string): string[] {
     return ['NASDAQ', 'NYSE', 'BMV', 'NYSEARCA']
 }
 
-// EXPRESIÓN REGULAR HOISTEADA (Regla js-hoist-regexp)
-const PRICE_REGEX = /class="YMlKec fxKbKc">\$?([0-9,.]+)</;
+// EXPRESIÓN REGULAR HOISTEADA (Regla js-hoist-regexp) - Eliminada por uso de API JSON
 
 /**
- * Scraper optimizado con Regex para máxima velocidad.
+ * Convierte el ticker al formato que Yahoo Finance espera.
  */
-async function fetchPriceFromGoogle(ticker: string): Promise<{ price: number, currency: string } | null> {
-    const cleanTicker = ticker.replace('.MX', '').split(':')[0]
-    const exchanges = getExchangesForTicker(ticker)
-
-    for (const exchange of exchanges) {
-        try {
-            const suffix = exchange ? `:${exchange}` : '';
-            const url = `https://www.google.com/finance/quote/${cleanTicker}${suffix}`
-
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-                next: { revalidate: 0 } // No cache para acciones inmediatas
-            })
-
-            if (!response.ok) continue
-
-            const html = await response.text()
-
-            // BÚSQUEDA POR REGEX (Súper rápida con regex pre-compilada)
-            const match = html.match(PRICE_REGEX);
-            let price: number | null = null;
-
-            if (match?.[1]) {
-                price = parseFloat(match[1].replace(/,/g, ''));
-            } else {
-                // Fallback a Cheerio solo si falla el Regex
-                const $ = cheerio.load(html.substring(0, 150000))
-                const priceText = $('div.YMlKec.fxKbKc').first().text()
-                price = priceText ? parseFloat(priceText.replace(/[$,\s]/g, '')) : null
-            }
-
-            if (price && price > 0) {
-                const isMexican = exchange === 'BMV' ||
-                    ticker.toUpperCase().endsWith('.MX') ||
-                    ticker.toUpperCase().endsWith(':BMV') ||
-                    ticker === 'USD-MXN';
-
-                return { price, currency: isMexican ? 'MXN' : 'USD' }
-            }
-        } catch (e) {
-            console.error(`Error scraping ${ticker} on ${exchange}:`, e)
-            continue
-        }
+function getYahooTicker(ticker: string): string {
+    const upperTicker = ticker.toUpperCase();
+    if (upperTicker === 'USD-MXN') return 'USDMXN=X';
+    
+    let cleanTicker = upperTicker.split(':')[0];
+    
+    // Si ya tiene .MX, lo dejamos
+    if (cleanTicker.endsWith('.MX')) return cleanTicker;
+    
+    // Si es del mercado mexicano, le agregamos .MX
+    if (upperTicker.endsWith(':BMV') || EXCHANGE_MAP[cleanTicker] === 'BMV') {
+        return `${cleanTicker}.MX`;
     }
-    return null
+    
+    return cleanTicker;
+}
+
+/**
+ * Scraper optimizado usando la API JSON pública de Yahoo Finance.
+ * Más rápido y mucho más estable que hacer scraping de HTML en Google.
+ */
+async function fetchPrice(ticker: string): Promise<{ price: number, currency: string } | null> {
+    const yahooTicker = getYahooTicker(ticker);
+    
+    try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}`;
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+            next: { revalidate: 0 } // No cache
+        });
+
+        if (!response.ok) {
+            console.error(`Error fetching from Yahoo for ${yahooTicker}: HTTP ${response.status}`);
+            return null;
+        }
+
+        const json = await response.json();
+        const result = json.chart?.result?.[0];
+        
+        if (result && result.meta && result.meta.regularMarketPrice) {
+            return {
+                price: result.meta.regularMarketPrice,
+                currency: result.meta.currency || 'USD'
+            };
+        }
+    } catch (e) {
+        console.error(`Error fetching ${ticker} from Yahoo:`, e);
+    }
+    return null;
 }
 
 /**
@@ -101,13 +104,13 @@ export async function syncSingleTickerPrice(ticker: string) {
 
         console.log(`🚀 Fast Sync (Server Side) for ${upperTicker}...`);
 
-        // Regla async-parallel: Ejecutar el scraper y la consulta de la DB en paralelo para eliminar el waterfall
+        // Regla async-parallel: Ejecutar el fetch y la consulta de la DB en paralelo para eliminar el waterfall
         const isMexican = upperTicker.endsWith('.MX') ||
             upperTicker.endsWith(':BMV') ||
             upperTicker === 'USD-MXN';
 
         const [result, existingCurrencyData] = await Promise.all([
-            fetchPriceFromGoogle(upperTicker),
+            fetchPrice(upperTicker),
             !isMexican ? supabase
                 .from('asset_prices')
                 .select('currency')
