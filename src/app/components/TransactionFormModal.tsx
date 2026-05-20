@@ -272,7 +272,9 @@ export default function TransactionFormModal({
                   value={exchange}
                   onChange={(e) => setExchange(e.target.value)}
                   required
-                  className="rounded-lg border border-border px-2 sm:px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className={`rounded-lg border border-border px-3 py-2.5 text-sm font-medium bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                    !exchange ? 'text-muted-foreground' : 'text-foreground'
+                  }`}
                 >
                   <option value="" disabled hidden>Bolsa</option>
                   <option value="US">US</option>
@@ -281,7 +283,7 @@ export default function TransactionFormModal({
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as 'BUY' | 'SELL')}
-                  className="rounded-lg border border-border px-3 py-2.5 text-sm font-bold bg-muted text-foreground"
+                  className="rounded-lg border border-border px-3 py-2.5 text-sm font-semibold bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 >
                   <option value="BUY">BUY</option>
                   <option value="SELL">SELL</option>
