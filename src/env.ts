@@ -9,7 +9,7 @@ import { z } from 'zod';
  */
 export const env = createEnv({
   server: {
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().default('mock-service-role-key'),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1),

@@ -12,11 +12,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import toast from 'react-hot-toast';
 
+import { syncSingleTickerPrice } from '@/app/actions/syncPrice';
+import { KNOWN_TICKERS } from '@/constants/tickers';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { KNOWN_TICKERS } from '@/constants/tickers';
+
 import TickerAutocomplete from './TickerAutocomplete';
-import { syncSingleTickerPrice } from '@/app/actions/syncPrice';
 
 export interface TransactionData {
   id?: string;
@@ -49,7 +50,7 @@ export default function TransactionFormModal({
 }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [ticker, setTicker] = useState('');
   const [exchange, setExchange] = useState('');
@@ -76,6 +77,8 @@ export default function TransactionFormModal({
       } else if (initTicker.endsWith('.MX')) {
         initTicker = initTicker.replace('.MX', '');
         initExchange = ':BMV';
+      } else {
+        initExchange = 'US';
       }
 
       setTicker(initTicker);
@@ -136,6 +139,13 @@ export default function TransactionFormModal({
 
     setLoading(true);
 
+    if (!exchange) {
+      setError('Por favor selecciona una bolsa (US o MX)');
+      toast.error('Por favor selecciona una bolsa (US o MX)');
+      setLoading(false);
+      return;
+    }
+
     try {
       let submitDate: string;
       if (date) {
@@ -150,7 +160,7 @@ export default function TransactionFormModal({
       if (cleanTicker.includes(':')) {
         cleanTicker = cleanTicker.split(':')[0];
       }
-      const finalTicker = `${cleanTicker}${exchange}`;
+      const finalTicker = `${cleanTicker}${exchange === ':BMV' ? ':BMV' : ''}`;
 
       const payload = {
         portfolio_id: portfolioId,
@@ -261,9 +271,11 @@ export default function TransactionFormModal({
                 <select
                   value={exchange}
                   onChange={(e) => setExchange(e.target.value)}
+                  required
                   className="rounded-lg border border-border px-2 sm:px-3 py-2.5 text-sm font-medium bg-background text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
-                  <option value="">US</option>
+                  <option value="" disabled hidden>Bolsa</option>
+                  <option value="US">US</option>
                   <option value=":BMV">MX</option>
                 </select>
                 <select
