@@ -5,31 +5,11 @@
  * All prices are pre-populated via external sync jobs.
  */
 
+import { EXCHANGE_MAP as BASE_EXCHANGE_MAP } from '@/constants/tickers';
 import { createClient } from '@/lib/supabaseServer';
 
 /** Known exchange mappings for common tickers */
-const EXCHANGE_MAP: Record<string, string> = {
-  // NASDAQ
-  AAPL: 'NASDAQ', MSFT: 'NASDAQ', GOOGL: 'NASDAQ', GOOG: 'NASDAQ', AMZN: 'NASDAQ',
-  META: 'NASDAQ', TSLA: 'NASDAQ', NVDA: 'NASDAQ', NFLX: 'NASDAQ', AMD: 'NASDAQ',
-  INTC: 'NASDAQ', PYPL: 'NASDAQ', ADBE: 'NASDAQ', CSCO: 'NASDAQ', CMCSA: 'NASDAQ',
-  PEP: 'NASDAQ', COST: 'NASDAQ', AVGO: 'NASDAQ', QCOM: 'NASDAQ', TXN: 'NASDAQ',
-  SBUX: 'NASDAQ', BND: 'NASDAQ', QQQ: 'NASDAQ',
-  // NYSE
-  JPM: 'NYSE', V: 'NYSE', JNJ: 'NYSE', WMT: 'NYSE', PG: 'NYSE', MA: 'NYSE',
-  UNH: 'NYSE', HD: 'NYSE', DIS: 'NYSE', BAC: 'NYSE', XOM: 'NYSE', KO: 'NYSE',
-  PFE: 'NYSE', VZ: 'NYSE', T: 'NYSE', MRK: 'NYSE', CVX: 'NYSE', WFC: 'NYSE',
-  ABT: 'NYSE', TMO: 'NYSE', NKE: 'NYSE', MCD: 'NYSE', LLY: 'NYSE', DHR: 'NYSE',
-  NEE: 'NYSE', PM: 'NYSE', UNP: 'NYSE', IBM: 'NYSE', RTX: 'NYSE', HON: 'NYSE',
-  LOW: 'NYSE', CAT: 'NYSE', GE: 'NYSE', BA: 'NYSE', GS: 'NYSE', BLK: 'NYSE',
-  MMM: 'NYSE', AXP: 'NYSE', SPGI: 'NYSE',
-  // ETFs (NYSEARCA)
-  SPY: 'NYSEARCA', VOO: 'NYSEARCA', VTI: 'NYSEARCA', IVV: 'NYSEARCA',
-  VEA: 'NYSEARCA', VWO: 'NYSEARCA', VNQ: 'NYSEARCA', AGG: 'NYSEARCA',
-  VIG: 'NYSEARCA', VYM: 'NYSEARCA', SCHD: 'NYSEARCA', VGT: 'NYSEARCA',
-  XLK: 'NYSEARCA', XLF: 'NYSEARCA', XLE: 'NYSEARCA', XLV: 'NYSEARCA',
-  XLI: 'NYSEARCA', XLY: 'NYSEARCA', XLP: 'NYSEARCA', ARKK: 'NYSEARCA',
-};
+const EXCHANGE_MAP: Record<string, string> = { ...BASE_EXCHANGE_MAP };
 
 /**
  * Fetches current prices from the database.

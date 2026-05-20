@@ -6,7 +6,7 @@
  */
 
 /** Known exchange mappings for common tickers */
-const EXCHANGE_MAP: Record<string, string> = {
+export const EXCHANGE_MAP: Record<string, string> = {
     // --- NASDAQ (Tech & Growth) ---
     AAPL: 'NASDAQ',
     MSFT: 'NASDAQ',
