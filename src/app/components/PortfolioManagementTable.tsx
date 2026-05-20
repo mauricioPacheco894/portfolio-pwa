@@ -523,7 +523,7 @@ export default function PortfolioManagementTable({
 
                     {showProjectedColumn ? (
                       <td className="px-3 sm:px-4 py-1.5 text-right">
-                        {proposal && row.targetPct > 0 && (
+                        {proposal && row.targetPct > 0 ? (
                           <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             <span className="text-sm font-semibold text-foreground">
                               {proposal.projectedPct?.toFixed(1)}%
@@ -532,11 +532,13 @@ export default function PortfolioManagementTable({
                               / {row.targetPct.toFixed(1)}%
                             </span>
                           </div>
+                        ) : (
+                          <span className="text-sm font-medium text-muted-foreground/30">—</span>
                         )}
                       </td>
                     ) : (
                       <td className="px-3 sm:px-4 py-1.5 text-right whitespace-nowrap">
-                        {row.targetPct > 0 && (
+                        {row.targetPct > 0 ? (
                           <span
                             className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
                               ? 'text-primary'
@@ -548,6 +550,8 @@ export default function PortfolioManagementTable({
                             {row.targetPct - row.currentPct >= 0 ? '+' : ''}
                             {(row.targetPct - row.currentPct).toFixed(2)}%
                           </span>
+                        ) : (
+                          <span className="text-sm font-medium text-muted-foreground/30">—</span>
                         )}
                       </td>
                     )}
@@ -555,7 +559,7 @@ export default function PortfolioManagementTable({
                     {calcMode === 'strategy' ? (
                       renderStrategyAction(row, total, exchangeRate)
                     ) : (
-                      renderRebalanceAction(proposal, exchangeRate)
+                      renderRebalanceAction(proposal, row.targetPct, exchangeRate)
                     )}
                   </tr>
                 );
@@ -700,8 +704,14 @@ function renderStrategyAction(
 
   return (
     <>
-      <td className="px-3 sm:px-4 py-2"></td>
-      <td className="px-3 sm:px-4 py-2"></td>
+      <td className="px-3 sm:px-4 py-2 text-right">
+        <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
+          Sin meta
+        </span>
+      </td>
+      <td className="px-3 sm:px-4 py-2 text-right">
+        <span className="text-sm text-muted-foreground/30 font-medium">—</span>
+      </td>
     </>
   );
 }
@@ -709,14 +719,23 @@ function renderStrategyAction(
 // Helper: Render deposit/rebalance mode action
 function renderRebalanceAction(
   proposal: { action: 'BUY' | 'SELL' | 'HOLD'; amount: number } | undefined,
+  targetPct: number,
   exchangeRate: number
 ) {
-  if (!proposal) return (
-    <>
-      <td className="px-3 sm:px-4 py-2"></td>
-      <td className="px-3 sm:px-4 py-2"></td>
-    </>
-  );
+  if (!proposal || (targetPct === 0 && (proposal.action === 'HOLD' || proposal.amount < 0.01))) {
+    return (
+      <>
+        <td className="px-3 sm:px-4 py-2 text-right">
+          <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
+            Sin meta
+          </span>
+        </td>
+        <td className="px-3 sm:px-4 py-2 text-right">
+          <span className="text-sm text-muted-foreground/30 font-medium">—</span>
+        </td>
+      </>
+    );
+  }
 
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
