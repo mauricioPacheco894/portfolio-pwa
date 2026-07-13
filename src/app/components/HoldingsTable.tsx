@@ -15,6 +15,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-
 import { useMemo, useState } from 'react';
 import { AssetPosition } from '@/types/portfolio';
 import { CurrencyBadge } from './ui/CurrencyBadge';
+import { currencyFormatter, currencyFormatterWithSign } from '@/utils/formatters';
 
 type SortKey = keyof AssetPosition;
 type SortDirection = 'asc' | 'desc';
@@ -42,29 +43,6 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
       else next.add(ticker);
       return next;
     });
-  };
-
-  const currencyFormatter = (
-    value: number
-  ) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD', // Still use USD style for the $ symbol
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const currencyFormatterWithSign = (
-    value: number
-  ) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      signDisplay: 'always',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
 
