@@ -7,41 +7,41 @@
  * Handles USD/MXN conversion for display and consolidates holdings for charts.
  */
 
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronUp,Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import AddTransactionForm from './AddTransactionForm';
-import { Header } from './Header';
-import PaginationControls from './PaginationControls';
-import HoldingsTable from './HoldingsTable';
-import TransactionsTable from './TransactionsTable';
-import PortfolioActions from './PortfolioActions';
-import PortfolioChartModal from './PortfolioChartModal';
-import PortfolioManagementTable from './PortfolioManagementTable';
-import TransactionActions from './TransactionActions';
-import TransactionFilters from './TransactionFilters';
+import { useEffect,useState } from 'react';
+
+import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
 import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
-import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
+
+import AddTransactionForm from './AddTransactionForm';
+import { Header } from './Header';
+import HoldingsTable from './HoldingsTable';
+import PaginationControls from './PaginationControls';
+import PerformanceChart from './PerformanceChart';
+import PortfolioActions from './PortfolioActions';
+import PortfolioChartModal from './PortfolioChartModal';
 import PortfolioHeaderStats from './PortfolioHeaderStats';
+import PortfolioManagementTable from './PortfolioManagementTable';
+import TransactionFilters from './TransactionFilters';
+import TransactionsTable from './TransactionsTable';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
-interface Props {
+interface PortfolioDashboardProps {
   portfolio: Portfolio;
   holdings: AssetPosition[];
   activeHoldings: AssetPosition[];
   transactions: Transaction[];
   uniqueTickers: string[];
-  rebalanceSuggestions: RebalanceSuggestion[];
+  rebalanceSuggestions: any[];
   usdMxnRate: number;
   totalRealizedPnlUSD: number;
   totalRealizedPnlMXN: number;
-  pagination: {
-    page: number;
-    totalPages: number;
-  };
+  pagination: { page: number; totalPages: number };
+  historyData: any[];
 }
 
 export default function PortfolioDashboard({
@@ -55,9 +55,34 @@ export default function PortfolioDashboard({
   totalRealizedPnlUSD,
   totalRealizedPnlMXN,
   pagination,
-}: Props) {
-  const [currency, setCurrency] = useState<'USD' | 'MXN'>('USD');
+  historyData,
+}: PortfolioDashboardProps) {
+  const [currency, setCurrency] = useState<'USD' | 'MXN'>('MXN');
   const [showValues, setShowValues] = useState(true);
+
+  // Use the custom hook to calculate all totals
+  const {
+    exchangeRate,
+    totalValue,
+    totalInvested,
+    realizedPL,
+    unrealizedPL,
+    totalProfit,
+    percentage,
+    consolidatedAssetsForChart,
+    preCalculatedHoldingsUSD,
+    otherPnL,
+    monthlyReturn,
+    ytdReturn
+  } = usePortfolioCalculations(
+    holdings, 
+    portfolio, 
+    currency, 
+    usdMxnRate, 
+    totalRealizedPnlUSD, 
+    totalRealizedPnlMXN,
+    historyData
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem('portfolio_currency');
@@ -81,17 +106,7 @@ export default function PortfolioDashboard({
     localStorage.setItem('portfolio_currency', newCurrency);
   };
 
-  const {
-    exchangeRate,
-    totalValue,
-    totalInvested,
-    realizedPL,
-    unrealizedPL,
-    totalProfit,
-    percentage,
-    consolidatedAssetsForChart,
-    preCalculatedHoldingsUSD
-  } = usePortfolioCalculations(holdings, portfolio, currency, usdMxnRate, totalRealizedPnlUSD, totalRealizedPnlMXN);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-background dark:to-zinc-900/50">
@@ -154,12 +169,25 @@ export default function PortfolioDashboard({
               totalProfit={totalProfit}
               realizedPL={realizedPL}
               unrealizedPL={unrealizedPL}
+              otherPnL={otherPnL}
               percentage={percentage}
               currency={currency}
               showValues={showValues}
+              monthlyReturn={monthlyReturn}
+              ytdReturn={ytdReturn}
             />
             </div>
           </div>
+
+        <section className="mb-6">
+          <PerformanceChart 
+            currentValue={totalValue} 
+            totalInvested={totalInvested}
+            currency={currency} 
+            showValues={showValues} 
+            historyData={historyData}
+          />
+        </section>
 
         <section className="mb-6">
           <PortfolioManagementTable

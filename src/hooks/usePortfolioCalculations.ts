@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+
 import { AssetPosition } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { normalizeTicker } from '@/utils/tickerMapping';
@@ -11,7 +12,8 @@ export function usePortfolioCalculations(
   currency: 'USD' | 'MXN',
   usdMxnRate: number,
   totalRealizedPnlUSD: number,
-  totalRealizedPnlMXN: number
+  totalRealizedPnlMXN: number,
+  historyData: any[] = []
 ) {
   const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
 
@@ -24,14 +26,20 @@ export function usePortfolioCalculations(
   }, [holdings, exchangeRate]);
 
   const totalInvested = useMemo(() => {
+    // Financial Rigor: Use Net Cash Flow (Total Deposits - Total Withdrawals)
+    if (historyData && historyData.length > 0) {
+      const lastPoint = historyData[historyData.length - 1];
+      return currency === 'MXN' ? lastPoint.investedMXN : lastPoint.investedUSD;
+    }
+    
+    // Fallback to active positions cost basis if no history
     return holdings.reduce((sum, h) => {
       if (currency === 'MXN') {
-        // Use FX-adjusted historic cost basis for MXN display
         return sum + (h.totalInvestedMxn ?? (h.totalInvestedGlobal || 0) * exchangeRate);
       }
       return sum + (h.totalInvestedGlobal || 0);
     }, 0);
-  }, [holdings, currency, exchangeRate]);
+  }, [holdings, currency, exchangeRate, historyData]);
 
   const realizedPL = currency === 'MXN' ? totalRealizedPnlMXN : totalRealizedPnlUSD;
   
@@ -46,7 +54,14 @@ export function usePortfolioCalculations(
     }, 0);
   }, [holdings, currency, exchangeRate]);
 
-  const totalProfit = realizedPL + unrealizedPL;
+  // True holistic profit based on Net Cash Flow
+  const totalProfit = (historyData && historyData.length > 0)
+    ? totalValue - totalInvested
+    : realizedPL + unrealizedPL;
+    
+  // Un-attributed profit (Dividends, FX on cash, Fees)
+  const otherPnL = totalProfit - (realizedPL + unrealizedPL);
+
   const percentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
 
   // Consolidate holdings by normalized ticker for charts (USD base)
@@ -89,6 +104,53 @@ export function usePortfolioCalculations(
     return consolidatedMapUSD;
   }, [holdings, portfolio.target_allocation, exchangeRate]);
 
+  const { monthlyReturn, ytdReturn } = useMemo(() => {
+    let monthlyReturn = 0;
+    let ytdReturn = 0;
+    
+    if (historyData && historyData.length > 1) {
+      const today = new Date();
+      // Import these directly or assume they are available if we add them to imports
+      // Actually we need to ensure date-fns is imported
+      const oneMonthAgoDate = new Date();
+      oneMonthAgoDate.setMonth(today.getMonth() - 1);
+      
+      const ytdDate = new Date(today.getFullYear(), 0, 1); // Jan 1st
+
+      // Simple YYYY-MM-DD formatter since we can't easily add imports here without replacing the whole file header
+      const formatYMD = (d: Date) => d.toISOString().split('T')[0];
+
+      const oneMonthStr = formatYMD(oneMonthAgoDate);
+      let monthAgoPoint = historyData.find((d: any) => d.date >= oneMonthStr);
+      if (!monthAgoPoint) monthAgoPoint = historyData[0];
+
+      const ytdStr = formatYMD(ytdDate);
+      let ytdPoint = historyData.find((d: any) => d.date >= ytdStr);
+      if (!ytdPoint) ytdPoint = historyData[0];
+
+      const currentProfit = totalValue - totalInvested;
+      
+      const monthAgoValue = currency === 'USD' ? monthAgoPoint.valueUSD : monthAgoPoint.valueMXN;
+      const monthAgoInvested = currency === 'USD' ? monthAgoPoint.investedUSD : monthAgoPoint.investedMXN;
+      
+      if (monthAgoInvested > 0) {
+        const monthAgoProfit = monthAgoValue - monthAgoInvested;
+        const profitGeneratedThisMonth = currentProfit - monthAgoProfit;
+        monthlyReturn = totalInvested > 0 ? (profitGeneratedThisMonth / totalInvested) * 100 : 0;
+      }
+      
+      const ytdValue = currency === 'USD' ? ytdPoint.valueUSD : ytdPoint.valueMXN;
+      const ytdInvested = currency === 'USD' ? ytdPoint.investedUSD : ytdPoint.investedMXN;
+      
+      if (ytdInvested > 0) {
+        const ytdProfit = ytdValue - ytdInvested;
+        const profitGeneratedYTD = currentProfit - ytdProfit;
+        ytdReturn = totalInvested > 0 ? (profitGeneratedYTD / totalInvested) * 100 : 0;
+      }
+    }
+    
+    return { monthlyReturn, ytdReturn };
+  }, [historyData, currency, totalValue, totalInvested]);
 
   return {
     exchangeRate,
@@ -99,6 +161,9 @@ export function usePortfolioCalculations(
     totalProfit,
     percentage,
     consolidatedAssetsForChart,
-    preCalculatedHoldingsUSD
+    preCalculatedHoldingsUSD,
+    otherPnL,
+    monthlyReturn,
+    ytdReturn
   };
 }

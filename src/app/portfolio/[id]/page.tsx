@@ -8,12 +8,15 @@
  * - asset_prices: Exchange rates (USD-MXN)
  */
 
+
 import { notFound } from 'next/navigation';
+
 import PortfolioDashboard from '@/app/components/PortfolioDashboard';
 import { createClient } from '@/lib/supabaseServer';
-import { Database } from '@/types/supabase';
-import { calculateRebalancing } from '@/utils/portfolioMath';
 import { AssetPosition } from '@/types/portfolio';
+import { Database } from '@/types/supabase';
+import { getPortfolioHistory } from '@/utils/historyCalculations';
+import { calculateRebalancing } from '@/utils/portfolioMath';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
@@ -93,7 +96,7 @@ export default async function Page({ params, searchParams }: Props) {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [paginatedResult, rpcResult, rateResult, pnlResult] = await Promise.all([
+  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData] = await Promise.all([
     getPaginatedTransactions(id, page, pageSize, {
       ticker: tickerFilter,
       type: typeFilter,
@@ -101,6 +104,7 @@ export default async function Page({ params, searchParams }: Props) {
     supabase.rpc('get_portfolio_positions', { p_portfolio_id: id }),
     supabase.from('asset_prices').select('price').eq('ticker', 'USD-MXN').maybeSingle(),
     supabase.rpc('get_realized_pnl', { p_portfolio_id: id }),
+    getPortfolioHistory(id)
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
@@ -183,6 +187,7 @@ export default async function Page({ params, searchParams }: Props) {
   const uniqueTickers = Array.from(new Set(holdings.map((h) => h.ticker)));
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  // Calculate real Monthly and YTD returns from historyData
   return (
     <PortfolioDashboard
       portfolio={portfolio}
@@ -195,6 +200,7 @@ export default async function Page({ params, searchParams }: Props) {
       totalRealizedPnlUSD={totalRealizedPnlUSD}
       totalRealizedPnlMXN={totalRealizedPnlMXN}
       pagination={{ page, totalPages }}
+      historyData={historyData}
     />
   );
 }
