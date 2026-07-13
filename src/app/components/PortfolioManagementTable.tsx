@@ -15,6 +15,7 @@ import {
   MinusCircle,
   Check,
   ChevronDown,
+  ChevronUp,
   Edit2,
   PlusCircle,
   Trash2,
@@ -82,6 +83,16 @@ export default function PortfolioManagementTable({
 
   const [ticker, setTicker] = useState('');
   const [percentage, setPercentage] = useState('');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (t: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -409,9 +420,9 @@ export default function PortfolioManagementTable({
 
       <div className="p-4 sm:p-6">
         <div className="max-h-[500px] overflow-auto">
-          <table className="w-full text-sm min-w-[600px]">
-            <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm">
-              <tr>
+          <table className="w-full text-sm min-w-full md:min-w-[600px] block md:table">
+            <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm hidden md:table-header-group">
+              <tr className="md:table-row">
                 <th className="px-3 sm:px-4 py-2 text-left">Activo</th>
                 <th className="px-3 sm:px-4 py-2 text-right">Valor</th>
                 <th className="px-3 sm:px-4 py-2 text-right">% Actual / Meta</th>
@@ -425,28 +436,48 @@ export default function PortfolioManagementTable({
                 <th className="px-3 sm:px-4 py-2 text-right">Monto</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="block md:table-row-group divide-y-0 md:divide-y divide-border/40 p-2 md:p-0">
               {tableData.map((row) => {
                 const proposal = calcMode === 'deposit' ? row.depositProposal : row.rebalanceProposal;
+                const isExpanded = expandedRows.has(row.ticker);
 
                 return (
                   <tr
                     key={row.ticker}
-                    className="hover:bg-muted transition-colors"
+                    className="hover:bg-muted transition-colors block md:table-row mb-2 md:mb-0 rounded-xl md:rounded-none border border-border md:border-0 p-3 md:p-0 shadow-sm md:shadow-none bg-card md:bg-transparent"
                   >
-                    <td className="px-3 sm:px-4 py-1.5 font-bold text-foreground text-sm">
-                      {row.ticker}
+                    <td 
+                      className={`flex justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 font-bold text-foreground text-sm cursor-pointer md:cursor-auto ${isExpanded ? 'border-b border-border/40 pb-2 mb-2 md:border-0 md:pb-1.5 md:mb-0' : ''}`}
+                      onClick={() => toggleRow(row.ticker)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="md:hidden flex items-center text-muted-foreground">
+                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        </span>
+                        <span className="text-base md:text-sm">{row.ticker}</span>
+                      </div>
+                      
+                      <div className="md:hidden text-right font-semibold tabular-nums text-base">
+                        $
+                        {row.currentValue.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
                     </td>
 
-                    <td className="px-3 sm:px-4 py-1.5 text-right text-muted-foreground text-sm tabular-nums">
-                      $
-                      {row.currentValue.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                    <td className="hidden md:table-cell px-4 py-1.5 text-right text-muted-foreground text-sm tabular-nums">
+                      <span>
+                        $
+                        {row.currentValue.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
                     </td>
 
-                    <td className="px-3 sm:px-4 py-1.5 text-right">
+                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
+                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">% Act/Meta</span>
                       {editingTicker === row.ticker ? (
                         <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                           <span className="text-sm font-semibold tabular-nums text-muted-foreground">
@@ -522,7 +553,8 @@ export default function PortfolioManagementTable({
                     </td>
 
                     {showProjectedColumn ? (
-                      <td className="px-3 sm:px-4 py-1.5 text-right">
+                      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
+                        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Después</span>
                         {proposal && row.targetPct > 0 ? (
                           <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             <span className="text-sm font-semibold text-foreground">
@@ -537,7 +569,8 @@ export default function PortfolioManagementTable({
                         )}
                       </td>
                     ) : (
-                      <td className="px-3 sm:px-4 py-1.5 text-right whitespace-nowrap">
+                      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right whitespace-nowrap`}>
+                        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Dif.</span>
                         {row.targetPct > 0 ? (
                           <span
                             className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
@@ -557,9 +590,9 @@ export default function PortfolioManagementTable({
                     )}
 
                     {calcMode === 'strategy' ? (
-                      renderStrategyAction(row, total, exchangeRate)
+                      renderStrategyAction(row, total, exchangeRate, isExpanded)
                     ) : (
-                      renderRebalanceAction(proposal, row.targetPct, exchangeRate)
+                      renderRebalanceAction(proposal, row.targetPct, exchangeRate, isExpanded)
                     )}
                   </tr>
                 );
@@ -626,19 +659,22 @@ function renderStrategyAction(
     strategySuggestion?: RebalanceSuggestion;
   },
   total: number,
-  exchangeRate: number
+  exchangeRate: number,
+  isExpanded: boolean
 ) {
   const isIncorrectStrategy = Math.abs(total - 100) > 0.1;
 
   if (isIncorrectStrategy && row.targetPct > 0) {
     return (
       <>
-        <td className="px-3 sm:px-4 py-1.5 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span className="inline-flex w-24 items-center justify-center rounded bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
             AJUSTAR %
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-1.5 text-right text-sm text-muted-foreground/40 italic">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm text-muted-foreground/40 italic`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
           Inválido
         </td>
       </>
@@ -648,7 +684,8 @@ function renderStrategyAction(
   if (row.strategySuggestion && row.strategySuggestion.action !== 'HOLD') {
     return (
       <>
-        <td className="px-3 sm:px-4 py-1.5 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span
             className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
               ? 'bg-primary/20 text-primary'
@@ -659,12 +696,15 @@ function renderStrategyAction(
             {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-1.5 text-right text-sm font-medium text-foreground tabular-nums">
-          $
-          {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm font-medium text-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+          <span>
+            $
+            {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}
+          </span>
         </td>
       </>
     );
@@ -673,13 +713,15 @@ function renderStrategyAction(
   if (row.targetPct > 0 && row.currentValue < 0.01) {
     return (
       <>
-        <td className="px-3 sm:px-4 py-1.5 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
             <ArrowUpCircle size={10} />
             Comprar
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-1.5 text-right text-sm font-medium text-muted-foreground tabular-nums">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm font-medium text-muted-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
           ---
         </td>
       </>
@@ -689,13 +731,15 @@ function renderStrategyAction(
   if (row.targetPct > 0) {
     return (
       <>
-        <td className="px-3 sm:px-4 py-2 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-[11px] text-muted-foreground/60 leading-tight border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
           En rango
         </td>
       </>
@@ -704,12 +748,14 @@ function renderStrategyAction(
 
   return (
     <>
-      <td className="px-3 sm:px-4 py-2 text-right">
+      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
+        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
         <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
           Sin meta
         </span>
       </td>
-      <td className="px-3 sm:px-4 py-2 text-right">
+      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
         <span className="text-sm text-muted-foreground/30 font-medium">—</span>
       </td>
     </>
@@ -720,17 +766,20 @@ function renderStrategyAction(
 function renderRebalanceAction(
   proposal: { action: 'BUY' | 'SELL' | 'HOLD'; amount: number } | undefined,
   targetPct: number,
-  exchangeRate: number
+  exchangeRate: number,
+  isExpanded: boolean
 ) {
   if (!proposal || (targetPct === 0 && (proposal.action === 'HOLD' || proposal.amount < 0.01))) {
     return (
       <>
-        <td className="px-3 sm:px-4 py-2 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
             Sin meta
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-2 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
           <span className="text-sm text-muted-foreground/30 font-medium">—</span>
         </td>
       </>
@@ -740,13 +789,15 @@ function renderRebalanceAction(
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
       <>
-        <td className="px-3 sm:px-4 py-2 text-right">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
           <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
         </td>
-        <td className="px-3 sm:px-4 py-2 text-right text-[11px] text-muted-foreground/60 leading-tight">
+        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-[11px] text-muted-foreground/60 leading-tight border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
           En rango
         </td>
       </>
@@ -757,7 +808,8 @@ function renderRebalanceAction(
 
   return (
     <>
-      <td className="px-3 sm:px-4 py-2 text-right">
+      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
+        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
         <span
           className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
             ? 'bg-primary/20 text-primary'
@@ -768,12 +820,15 @@ function renderRebalanceAction(
           {proposal.action === 'BUY' ? 'Comprar' : 'Vender'}
         </span>
       </td>
-      <td className="px-3 sm:px-4 py-2 text-right text-sm font-medium text-foreground tabular-nums">
-        $
-        {amountDisplay.toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })}
+      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-sm font-medium text-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+        <span>
+          $
+          {amountDisplay.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}
+        </span>
       </td>
     </>
   );
