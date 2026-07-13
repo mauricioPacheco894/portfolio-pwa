@@ -10,11 +10,12 @@
 import { Session, User } from '@supabase/supabase-js';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
 } from 'react';
+
 import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {

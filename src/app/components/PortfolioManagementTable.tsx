@@ -12,30 +12,30 @@
 import {
   ArrowDownCircle,
   ArrowUpCircle,
-  MinusCircle,
   Check,
   ChevronDown,
   ChevronUp,
   Edit2,
+  MinusCircle,
   PlusCircle,
   Trash2,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useEffect,useMemo, useRef, useState } from 'react';
 
+import { KNOWN_TICKERS } from '@/constants/tickers';
 import { supabase } from '@/lib/supabase';
-import { normalizeTicker } from '@/utils/tickerMapping';
+import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 import {
-  calculateRebalancing,
   calculateClassicRebalance,
+  calculateRebalancing,
   calculateSmartDeposit,
   prepareRebalanceItems,
 } from '@/utils/portfolioMath';
-import { KNOWN_TICKERS } from '@/constants/tickers';
-import TickerAutocomplete from './TickerAutocomplete';
+import { normalizeTicker } from '@/utils/tickerMapping';
 
-import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
+import TickerAutocomplete from './TickerAutocomplete';
 
 type CalcMode = 'strategy' | 'deposit' | 'rebalance';
 

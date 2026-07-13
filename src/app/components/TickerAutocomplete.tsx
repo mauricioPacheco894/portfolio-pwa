@@ -7,7 +7,7 @@
  * Supports keyboard navigation and filtering.
  */
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useEffect, useMemo,useRef, useState } from 'react';
 
 interface TickerAutocompleteProps {
     value: string;

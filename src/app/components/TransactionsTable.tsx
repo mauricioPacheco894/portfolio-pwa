@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import TransactionActions from './TransactionActions';
+import { useState } from 'react';
+
 import { AssetPosition } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
+
+import TransactionActions from './TransactionActions';
 import { CurrencyBadge } from './ui/CurrencyBadge';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];

@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabaseServer';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+import { createClient } from '@/lib/supabaseServer';
 
 export interface HistoryDataPoint {
   date: string;

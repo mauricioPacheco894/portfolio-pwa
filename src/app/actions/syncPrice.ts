@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import * as cheerio from 'cheerio';
+
 import { env } from '@/env';
 
 /**
@@ -37,7 +38,7 @@ function getYahooTicker(ticker: string): string {
     const upperTicker = ticker.toUpperCase();
     if (upperTicker === 'USD-MXN') return 'USDMXN=X';
     
-    let cleanTicker = upperTicker.split(':')[0];
+    const cleanTicker = upperTicker.split(':')[0];
     
     // Si ya tiene .MX, lo dejamos
     if (cleanTicker.endsWith('.MX')) return cleanTicker;

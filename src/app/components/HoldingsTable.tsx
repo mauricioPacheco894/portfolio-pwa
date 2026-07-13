@@ -13,9 +13,11 @@
 
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
 import { AssetPosition } from '@/types/portfolio';
-import { CurrencyBadge } from './ui/CurrencyBadge';
 import { currencyFormatter, currencyFormatterWithSign } from '@/utils/formatters';
+
+import { CurrencyBadge } from './ui/CurrencyBadge';
 
 type SortKey = keyof AssetPosition;
 type SortDirection = 'asc' | 'desc';
