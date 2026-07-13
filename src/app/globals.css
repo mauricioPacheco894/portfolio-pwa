@@ -102,3 +102,12 @@ h6 {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+/* Remove focus outlines from Recharts chart wrappers */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}

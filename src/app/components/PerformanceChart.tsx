@@ -1,8 +1,8 @@
 'use client';
 
-import { format, parseISO,startOfYear, subDays, subMonths, subYears } from 'date-fns';
+import { format, parseISO, startOfYear, subDays, subMonths, subYears } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useEffect,useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -16,6 +16,7 @@ type TimeRange = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
 
 interface ChartDataPoint {
   date: Date;
+  timestamp: number;
   value: number;
   invested: number;
   formattedDate: string;
@@ -28,8 +29,6 @@ interface PerformanceChartProps {
   showValues: boolean;
   historyData: any[];
 }
-
-
 
 // Custom Tooltip component to handle both the floating date badge and syncing state
 const CustomTooltip = ({ active, payload, setHoverData }: any) => {
@@ -55,29 +54,41 @@ const CustomTooltip = ({ active, payload, setHoverData }: any) => {
 export default function PerformanceChart({ currentValue, totalInvested, currency, showValues, historyData = [] }: PerformanceChartProps) {
   const [activeRange, setActiveRange] = useState<TimeRange>('YTD');
   const [hoverData, setHoverData] = useState<ChartDataPoint | null>(null);
+  const [isMouseInChart, setIsMouseInChart] = useState(false);
+
+  // Hold-to-compare: pixel-based drag using an HTML overlay
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartIdx, setDragStartIdx] = useState<number | null>(null);
+  const [dragEndIdx, setDragEndIdx] = useState<number | null>(null);
 
   // Map the real history data
   const fullData = useMemo(() => {
     if (!historyData || historyData.length === 0) return [];
-    
-    // Map to the format needed for the chart
-    const mappedData: ChartDataPoint[] = historyData.map(d => ({
-      date: parseISO(d.date),
-      value: currency === 'USD' ? d.valueUSD : d.valueMXN,
-      invested: currency === 'USD' ? d.investedUSD : d.investedMXN,
-      formattedDate: d.formattedDate
-    }));
-    
-    // Add today's current live value at the very end so the line connects to now perfectly
+
+    const mappedData: ChartDataPoint[] = historyData.map(d => {
+      const dt = parseISO(d.date);
+      return {
+        date: dt,
+        timestamp: dt.getTime(),
+        value: currency === 'USD' ? d.valueUSD : d.valueMXN,
+        invested: currency === 'USD' ? d.investedUSD : d.investedMXN,
+        formattedDate: d.formattedDate
+      };
+    });
+
     if (mappedData.length > 0) {
+      const now = new Date();
       mappedData.push({
-        date: new Date(),
+        date: now,
+        timestamp: now.getTime(),
         value: currentValue,
-        invested: totalInvested, // Use live totalInvested to match global KPIs perfectly
-        formattedDate: format(new Date(), "d MMM yyyy", { locale: es })
+        invested: totalInvested,
+        formattedDate: format(now, "d MMM yyyy", { locale: es })
       });
     }
-    
+
     return mappedData;
   }, [historyData, currency, currentValue, totalInvested]);
 
@@ -88,8 +99,7 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
 
     switch (activeRange) {
       case '1D':
-        // For 1D we usually show intraday. We'll just take the last 2 days to have some line.
-        startDate = subDays(today, 2); 
+        startDate = subDays(today, 2);
         break;
       case '1W':
         startDate = subDays(today, 7);
@@ -111,27 +121,148 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
     return fullData.filter(d => format(d.date, 'yyyy-MM-dd') >= startDateStr);
   }, [fullData, activeRange]);
 
+  // Map pixel X to the nearest data index
+  const getDataIndexFromPixelX = useCallback((pixelX: number): number => {
+    const container = chartContainerRef.current;
+    if (!container || chartData.length === 0) return 0;
+    const containerWidth = container.offsetWidth;
+    const clampedX = Math.max(0, Math.min(pixelX, containerWidth));
+    const ratio = clampedX / containerWidth;
+    const index = Math.round(ratio * (chartData.length - 1));
+    return Math.max(0, Math.min(index, chartData.length - 1));
+  }, [chartData]);
+
+  // Mouse handlers — drag only activates after moving 15px+ while holding
+  const dragStartPixelRef = useRef<number | null>(null);
+  const pendingDragIdxRef = useRef<number | null>(null);
+  const DRAG_THRESHOLD = 15; // pixels before entering drag mode
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const idx = getDataIndexFromPixelX(x);
+
+    // Don't enter drag mode yet — just record start position
+    dragStartPixelRef.current = x;
+    pendingDragIdxRef.current = idx;
+    setIsMouseDown(true);
+  }, [getDataIndexFromPixelX]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+
+    // If mouse is down but we haven't entered drag mode yet, check threshold
+    if (dragStartPixelRef.current !== null && !isDragging) {
+      const distance = Math.abs(x - dragStartPixelRef.current);
+      if (distance >= DRAG_THRESHOLD) {
+        // Now enter drag mode
+        setIsDragging(true);
+        setDragStartIdx(pendingDragIdxRef.current);
+        setDragEndIdx(getDataIndexFromPixelX(x));
+        setHoverData(null);
+      }
+      return;
+    }
+
+    // Already dragging — update end position
+    if (isDragging) {
+      setDragEndIdx(getDataIndexFromPixelX(x));
+    }
+  }, [isDragging, getDataIndexFromPixelX]);
+
+  // On release, clear everything — go back to normal
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setIsMouseDown(false);
+    setDragStartIdx(null);
+    setDragEndIdx(null);
+    dragStartPixelRef.current = null;
+    pendingDragIdxRef.current = null;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      setDragStartIdx(null);
+      setDragEndIdx(null);
+    }
+    setIsMouseDown(false);
+    dragStartPixelRef.current = null;
+    pendingDragIdxRef.current = null;
+    setHoverData(null);
+    setIsMouseInChart(false);
+  }, [isDragging]);
+
+  // Catch mouseup outside the chart
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseUp = () => handleMouseUp();
+    window.addEventListener('mouseup', onMouseUp);
+    return () => window.removeEventListener('mouseup', onMouseUp);
+  }, [isDragging, handleMouseUp]);
+
+  // Robust detection of mouse leaving chart area (catches fast exits)
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    const onDocMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (inside) {
+        setIsMouseInChart(true);
+      } else {
+        setIsMouseInChart(false);
+        setHoverData(null);
+      }
+    };
+
+    document.addEventListener('mousemove', onDocMouseMove);
+    return () => document.removeEventListener('mousemove', onDocMouseMove);
+  }, []);
+
   if (chartData.length === 0) return null;
 
+  // Determine comparison points
   const firstPoint = chartData[0];
   const displayPoint = hoverData || chartData[chartData.length - 1];
-  
+
+  let compareStart = firstPoint;
+  let compareEnd = displayPoint;
+  let isHoldCompare = false;
+
+  if (isDragging && dragStartIdx !== null && dragEndIdx !== null) {
+    const lo = Math.min(dragStartIdx, dragEndIdx);
+    const hi = Math.max(dragStartIdx, dragEndIdx);
+    if (lo !== hi && chartData[lo] && chartData[hi]) {
+      compareStart = chartData[lo];
+      compareEnd = chartData[hi];
+      isHoldCompare = true;
+    }
+  }
+
   // Calculate true profit to eliminate deposit distortions
-  const currentProfit = displayPoint.value - displayPoint.invested;
-  const initialProfit = firstPoint.value - firstPoint.invested;
-  
-  // For 'ALL', the profit should be the absolute current profit (ignoring missing history)
-  // to perfectly match the global historical KPIs in the header.
-  const valueChange = activeRange === 'ALL' 
-    ? currentProfit 
+  const currentProfit = compareEnd.value - compareEnd.invested;
+  const initialProfit = compareStart.value - compareStart.invested;
+
+  const valueChange = (activeRange === 'ALL' && !isHoldCompare)
+    ? currentProfit
     : currentProfit - initialProfit;
-  
-  // The yield is relative to the current capital base
-  const percentChange = displayPoint.invested > 0 ? (valueChange / displayPoint.invested) * 100 : 0;
-  
+
+  const percentChange = compareEnd.invested > 0 ? (valueChange / compareEnd.invested) * 100 : 0;
   const isPositive = valueChange >= 0;
 
-  const lineColor = isPositive ? '#10b981' : '#ef4444'; // Emerald 500 or Red 500
+  const lineColor = isPositive ? '#10b981' : '#ef4444';
   const gradientId = `colorValue-${activeRange}`;
 
   const formatCurrency = (val: number) => {
@@ -144,26 +275,41 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
 
   const ranges: TimeRange[] = ['1D', '1W', '1M', 'YTD', '1Y', 'ALL'];
 
-  const xAxisFormatter = (val: Date) => {
+  const xAxisFormatter = (val: number) => {
     try {
+      const date = new Date(val);
       if (activeRange === '1D' || activeRange === '1W') {
-        return format(val, 'd MMM', { locale: es });
+        return format(date, 'd MMM', { locale: es });
       } else if (activeRange === '1M' || activeRange === 'YTD' || activeRange === '1Y') {
-        return format(val, 'MMM yyyy', { locale: es });
+        return format(date, 'MMM yyyy', { locale: es });
       } else {
-        return format(val, 'yyyy', { locale: es });
+        return format(date, 'yyyy', { locale: es });
       }
     } catch {
       return '';
     }
   };
 
+  // Calculate pixel positions for the highlight overlay
+  let highlightLeft: number | null = null;
+  let highlightWidth: number | null = null;
+
+  if (isDragging && dragStartIdx !== null && dragEndIdx !== null && chartContainerRef.current) {
+    const containerWidth = chartContainerRef.current.offsetWidth;
+    const lo = Math.min(dragStartIdx, dragEndIdx);
+    const hi = Math.max(dragStartIdx, dragEndIdx);
+    const startPx = (lo / (chartData.length - 1)) * containerWidth;
+    const endPx = (hi / (chartData.length - 1)) * containerWidth;
+    highlightLeft = startPx;
+    highlightWidth = endPx - startPx;
+  }
+
   return (
     <div className="w-full bg-card rounded-xl border border-border shadow-sm p-4 sm:p-6 mb-6">
       {/* Header with big number and percentage */}
       <div className="flex flex-col mb-6">
         <h3 className="text-3xl font-bold text-foreground tracking-tight">
-          {formatCurrency(displayPoint.value)}
+          {formatCurrency(isHoldCompare ? compareEnd.value : displayPoint.value)}
         </h3>
         <div className={`flex items-center gap-2 mt-1 ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
           <span className="font-medium text-lg">
@@ -173,23 +319,31 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
             ({valueChange > 0 ? '+' : ''}{showValues ? percentChange.toFixed(2) : '***'}%)
           </span>
           <span className="text-muted-foreground text-sm font-normal ml-2">
-            {activeRange}
+            {isHoldCompare
+              ? `${format(compareStart.date, 'd MMM yyyy', { locale: es })} – ${format(compareEnd.date, 'd MMM yyyy', { locale: es })}`
+              : activeRange}
           </span>
         </div>
-        <div className="text-sm text-muted-foreground mt-1">
-          {displayPoint.formattedDate}
+        <div className="text-sm text-muted-foreground mt-1 h-5">
+          {!isHoldCompare && displayPoint.formattedDate}
         </div>
       </div>
 
-      {/* Chart */}
-      <div 
-        className="h-[250px] sm:h-[300px] w-full mt-4 relative" 
-        onMouseLeave={() => setHoverData(null)}
+      {/* Chart with hold-to-compare overlay */}
+      <div
+        ref={chartContainerRef}
+        className="h-[250px] sm:h-[300px] w-full mt-4 relative select-none [&_.recharts-wrapper]:outline-none [&_.recharts-wrapper]:border-none [&_.recharts-wrapper]:shadow-none [&_.recharts-surface]:outline-none [&_svg]:outline-none [&_*:focus]:outline-none [&_*:focus-visible]:outline-none"
+        onMouseDown={(e) => {
+          e.preventDefault(); // Prevent browser text/element selection
+          handleMouseDown(e);
+        }}
+        onMouseLeave={handleMouseLeave}
       >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+            style={{ outline: 'none', border: 'none' }}
             onMouseLeave={() => setHoverData(null)}
           >
             <defs>
@@ -198,8 +352,8 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
                 <stop offset="95%" stopColor={lineColor} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="timestamp"
               hide={false}
               tickFormatter={xAxisFormatter}
               axisLine={false}
@@ -208,18 +362,23 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
               minTickGap={50}
               dy={10}
               style={{ pointerEvents: 'none' }}
+              type="number"
+              domain={['dataMin', 'dataMax']}
             />
-            <YAxis 
-              domain={['auto', 'auto']} 
-              hide={true} // Hide axis like Google Finance
+            <YAxis
+              domain={['auto', 'auto']}
+              hide={true}
             />
-            <Tooltip
-              content={<CustomTooltip setHoverData={setHoverData} />}
-              cursor={{ stroke: '#71717a', strokeWidth: 1, strokeDasharray: '4 4' }} // Zinc 500
-              isAnimationActive={false}
-              position={{ y: 220 }} // Position the date badge near the bottom like Google Finance
-              wrapperStyle={{ pointerEvents: 'none', zIndex: 100 }}
-            />
+            {/* Only show tooltip when mouse is in chart and NOT dragging */}
+            {!isDragging && isMouseInChart && (
+              <Tooltip
+                content={<CustomTooltip setHoverData={setHoverData} />}
+                cursor={{ stroke: '#71717a', strokeWidth: 1, strokeDasharray: '4 4' }}
+                isAnimationActive={false}
+                position={{ y: 220 }}
+                wrapperStyle={{ pointerEvents: 'none', zIndex: 100 }}
+              />
+            )}
             <Area
               type="linear"
               dataKey="value"
@@ -227,11 +386,41 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
               fillOpacity={1}
               fill={`url(#${gradientId})`}
               strokeWidth={2}
-              activeDot={{ r: 5, fill: lineColor, stroke: 'white', strokeWidth: 2 }}
-              isAnimationActive={false} // Disable animation for smoother hover experience
+              activeDot={isDragging || !isMouseInChart ? false : { r: 5, fill: lineColor, stroke: 'white', strokeWidth: 2 }}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
+
+        {/* Overlay — captures mousemove while mouse is pressed (for threshold detection and active dragging) */}
+        {(isDragging || isMouseDown) && (
+          <div
+            className="absolute inset-0"
+            style={{
+              zIndex: 30,
+              cursor: isDragging ? 'col-resize' : 'default',
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          />
+        )}
+
+        {/* Highlight band while holding */}
+        {highlightLeft !== null && highlightWidth !== null && highlightWidth > 2 && (
+          <div
+            className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
+            style={{
+              zIndex: 15,
+              left: `${highlightLeft}px`,
+              width: `${highlightWidth}px`,
+              background: isPositive
+                ? 'rgba(16, 185, 129, 0.1)'
+                : 'rgba(239, 68, 68, 0.1)',
+              borderLeft: `1.5px solid ${isPositive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+              borderRight: `1.5px solid ${isPositive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            }}
+          />
+        )}
       </div>
 
       {/* Time Range Selector */}
