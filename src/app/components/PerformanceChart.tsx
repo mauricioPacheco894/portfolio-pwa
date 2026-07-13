@@ -10,6 +10,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ReferenceLine,
 } from 'recharts';
 
 type TimeRange = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
@@ -20,6 +21,8 @@ interface ChartDataPoint {
   value: number;
   invested: number;
   formattedDate: string;
+  dailyChange: number;
+  dailyChangePercent: number;
 }
 
 interface PerformanceChartProps {
@@ -28,10 +31,12 @@ interface PerformanceChartProps {
   currency: 'USD' | 'MXN';
   showValues: boolean;
   historyData: any[];
+  intradayData?: any[];
+  isLoadingIntraday?: boolean;
 }
 
 // Custom Tooltip component to handle both the floating date badge and syncing state
-const CustomTooltip = ({ active, payload, setHoverData }: any) => {
+const CustomTooltip = ({ active, payload, setHoverData, currency, showValues }: any) => {
   // Sync hover data back to parent safely without trigger render warnings
   useEffect(() => {
     if (active && payload && payload.length) {
@@ -42,19 +47,31 @@ const CustomTooltip = ({ active, payload, setHoverData }: any) => {
   }, [active, payload, setHoverData]);
 
   if (active && payload && payload.length) {
+    const data = payload[0].payload;
     return (
-      <div className="bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs px-2.5 py-1.5 rounded shadow-lg transform -translate-y-4">
-        {payload[0].payload.formattedDate}
+      <div className="bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs px-2.5 py-1.5 rounded shadow-lg transform -translate-y-4 z-50">
+        {data.formattedDate}
       </div>
     );
   }
   return null;
 };
 
-export default function PerformanceChart({ currentValue, totalInvested, currency, showValues, historyData = [] }: PerformanceChartProps) {
+export default function PerformanceChart({ currentValue, totalInvested, currency, showValues, historyData = [], intradayData = [], isLoadingIntraday = false }: PerformanceChartProps) {
   const [activeRange, setActiveRange] = useState<TimeRange>('YTD');
   const [hoverData, setHoverData] = useState<ChartDataPoint | null>(null);
   const [isMouseInChart, setIsMouseInChart] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('portfolioActiveRange');
+    if (saved) setActiveRange(saved as TimeRange);
+  }, []);
+
+  const handleRangeChange = (range: TimeRange) => {
+    setActiveRange(range);
+    setHoverData(null);
+    localStorage.setItem('portfolioActiveRange', range);
+  };
 
   // Hold-to-compare: pixel-based drag using an HTML overlay
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -63,34 +80,97 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
   const [dragStartIdx, setDragStartIdx] = useState<number | null>(null);
   const [dragEndIdx, setDragEndIdx] = useState<number | null>(null);
 
-  // Map the real history data
+  // Map the real history data (for ALL, 1Y, YTD, 1M, 1W)
   const fullData = useMemo(() => {
+    // If activeRange is 1D and we have intraday data, map that instead
+    if (activeRange === '1D' && intradayData && intradayData.length > 0) {
+      const intradayMapped = intradayData.map((d: any, i: number) => {
+        const dt = new Date(d.timestamp);
+        const value = currency === 'USD' ? d.valueUSD : d.valueMXN;
+        const invested = currency === 'USD' ? d.investedUSD : d.investedMXN;
+        
+        let dailyChange = 0;
+        let dailyChangePercent = 0;
+        
+        if (i > 0) {
+          const prevValue = currency === 'USD' ? intradayData[i - 1].valueUSD : intradayData[i - 1].valueMXN;
+          const prevInvested = currency === 'USD' ? intradayData[i - 1].investedUSD : intradayData[i - 1].investedMXN;
+          
+          const currentProfit = value - invested;
+          const prevProfit = prevValue - prevInvested;
+          dailyChange = currentProfit - prevProfit;
+          if (prevValue > 0) {
+             dailyChangePercent = (dailyChange / prevValue) * 100;
+          }
+        }
+  
+        return {
+          date: dt,
+          timestamp: dt.getTime(),
+          value,
+          invested,
+          formattedDate: format(dt, 'h:mm a', { locale: es }),
+          dailyChange,
+          dailyChangePercent
+        };
+      });
+      return intradayMapped;
+    }
+
     if (!historyData || historyData.length === 0) return [];
 
-    const mappedData: ChartDataPoint[] = historyData.map(d => {
+    const mappedData: ChartDataPoint[] = historyData.map((d, i) => {
       const dt = parseISO(d.date);
+      const value = currency === 'USD' ? d.valueUSD : d.valueMXN;
+      const invested = currency === 'USD' ? d.investedUSD : d.investedMXN;
+      
+      let dailyChange = 0;
+      let dailyChangePercent = 0;
+      
+      if (i > 0) {
+        const prevValue = currency === 'USD' ? historyData[i - 1].valueUSD : historyData[i - 1].valueMXN;
+        const prevInvested = currency === 'USD' ? historyData[i - 1].investedUSD : historyData[i - 1].investedMXN;
+        
+        const currentProfit = value - invested;
+        const prevProfit = prevValue - prevInvested;
+        dailyChange = currentProfit - prevProfit;
+        if (prevValue > 0) {
+           dailyChangePercent = (dailyChange / prevValue) * 100;
+        }
+      }
+
       return {
         date: dt,
         timestamp: dt.getTime(),
-        value: currency === 'USD' ? d.valueUSD : d.valueMXN,
-        invested: currency === 'USD' ? d.investedUSD : d.investedMXN,
-        formattedDate: d.formattedDate
+        value,
+        invested,
+        formattedDate: d.formattedDate,
+        dailyChange,
+        dailyChangePercent
       };
     });
 
-    if (mappedData.length > 0) {
+    if (mappedData.length > 0 && activeRange !== '1D') {
       const now = new Date();
+      const prevData = mappedData[mappedData.length - 1];
+      const currentProfit = currentValue - totalInvested;
+      const prevProfit = prevData.value - prevData.invested;
+      const dailyChange = currentProfit - prevProfit;
+      const dailyChangePercent = prevData.value > 0 ? (dailyChange / prevData.value) * 100 : 0;
+
       mappedData.push({
         date: now,
         timestamp: now.getTime(),
         value: currentValue,
         invested: totalInvested,
-        formattedDate: format(now, "d MMM yyyy", { locale: es })
+        formattedDate: format(now, "d MMM yyyy", { locale: es }),
+        dailyChange,
+        dailyChangePercent
       });
     }
 
     return mappedData;
-  }, [historyData, currency, currentValue, totalInvested]);
+  }, [historyData, currency, currentValue, totalInvested, activeRange, intradayData]);
 
   // Filter data based on selected range
   const chartData = useMemo(() => {
@@ -99,6 +179,10 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
 
     switch (activeRange) {
       case '1D':
+        if (intradayData && intradayData.length > 0) {
+          // No need to filter intradayData, it's already only for today
+          return fullData;
+        }
         startDate = subDays(today, 2);
         break;
       case '1W':
@@ -253,13 +337,28 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
 
   // Calculate true profit to eliminate deposit distortions
   const currentProfit = compareEnd.value - compareEnd.invested;
-  const initialProfit = compareStart.value - compareStart.invested;
+  let initialProfit = compareStart.value - compareStart.invested;
+
+  let prevCloseValue: number | null = null;
+  if (historyData && historyData.length > 0) {
+    const lastDay = historyData[historyData.length - 1];
+    prevCloseValue = currency === 'USD' ? lastDay.valueUSD : lastDay.valueMXN;
+    
+    if (activeRange === '1D' && !isHoldCompare && prevCloseValue !== null) {
+      const prevInv = currency === 'USD' ? lastDay.investedUSD : lastDay.investedMXN;
+      initialProfit = prevCloseValue - prevInv;
+    }
+  }
 
   const valueChange = (activeRange === 'ALL' && !isHoldCompare)
     ? currentProfit
     : currentProfit - initialProfit;
 
-  const percentChange = compareEnd.invested > 0 ? (valueChange / compareEnd.invested) * 100 : 0;
+  const baseForPercent = (activeRange === '1D' && !isHoldCompare && prevCloseValue) 
+    ? prevCloseValue 
+    : compareEnd.invested;
+    
+  const percentChange = baseForPercent > 0 ? (valueChange / baseForPercent) * 100 : 0;
   const isPositive = valueChange >= 0;
 
   const lineColor = isPositive ? '#10b981' : '#ef4444';
@@ -278,7 +377,9 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
   const xAxisFormatter = (val: number) => {
     try {
       const date = new Date(val);
-      if (activeRange === '1D' || activeRange === '1W') {
+      if (activeRange === '1D') {
+        return format(date, 'h:mm a', { locale: es });
+      } else if (activeRange === '1W') {
         return format(date, 'd MMM', { locale: es });
       } else if (activeRange === '1M' || activeRange === 'YTD' || activeRange === '1Y') {
         return format(date, 'MMM yyyy', { locale: es });
@@ -334,13 +435,19 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
         ref={chartContainerRef}
         className="h-[250px] sm:h-[300px] w-full mt-4 relative select-none [&_.recharts-wrapper]:outline-none [&_.recharts-wrapper]:border-none [&_.recharts-wrapper]:shadow-none [&_.recharts-surface]:outline-none [&_svg]:outline-none [&_*:focus]:outline-none [&_*:focus-visible]:outline-none"
         onMouseDown={(e) => {
+          if (activeRange === '1D' && isLoadingIntraday) return;
           e.preventDefault(); // Prevent browser text/element selection
           handleMouseDown(e);
         }}
         onMouseLeave={handleMouseLeave}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+        {activeRange === '1D' && isLoadingIntraday ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
             data={chartData}
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
             style={{ outline: 'none', border: 'none' }}
@@ -369,10 +476,24 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
               domain={['auto', 'auto']}
               hide={true}
             />
+            {activeRange === '1D' && prevCloseValue !== null && (
+              <ReferenceLine 
+                y={prevCloseValue} 
+                stroke="#a1a1aa" 
+                strokeDasharray="4 4" 
+                label={{ 
+                  position: 'insideTopRight', 
+                  value: `Cierre ant. ${formatCurrency(prevCloseValue)}`, 
+                  fill: '#a1a1aa', 
+                  fontSize: 12,
+                  dy: -10 
+                }} 
+              />
+            )}
             {/* Only show tooltip when mouse is in chart and NOT dragging */}
             {!isDragging && isMouseInChart && (
               <Tooltip
-                content={<CustomTooltip setHoverData={setHoverData} />}
+                content={<CustomTooltip setHoverData={setHoverData} currency={currency} showValues={showValues} />}
                 cursor={{ stroke: '#71717a', strokeWidth: 1, strokeDasharray: '4 4' }}
                 isAnimationActive={false}
                 position={{ y: 220 }}
@@ -391,6 +512,7 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
             />
           </AreaChart>
         </ResponsiveContainer>
+        )}
 
         {/* Overlay — captures mousemove while mouse is pressed (for threshold detection and active dragging) */}
         {(isDragging || isMouseDown) && (
@@ -428,10 +550,7 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
         {ranges.map((range) => (
           <button
             key={range}
-            onClick={() => {
-              setActiveRange(range);
-              setHoverData(null);
-            }}
+            onClick={() => handleRangeChange(range)}
             className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
               activeRange === range
                 ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'

@@ -14,6 +14,7 @@ import { useEffect,useState } from 'react';
 import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
 import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
+import { getPortfolioIntraday } from '@/utils/intradayCalculations';
 
 import AddTransactionForm from './AddTransactionForm';
 import { Header } from './Header';
@@ -59,16 +60,18 @@ export default function PortfolioDashboard({
 }: PortfolioDashboardProps) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('MXN');
   const [showValues, setShowValues] = useState(true);
+  const [intradayData, setIntradayData] = useState<any[] | null>(null);
+  const [isLoadingIntraday, setIsLoadingIntraday] = useState(true);
 
   // Use the custom hook to calculate all totals
   const {
     exchangeRate,
-    totalValue,
-    totalInvested,
+    totalValue: dbTotalValue,
+    totalInvested: dbTotalInvested,
     realizedPL,
-    unrealizedPL,
-    totalProfit,
-    percentage,
+    unrealizedPL: dbUnrealizedPL,
+    totalProfit: dbTotalProfit,
+    percentage: dbPercentage,
     consolidatedAssetsForChart,
     preCalculatedHoldingsUSD,
     otherPnL,
@@ -79,10 +82,35 @@ export default function PortfolioDashboard({
     portfolio, 
     currency, 
     usdMxnRate, 
-    totalRealizedPnlUSD, 
+    totalRealizedPnlUSD,
     totalRealizedPnlMXN,
     historyData
   );
+
+  // Sync with live intraday data if available (most recent Yahoo Finance 15m tick)
+  let totalValue = dbTotalValue;
+  let totalInvested = dbTotalInvested;
+  
+  if (intradayData && intradayData.length > 0) {
+    const lastTick = intradayData[intradayData.length - 1];
+    totalValue = currency === 'USD' ? lastTick.valueUSD : lastTick.valueMXN;
+    totalInvested = currency === 'USD' ? lastTick.investedUSD : lastTick.investedMXN;
+  }
+
+  const totalProfit = totalValue - totalInvested;
+  const percentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const unrealizedPL = totalProfit - realizedPL - (otherPnL || 0);
+
+  useEffect(() => {
+    let isMounted = true;
+    getPortfolioIntraday(portfolio.id).then(data => {
+      if (isMounted) {
+        setIntradayData(data);
+        setIsLoadingIntraday(false);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [portfolio.id]);
 
   useEffect(() => {
     const saved = localStorage.getItem('portfolio_currency');
@@ -186,6 +214,8 @@ export default function PortfolioDashboard({
             currency={currency} 
             showValues={showValues} 
             historyData={historyData}
+            intradayData={intradayData || undefined}
+            isLoadingIntraday={isLoadingIntraday}
           />
         </section>
 
