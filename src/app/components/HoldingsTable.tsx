@@ -14,6 +14,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AssetPosition } from '@/types/portfolio';
+import { CurrencyBadge } from './ui/CurrencyBadge';
 
 type SortKey = keyof AssetPosition;
 type SortDirection = 'asc' | 'desc';
@@ -66,19 +67,7 @@ export default function HoldingsTable({ holdings }: HoldingsTableProps) {
     }).format(value);
   };
 
-  const CurrencyBadge = ({ currency }: { currency?: 'USD' | 'MXN' }) => {
-    if (!currency) return null;
-    return (
-      <span
-        className={`text-[9px] font-bold px-1 py-0 rounded transition-colors ${currency === 'MXN'
-          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/50'
-          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-700/50'
-          }`}
-      >
-        {currency}
-      </span>
-    );
-  };
+
 
   const handleSort = (key: SortKey) => {
     setSortConfig((current) => ({
