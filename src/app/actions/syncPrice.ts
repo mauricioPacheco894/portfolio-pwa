@@ -6,7 +6,7 @@ import * as cheerio from 'cheerio';
 import { env } from '@/env';
 
 /**
- * Mapeo de mercados conocidos para acelerar la búsqueda.
+ * Mapping of known markets to speed up the search.
  */
 const EXCHANGE_MAP: Record<string, string> = {
     AAPL: 'NASDAQ', MSFT: 'NASDAQ', GOOGL: 'NASDAQ', GOOG: 'NASDAQ', AMZN: 'NASDAQ',
@@ -16,7 +16,7 @@ const EXCHANGE_MAP: Record<string, string> = {
 };
 
 /**
- * Determina en qué mercados buscar un ticker
+ * Determines which markets to search for a ticker
  */
 function getExchangesForTicker(ticker: string): string[] {
     const upperTicker = ticker.toUpperCase()
@@ -25,14 +25,14 @@ function getExchangesForTicker(ticker: string): string[] {
     if (upperTicker.endsWith('.MX')) return ['BMV']
     if (EXCHANGE_MAP[upperTicker]) return [EXCHANGE_MAP[upperTicker]]
 
-    // Si no sabemos, probamos los más probables
+    // If we don't know, we try the most likely ones
     return ['NASDAQ', 'NYSE', 'BMV', 'NYSEARCA']
 }
 
-// EXPRESIÓN REGULAR HOISTEADA (Regla js-hoist-regexp) - Eliminada por uso de API JSON
+// HOISTED REGULAR EXPRESSION (js-hoist-regexp rule) - Removed; JSON API is used instead
 
 /**
- * Convierte el ticker al formato que Yahoo Finance espera.
+ * Converts the ticker to the format Yahoo Finance expects.
  */
 function getYahooTicker(ticker: string): string {
     const upperTicker = ticker.toUpperCase();
@@ -40,10 +40,10 @@ function getYahooTicker(ticker: string): string {
     
     const cleanTicker = upperTicker.split(':')[0];
     
-    // Si ya tiene .MX, lo dejamos
+    // If it already has .MX, leave it as is
     if (cleanTicker.endsWith('.MX')) return cleanTicker;
     
-    // Si es del mercado mexicano, le agregamos .MX
+    // If it is from the Mexican market, append .MX
     if (upperTicker.endsWith(':BMV') || EXCHANGE_MAP[cleanTicker] === 'BMV') {
         return `${cleanTicker}.MX`;
     }
@@ -52,8 +52,8 @@ function getYahooTicker(ticker: string): string {
 }
 
 /**
- * Scraper optimizado usando la API JSON pública de Yahoo Finance.
- * Más rápido y mucho más estable que hacer scraping de HTML en Google.
+ * Optimized scraper using Yahoo Finance's public JSON API.
+ * Faster and much more stable than scraping HTML from Google.
  */
 async function fetchPrice(ticker: string): Promise<{ price: number, currency: string } | null> {
     const yahooTicker = getYahooTicker(ticker);
@@ -105,7 +105,7 @@ export async function syncSingleTickerPrice(ticker: string) {
 
         console.log(`🚀 Fast Sync (Server Side) for ${upperTicker}...`);
 
-        // Regla async-parallel: Ejecutar el fetch y la consulta de la DB en paralelo para eliminar el waterfall
+        // async-parallel rule: Run the fetch and the DB query in parallel to eliminate the waterfall
         const isMexican = upperTicker.endsWith('.MX') ||
             upperTicker.endsWith(':BMV') ||
             upperTicker === 'USD-MXN';

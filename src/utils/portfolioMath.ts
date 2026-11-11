@@ -268,14 +268,14 @@ export function calculateRebalancing(
     const targetVal = totalPortfolioValue * (targetPct / 100);
     const diffVal = targetVal - currentVal;
 
-    // Tolerancia base: 20% del porcentaje meta
+    // Base tolerance: 20% of the target percentage
     const relativeTolerance = 0.20;
     const calculatedTolerance = targetPct * relativeTolerance;
     
-    // Límite para la tolerancia inferior (compra): entre 1.5% y 5.0% absoluto
+    // Lower tolerance (buy) cap: between 1.5% and 5.0% absolute
     const lowerTolerance = Math.max(1.5, Math.min(calculatedTolerance, 5.0));
     
-    // Banda superior más amplia: 1.5 veces la inferior para dejar "correr" más las ganancias
+    // Wider upper band: 1.5x the lower one to let gains run further
     const upperTolerance = lowerTolerance * 1.5;
 
     const sellThreshold = targetPct + upperTolerance;
