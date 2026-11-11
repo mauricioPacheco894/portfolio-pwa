@@ -1,12 +1,12 @@
--- Migración: copia fiel del SQL vivo de public.get_portfolio_positions
--- en el proyecto Supabase "portfolio" (ref xmgbvjkmkzhrndezozbu),
--- leído con pg_get_functiondef() el 2026-11-11. Sin cambios funcionales.
--- Asume que ya existen el tipo position_summary y las tablas
--- transactions y asset_prices.
+-- Migration: faithful copy of the live SQL for public.get_portfolio_positions
+-- in the Supabase project "portfolio" (ref xmgbvjkmkzhrndezozbu),
+-- read with pg_get_functiondef() on 2026-11-11. No functional changes.
+-- Assumes the position_summary type and the
+-- transactions and asset_prices tables already exist.
 
 -- get_portfolio_positions
--- Fuente: pg_get_functiondef() leído vía Supabase Management API el 2026-11-11
--- Proyecto: portfolio (xmgbvjkmkzhrndezozbu). Sin cambios; copia fiel del SQL vivo.
+-- Source: pg_get_functiondef() read via the Supabase Management API on 2026-11-11
+-- Project: portfolio (xmgbvjkmkzhrndezozbu). No changes; faithful copy of the live SQL.
 CREATE OR REPLACE FUNCTION public.get_portfolio_positions(p_portfolio_id uuid)
  RETURNS SETOF position_summary
  LANGUAGE plpgsql

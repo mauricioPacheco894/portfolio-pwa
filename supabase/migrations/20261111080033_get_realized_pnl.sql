@@ -1,11 +1,11 @@
--- Migración: copia fiel del SQL vivo de public.get_realized_pnl
--- en el proyecto Supabase "portfolio" (ref xmgbvjkmkzhrndezozbu),
--- leído con pg_get_functiondef() el 2026-11-11. Sin cambios funcionales.
--- Asume que ya existen las tablas transactions y asset_prices.
+-- Migration: faithful copy of the live SQL for public.get_realized_pnl
+-- in the Supabase project "portfolio" (ref xmgbvjkmkzhrndezozbu),
+-- read with pg_get_functiondef() on 2026-11-11. No functional changes.
+-- Assumes the transactions and asset_prices tables already exist.
 
 -- get_realized_pnl
--- Fuente: pg_get_functiondef() leído vía Supabase Management API el 2026-11-11
--- Proyecto: portfolio (xmgbvjkmkzhrndezozbu). Sin cambios; copia fiel del SQL vivo.
+-- Source: pg_get_functiondef() read via the Supabase Management API on 2026-11-11
+-- Project: portfolio (xmgbvjkmkzhrndezozbu). No changes; faithful copy of the live SQL.
 CREATE OR REPLACE FUNCTION public.get_realized_pnl(p_portfolio_id uuid)
  RETURNS TABLE(ticker text, total_sold_amount numeric, total_cost_basis numeric, realized_pnl numeric, currency text, total_cost_basis_mxn numeric, total_sold_amount_mxn numeric, realized_pnl_mxn numeric)
  LANGUAGE plpgsql
