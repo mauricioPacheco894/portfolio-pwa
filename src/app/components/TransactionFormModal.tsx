@@ -206,7 +206,7 @@ export default function TransactionFormModal({
         );
       }
 
-      // Sincronizar el precio de Yahoo de manera inmediata
+      // Sync the Yahoo price immediately
       try {
         await syncSingleTickerPrice(payload.ticker);
       } catch (invokeError) {
