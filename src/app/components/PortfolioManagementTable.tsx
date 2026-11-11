@@ -835,34 +835,48 @@ export default function PortfolioManagementTable({
                     <tr id={`pos-detalle-${row.ticker}-d`} className="hidden sm:table-row">
                       <td
                         colSpan={11}
-                        className="border-t border-border/40 bg-muted/30 px-3 py-3 sm:px-4"
+                        className="border-t border-border/40 bg-muted/30 px-3 py-2 sm:px-4"
                       >
                         {hasHistory && history ? (
                           <>
-                            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs">
-                              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {/* Summary as a compact strip of stat blocks. */}
+                            <div className="flex flex-wrap items-stretch gap-x-5 gap-y-2 text-xs">
+                              <span className="self-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                 Historial
                               </span>
-                              <span className="text-foreground">
-                                {history.buys + history.sells} operaciones ·{' '}
-                                {history.buys} compras · {history.sells} ventas
-                              </span>
-                              <span className="text-muted-foreground">
-                                Primera compra:{' '}
-                                <span className="text-foreground">
+                              <div className="border-l border-border/60 pl-5">
+                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  Operaciones
+                                </div>
+                                <div className="font-semibold tabular-nums text-foreground">
+                                  {history.buys + history.sells}
+                                  <span className="ml-1.5 font-normal text-muted-foreground">
+                                    {history.buys} compras · {history.sells} ventas
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="border-l border-border/60 pl-5">
+                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  Primera compra
+                                </div>
+                                <div className="font-semibold tabular-nums text-foreground">
                                   {fmtDate(history.firstBuyDate)}
-                                </span>
-                              </span>
-                              <span className="text-muted-foreground">
-                                Última:{' '}
-                                <span className="text-foreground">
+                                </div>
+                              </div>
+                              <div className="border-l border-border/60 pl-5">
+                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  Última
+                                </div>
+                                <div className="font-semibold tabular-nums text-foreground">
                                   {fmtDate(history.lastOpDate)}
-                                </span>
-                              </span>
-                              <span className="text-muted-foreground">
-                                Ganancia realizada:{' '}
+                                </div>
+                              </div>
+                              <div className="border-l border-border/60 pl-5">
+                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  Ganancia realizada
+                                </div>
                                 {history.sells > 0 ? (
-                                  <span
+                                  <div
                                     className={`font-semibold tabular-nums ${
                                       history.realizedPnlUSD >= 0
                                         ? 'text-emerald-600 dark:text-emerald-400'
@@ -877,46 +891,79 @@ export default function PortfolioManagementTable({
                                           maximumFractionDigits: 2,
                                         })}`
                                       : '****'}
-                                  </span>
+                                  </div>
                                 ) : (
-                                  <span className="text-muted-foreground/60">—</span>
+                                  <div className="font-semibold tabular-nums text-muted-foreground/60">
+                                    —
+                                  </div>
                                 )}
-                              </span>
+                              </div>
                             </div>
-                            <ul className="mt-2 divide-y divide-border/40">
-                              {history.recent.map((op, i) => (
-                                <li
-                                  key={`${op.date}-${op.type}-${i}`}
-                                  className="flex items-center gap-3 py-1 text-xs tabular-nums"
-                                >
-                                  <span className="w-[74px] shrink-0 text-muted-foreground">
-                                    {fmtDate(op.date)}
-                                  </span>
-                                  <span
-                                    className={`inline-flex w-[62px] shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-bold uppercase ${
-                                      op.type === 'BUY'
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                                    }`}
+                            {/* Operations as a dense mini-table with its own header row. */}
+                            <table className="mt-2 w-full table-fixed text-xs">
+                              <colgroup>
+                                <col className="w-[20%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[18%]" />
+                                <col className="w-[23%]" />
+                                <col className="w-[23%]" />
+                              </colgroup>
+                              <thead>
+                                <tr className="border-b border-border/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  <th scope="col" className="py-1 pr-2 text-left">
+                                    Fecha
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-left">
+                                    Tipo
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-right">
+                                    Cant.
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-right">
+                                    Precio
+                                  </th>
+                                  <th scope="col" className="py-1 text-right">
+                                    Total
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/40">
+                                {history.recent.map((op, i) => (
+                                  <tr
+                                    key={`${op.date}-${op.type}-${i}`}
+                                    className="tabular-nums"
                                   >
-                                    {op.type === 'BUY' ? 'Compra' : 'Venta'}
-                                  </span>
-                                  <span className="ml-auto text-foreground">
-                                    {op.quantity.toLocaleString('en-US', {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 6,
-                                    })}{' '}
-                                    tít.
-                                  </span>
-                                  <span className="w-24 shrink-0 text-right text-muted-foreground">
-                                    @ {money(op.pricePerUnitUSD)}
-                                  </span>
-                                  <span className="w-24 shrink-0 text-right font-semibold text-foreground">
-                                    {money(op.totalUSD)}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
+                                    <td className="py-1 pr-2 text-muted-foreground">
+                                      {fmtDate(op.date)}
+                                    </td>
+                                    <td className="py-1 pr-2">
+                                      <span
+                                        className={`inline-flex w-[62px] items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-bold uppercase ${
+                                          op.type === 'BUY'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                        }`}
+                                      >
+                                        {op.type === 'BUY' ? 'Compra' : 'Venta'}
+                                      </span>
+                                    </td>
+                                    <td className="py-1 pr-2 text-right text-foreground">
+                                      {op.quantity.toLocaleString('en-US', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 6,
+                                      })}{' '}
+                                      tít.
+                                    </td>
+                                    <td className="py-1 pr-2 text-right text-muted-foreground">
+                                      @ {money(op.pricePerUnitUSD)}
+                                    </td>
+                                    <td className="py-1 text-right font-semibold text-foreground">
+                                      {money(op.totalUSD)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </>
                         ) : (
                           <span className="text-xs text-muted-foreground">
