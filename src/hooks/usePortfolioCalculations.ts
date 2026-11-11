@@ -11,6 +11,7 @@ import {
   type RebalanceItem,
 } from '@/utils/portfolioMath';
 import { normalizeTicker } from '@/utils/tickerMapping';
+import { calculateTimeWeightedReturn, HistoryDataPoint } from '@/utils/timeWeightedReturn';
 
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 
@@ -21,7 +22,7 @@ export function usePortfolioCalculations(
   usdMxnRate: number,
   totalRealizedPnlUSD: number,
   totalRealizedPnlMXN: number,
-  historyData: any[] = [],
+  historyData: HistoryDataPoint[] = [],
   depositAmount: string = '0'
 ) {
   const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
@@ -194,53 +195,32 @@ export function usePortfolioCalculations(
     [rebalanceItems]
   );
 
+  // Month and YTD returns, time-weighted from the history series. The base
+  // point is the last history point on or before the target date (never the
+  // first point after it: with gaps in the history that would silently
+  // measure a shorter, arbitrary period). Daily returns net out each day's
+  // cash flow, so deposits and withdrawals do not inflate the return, and
+  // the denominator is each day's starting value rather than the current
+  // invested amount.
   const { monthlyReturn, ytdReturn } = useMemo(() => {
-    let monthlyReturn = 0;
-    let ytdReturn = 0;
-    
-    if (historyData && historyData.length > 1) {
-      const today = new Date();
-      // Import these directly or assume they are available if we add them to imports
-      // Actually we need to ensure date-fns is imported
-      const oneMonthAgoDate = new Date();
-      oneMonthAgoDate.setMonth(today.getMonth() - 1);
-      
-      const ytdDate = new Date(today.getFullYear(), 0, 1); // Jan 1st
-
-      // Simple YYYY-MM-DD formatter since we can't easily add imports here without replacing the whole file header
-      const formatYMD = (d: Date) => d.toISOString().split('T')[0];
-
-      const oneMonthStr = formatYMD(oneMonthAgoDate);
-      let monthAgoPoint = historyData.find((d: any) => d.date >= oneMonthStr);
-      if (!monthAgoPoint) monthAgoPoint = historyData[0];
-
-      const ytdStr = formatYMD(ytdDate);
-      let ytdPoint = historyData.find((d: any) => d.date >= ytdStr);
-      if (!ytdPoint) ytdPoint = historyData[0];
-
-      const currentProfit = totalValue - totalInvested;
-      
-      const monthAgoValue = currency === 'USD' ? monthAgoPoint.valueUSD : monthAgoPoint.valueMXN;
-      const monthAgoInvested = currency === 'USD' ? monthAgoPoint.investedUSD : monthAgoPoint.investedMXN;
-      
-      if (monthAgoInvested > 0) {
-        const monthAgoProfit = monthAgoValue - monthAgoInvested;
-        const profitGeneratedThisMonth = currentProfit - monthAgoProfit;
-        monthlyReturn = totalInvested > 0 ? (profitGeneratedThisMonth / totalInvested) * 100 : 0;
-      }
-      
-      const ytdValue = currency === 'USD' ? ytdPoint.valueUSD : ytdPoint.valueMXN;
-      const ytdInvested = currency === 'USD' ? ytdPoint.investedUSD : ytdPoint.investedMXN;
-      
-      if (ytdInvested > 0) {
-        const ytdProfit = ytdValue - ytdInvested;
-        const profitGeneratedYTD = currentProfit - ytdProfit;
-        ytdReturn = totalInvested > 0 ? (profitGeneratedYTD / totalInvested) * 100 : 0;
-      }
+    if (!historyData || historyData.length < 2) {
+      return { monthlyReturn: 0, ytdReturn: 0 };
     }
-    
-    return { monthlyReturn, ytdReturn };
-  }, [historyData, currency, totalValue, totalInvested]);
+
+    const today = new Date();
+    const formatYMD = (d: Date) => d.toISOString().split('T')[0];
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    const ytdDate = new Date(today.getFullYear(), 0, 1); // Jan 1st
+
+    return {
+      monthlyReturn:
+        calculateTimeWeightedReturn(historyData, formatYMD(oneMonthAgo), currency) * 100,
+      ytdReturn:
+        calculateTimeWeightedReturn(historyData, formatYMD(ytdDate), currency) * 100,
+    };
+  }, [historyData, currency]);
 
   return {
     exchangeRate,

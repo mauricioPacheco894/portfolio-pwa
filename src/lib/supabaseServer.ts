@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 import { env } from '@/env';
+import { Database } from '@/types/supabase';
 
 /**
  * Supabase Server Client Factory
@@ -15,7 +16,7 @@ import { env } from '@/env';
 export async function createClient() {
   const cookieStore = await cookies();
 
-  const client = createServerClient(
+  const client = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
     {

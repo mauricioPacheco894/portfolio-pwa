@@ -15,6 +15,8 @@ import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
 import { AssetPosition, TickerHistory } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioIntraday } from '@/utils/intradayCalculations';
+import { PositionMismatch } from '@/utils/reconciliation';
+import { HistoryDataPoint } from '@/utils/timeWeightedReturn';
 
 import AddTransactionForm from './AddTransactionForm';
 import { Header } from './Header';
@@ -41,7 +43,9 @@ interface PortfolioDashboardProps {
   /** Per-asset summarized history (desktop expanded detail). */
   tickerHistory: Record<string, TickerHistory>;
   pagination: { page: number; totalPages: number };
-  historyData: any[];
+  historyData: HistoryDataPoint[];
+  /** Tickers where the positions RPC disagrees with the raw transactions. */
+  reconciliationMismatches?: PositionMismatch[];
 }
 
 export default function PortfolioDashboard({
@@ -55,6 +59,7 @@ export default function PortfolioDashboard({
   tickerHistory,
   pagination,
   historyData,
+  reconciliationMismatches = [],
 }: PortfolioDashboardProps) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('MXN');
   const [showValues, setShowValues] = useState(true);
@@ -154,6 +159,31 @@ export default function PortfolioDashboard({
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-background dark:to-zinc-900/50">
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {reconciliationMismatches.length > 0 && (
+          <div
+            role="alert"
+            className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300"
+          >
+            <p className="font-semibold">
+              Advertencia: las posiciones no coinciden con el historial de transacciones.
+            </p>
+            <ul className="mt-1 list-disc pl-5">
+              {reconciliationMismatches.map((m) => (
+                <li key={m.ticker}>
+                  {m.ticker}: transacciones{' '}
+                  {m.fromTransactions.toLocaleString('es-MX', {
+                    maximumFractionDigits: 6,
+                  })}{' '}
+                  · posiciones{' '}
+                  {m.fromRpc.toLocaleString('es-MX', { maximumFractionDigits: 6 })}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1">
+              Revisa los datos antes de operar; puede ser un error de captura o del cálculo.
+            </p>
+          </div>
+        )}
         <div className="mb-6">
           <div className="flex flex-col gap-3 sm:gap-6 border-b border-border pb-6 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
