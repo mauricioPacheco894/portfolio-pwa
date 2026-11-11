@@ -7,7 +7,9 @@
  * (HoldingsTable) with "Gestión de Portafolio". On desktop it shows 11
  * dense columns; on mobile only the 4 essential ones (Activo | Valor | G/P |
  * % Act.), with the rest in the expanded detail (8-field grid). The desktop
- * expanded detail shows the asset's history (summary + latest 5 operations).
+ * expanded detail is one dense mini-table: the summary is its first row
+ * (figures aligned under the columns they belong to) and the latest 5
+ * operations follow, each with its market badge (MXN/USD).
  * ALL positions are shown, with no inner scroll and no horizontal scroll:
  * the component grows vertically.
  *
@@ -839,68 +841,9 @@ export default function PortfolioManagementTable({
                       >
                         {hasHistory && history ? (
                           <>
-                            {/* Summary as a compact strip of stat blocks. */}
-                            <div className="flex flex-wrap items-stretch gap-x-5 gap-y-2 text-xs">
-                              <span className="self-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                Historial
-                              </span>
-                              <div className="border-l border-border/60 pl-5">
-                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  Operaciones
-                                </div>
-                                <div className="font-semibold tabular-nums text-foreground">
-                                  {history.buys + history.sells}
-                                  <span className="ml-1.5 font-normal text-muted-foreground">
-                                    {history.buys} compras · {history.sells} ventas
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="border-l border-border/60 pl-5">
-                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  Primera compra
-                                </div>
-                                <div className="font-semibold tabular-nums text-foreground">
-                                  {fmtDate(history.firstBuyDate)}
-                                </div>
-                              </div>
-                              <div className="border-l border-border/60 pl-5">
-                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  Última
-                                </div>
-                                <div className="font-semibold tabular-nums text-foreground">
-                                  {fmtDate(history.lastOpDate)}
-                                </div>
-                              </div>
-                              <div className="border-l border-border/60 pl-5">
-                                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  Ganancia realizada
-                                </div>
-                                {history.sells > 0 ? (
-                                  <div
-                                    className={`font-semibold tabular-nums ${
-                                      history.realizedPnlUSD >= 0
-                                        ? 'text-emerald-600 dark:text-emerald-400'
-                                        : 'text-red-500 dark:text-red-400'
-                                    }`}
-                                  >
-                                    {showValues
-                                      ? `${history.realizedPnlUSD >= 0 ? '+' : '-'}$${Math.abs(
-                                          history.realizedPnlUSD * exchangeRate
-                                        ).toLocaleString('en-US', {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
-                                        })}`
-                                      : '****'}
-                                  </div>
-                                ) : (
-                                  <div className="font-semibold tabular-nums text-muted-foreground/60">
-                                    —
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {/* Operations as a dense mini-table with its own header row. */}
-                            <table className="mt-2 w-full table-fixed text-xs">
+                            {/* History as one dense mini-table: the summary is
+                            its first row, then the latest 5 operations. */}
+                            <table className="w-full table-fixed text-xs">
                               <colgroup>
                                 <col className="w-[20%]" />
                                 <col className="w-[16%]" />
@@ -928,13 +871,59 @@ export default function PortfolioManagementTable({
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-border/40">
+                                {/* Summary row: same columns and typography
+                                as the operations below, with each figure
+                                under the column it belongs to (date range
+                                under Fecha, buys/sells under Tipo, operation
+                                count under Cant., realized gain under Total). */}
+                                <tr className="tabular-nums">
+                                  <td className="py-1 pr-2 font-semibold text-foreground">
+                                    {fmtDate(history.firstBuyDate)} – {fmtDate(history.lastOpDate)}
+                                  </td>
+                                  <td className="py-1 pr-2 font-semibold text-foreground">
+                                    {history.buys} compras · {history.sells} ventas
+                                  </td>
+                                  <td className="py-1 pr-2 text-right font-semibold text-foreground">
+                                    {history.buys + history.sells}
+                                  </td>
+                                  <td className="py-1 pr-2 text-right text-muted-foreground/60">
+                                    —
+                                  </td>
+                                  <td className="py-1 text-right font-semibold">
+                                    {history.sells > 0 ? (
+                                      <span
+                                        className={
+                                          history.realizedPnlUSD >= 0
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : 'text-red-500 dark:text-red-400'
+                                        }
+                                      >
+                                        {showValues
+                                          ? `${history.realizedPnlUSD >= 0 ? '+' : '-'}$${Math.abs(
+                                              history.realizedPnlUSD * exchangeRate
+                                            ).toLocaleString('en-US', {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
+                                            })}`
+                                          : '****'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground/60">—</span>
+                                    )}
+                                  </td>
+                                </tr>
                                 {history.recent.map((op, i) => (
                                   <tr
-                                    key={`${op.date}-${op.type}-${i}`}
+                                    key={`${op.date}-${op.type}-${op.currency}-${i}`}
                                     className="tabular-nums"
                                   >
-                                    <td className="py-1 pr-2 text-muted-foreground">
-                                      {fmtDate(op.date)}
+                                    <td className="py-1 pr-2">
+                                      <span className="flex items-center gap-1.5">
+                                        <span className="text-muted-foreground">
+                                          {fmtDate(op.date)}
+                                        </span>
+                                        <CurrencyBadge currency={op.currency} />
+                                      </span>
                                     </td>
                                     <td className="py-1 pr-2">
                                       <span

@@ -74,6 +74,9 @@ export interface TickerHistoryOp {
   pricePerUnitUSD: number;
   /** Gross total (quantity × price) in USD base, excluding fees. */
   totalUSD: number;
+  /** Market of the leg, so a consolidated asset (e.g. CEG held in MXN
+   * and USD) shows which market each operation belongs to. */
+  currency: 'MXN' | 'USD';
 }
 
 /** Summarized history of one asset, keyed by normalized ticker. */

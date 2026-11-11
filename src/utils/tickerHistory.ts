@@ -11,7 +11,9 @@
  * positions from the hook. A :BMV (MXN) price is converted with the
  * current exchange rate, the same convention the table uses for
  * value/cost/price. The total is gross (quantity × price), excluding
- * fees, so each row stays self-consistent.
+ * fees, so each row stays self-consistent. Each operation also keeps its
+ * market (MXN for :BMV legs, USD otherwise), so a consolidated asset
+ * shows which market each operation belongs to.
  */
 
 import { TickerHistory, TickerHistoryOp } from '@/types/portfolio';
@@ -90,6 +92,7 @@ export function buildTickerHistoryMap(
         quantity: Number(t.quantity),
         pricePerUnitUSD: priceUSD,
         totalUSD: Number(t.quantity) * priceUSD,
+        currency: isMxnTicker(t.ticker) ? 'MXN' : 'USD',
       };
       return op;
     });
