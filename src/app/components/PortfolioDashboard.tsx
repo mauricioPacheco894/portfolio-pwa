@@ -12,13 +12,12 @@ import Link from 'next/link';
 import { useEffect,useState } from 'react';
 
 import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
-import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
+import { AssetPosition } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioIntraday } from '@/utils/intradayCalculations';
 
 import AddTransactionForm from './AddTransactionForm';
 import { Header } from './Header';
-import HoldingsTable from './HoldingsTable';
 import PaginationControls from './PaginationControls';
 import PerformanceChart from './PerformanceChart';
 import PortfolioActions from './PortfolioActions';
@@ -34,10 +33,8 @@ type Portfolio = Database['public']['Tables']['portfolios']['Row'];
 interface PortfolioDashboardProps {
   portfolio: Portfolio;
   holdings: AssetPosition[];
-  activeHoldings: AssetPosition[];
   transactions: Transaction[];
   uniqueTickers: string[];
-  rebalanceSuggestions: any[];
   usdMxnRate: number;
   totalRealizedPnlUSD: number;
   totalRealizedPnlMXN: number;
@@ -48,10 +45,8 @@ interface PortfolioDashboardProps {
 export default function PortfolioDashboard({
   portfolio,
   holdings,
-  activeHoldings,
   transactions,
   uniqueTickers,
-  rebalanceSuggestions,
   usdMxnRate,
   totalRealizedPnlUSD,
   totalRealizedPnlMXN,
@@ -62,6 +57,9 @@ export default function PortfolioDashboard({
   const [showValues, setShowValues] = useState(true);
   const [intradayData, setIntradayData] = useState<any[] | null>(null);
   const [isLoadingIntraday, setIsLoadingIntraday] = useState(true);
+  // Monto de aporte para el modo "Aportar Dinero" (vive aquí para que el
+  // hook calcule las propuestas de depósito con la meta guardada).
+  const [depositAmount, setDepositAmount] = useState<string>('5000');
 
   // Use the custom hook to calculate all totals
   const {
@@ -73,7 +71,10 @@ export default function PortfolioDashboard({
     totalProfit: dbTotalProfit,
     percentage: dbPercentage,
     consolidatedAssetsForChart,
-    preCalculatedHoldingsUSD,
+    consolidatedPositions,
+    strategySuggestions,
+    depositProposals,
+    rebalanceProposals,
     otherPnL,
     monthlyReturn,
     ytdReturn
@@ -84,7 +85,8 @@ export default function PortfolioDashboard({
     usdMxnRate, 
     totalRealizedPnlUSD,
     totalRealizedPnlMXN,
-    historyData
+    historyData,
+    depositAmount
   );
 
   // Sync with live intraday data if available (most recent Yahoo Finance 15m tick)
@@ -103,12 +105,21 @@ export default function PortfolioDashboard({
 
   useEffect(() => {
     let isMounted = true;
-    getPortfolioIntraday(portfolio.id).then(data => {
-      if (isMounted) {
-        setIntradayData(data);
-        setIsLoadingIntraday(false);
-      }
-    });
+    getPortfolioIntraday(portfolio.id)
+      .then(data => {
+        if (isMounted) {
+          setIntradayData(data);
+          setIsLoadingIntraday(false);
+        }
+      })
+      .catch((err) => {
+        // Sin intradía seguimos con los totales de la BD; sin este catch el
+        // estado quedaba en cargando para siempre y la gráfica no avanzaba.
+        console.error('[intraday] Error al cargar datos intradía:', err);
+        if (isMounted) {
+          setIsLoadingIntraday(false);
+        }
+      });
     return () => { isMounted = false; };
   }, [portfolio.id]);
 
@@ -221,14 +232,17 @@ export default function PortfolioDashboard({
 
         <section className="mb-6">
           <PortfolioManagementTable
-            holdings={activeHoldings}
-            preCalculatedHoldingsUSD={preCalculatedHoldingsUSD}
+            consolidatedPositions={consolidatedPositions}
+            strategySuggestions={strategySuggestions}
+            depositProposals={depositProposals}
+            rebalanceProposals={rebalanceProposals}
             currentTarget={portfolio.target_allocation || undefined}
-            rebalanceSuggestions={rebalanceSuggestions}
             portfolioId={portfolio.id}
             availableTickers={uniqueTickers}
             totalValue={totalValue}
             exchangeRate={exchangeRate}
+            depositAmount={depositAmount}
+            onDepositAmountChange={setDepositAmount}
             headerAction={
               <PortfolioChartModal
                 holdings={consolidatedAssetsForChart as any}
@@ -241,7 +255,6 @@ export default function PortfolioDashboard({
 
         <section className="mb-6">
           <DashboardSections
-            activeHoldings={activeHoldings}
             transactions={transactions}
             portfolioId={portfolio.id}
             pagination={pagination}
@@ -255,9 +268,9 @@ export default function PortfolioDashboard({
   );
 }
 
-/** Tabbed section for Positions and Transactions */
+/** Historial de transacciones (las posiciones viven ahora en la tabla única
+ * "Posiciones y estrategia" de arriba). */
 function DashboardSections({
-  activeHoldings,
   transactions,
   portfolioId,
   pagination,
@@ -265,7 +278,6 @@ function DashboardSections({
   usdMxnRate,
   holdings,
 }: {
-  activeHoldings: AssetPosition[];
   transactions: Transaction[];
   portfolioId: string;
   pagination: { page: number; totalPages: number };
@@ -277,16 +289,6 @@ function DashboardSections({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Posiciones */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-4 py-4 sm:px-6 border-b border-border bg-muted/30">
-          <h2 className="text-lg font-semibold text-foreground">Mis Posiciones</h2>
-        </div>
-        <div className="p-4 sm:p-0">
-          <HoldingsTable holdings={activeHoldings} />
-        </div>
-      </div>
-
       {/* Transacciones */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <button

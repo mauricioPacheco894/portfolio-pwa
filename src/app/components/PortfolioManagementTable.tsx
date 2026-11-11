@@ -1,12 +1,19 @@
 'use client';
 
 /**
- * Portfolio Management Table Component
+ * Portfolio Management Table Component ("Posiciones y estrategia")
  *
- * Unified table with a dropdown to select the calculation mode:
+ * Tabla única de posiciones y estrategia: fusiona la antigua "Mis Posiciones"
+ * (HoldingsTable) con "Gestión de Portafolio". Cada fila es un ticker
+ * normalizado (p. ej. NU + NUN:BMV → NU) con cantidad, costo, precio, valor,
+ * G/P, % actual/meta, diferencia y acción/monto según el modo:
  * - Strategy: Shows tolerance-based buy/sell/hold suggestions
  * - Deposit: Shows how to distribute new money (only buys)
  * - Rebalance: Shows classic rebalance (buy/sell to match targets)
+ *
+ * Los cálculos (consolidación, totales, sugerencias) viven en
+ * usePortfolioCalculations a partir de la meta GUARDADA; esta tabla solo
+ * presenta y edita las metas. Las sugerencias se recalculan al guardar.
  */
 
 import {
@@ -22,20 +29,15 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect,useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { KNOWN_TICKERS } from '@/constants/tickers';
 import { supabase } from '@/lib/supabase';
-import { AssetPosition, RebalanceSuggestion } from '@/types/portfolio';
-import {
-  calculateClassicRebalance,
-  calculateRebalancing,
-  calculateSmartDeposit,
-  prepareRebalanceItems,
-} from '@/utils/portfolioMath';
-import { normalizeTicker } from '@/utils/tickerMapping';
+import { ConsolidatedPosition, RebalanceSuggestion } from '@/types/portfolio';
+import { type OrderProposal } from '@/utils/portfolioMath';
 
 import TickerAutocomplete from './TickerAutocomplete';
+import { CurrencyBadge } from './ui/CurrencyBadge';
 
 type CalcMode = 'strategy' | 'deposit' | 'rebalance';
 
@@ -46,25 +48,39 @@ const MODE_OPTIONS: { value: CalcMode; label: string; description: string }[] = 
 ];
 
 interface PortfolioManagementTableProps {
-  holdings: AssetPosition[];
+  /** Posiciones consolidadas por ticker normalizado (del hook). */
+  consolidatedPositions: ConsolidatedPosition[];
+  /** Sugerencias de estrategia calculadas por el hook con la meta guardada. */
+  strategySuggestions: RebalanceSuggestion[];
+  /** Propuestas de depósito calculadas por el hook con la meta guardada. */
+  depositProposals: OrderProposal[];
+  /** Propuestas de rebalanceo clásico calculadas por el hook. */
+  rebalanceProposals: OrderProposal[];
   currentTarget: Record<string, number> | undefined;
-  rebalanceSuggestions: RebalanceSuggestion[];
   portfolioId: string;
   availableTickers: string[];
+  /** Total del header (mismo valor que muestra PortfolioHeaderStats). */
   totalValue: number;
   exchangeRate: number;
-  preCalculatedHoldingsUSD?: Record<string, number>;
+  /** Monto de aporte del modo "Aportar Dinero" (estado del Dashboard). */
+  depositAmount: string;
+  onDepositAmountChange: (value: string) => void;
   headerAction?: React.ReactNode;
 }
 
 
 export default function PortfolioManagementTable({
-  holdings,
+  consolidatedPositions,
+  strategySuggestions,
+  depositProposals,
+  rebalanceProposals,
   currentTarget,
   portfolioId,
   availableTickers,
+  totalValue,
   exchangeRate = 1,
-  preCalculatedHoldingsUSD,
+  depositAmount,
+  onDepositAmountChange,
   headerAction,
 }: PortfolioManagementTableProps) {
   const router = useRouter();
@@ -79,7 +95,6 @@ export default function PortfolioManagementTable({
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [depositAmount, setDepositAmount] = useState<string>('5000');
 
   const [ticker, setTicker] = useState('');
   const [percentage, setPercentage] = useState('');
@@ -180,82 +195,57 @@ export default function PortfolioManagementTable({
   const total = Object.values(allocation).reduce((a, b) => a + b, 0);
   const targetKeys = Object.keys(allocation);
 
-  // Consolidate holdings in USD
-  let consolidatedHoldingsUSD: Record<string, number>;
-  if (preCalculatedHoldingsUSD) {
-    consolidatedHoldingsUSD = preCalculatedHoldingsUSD;
-  } else {
-    consolidatedHoldingsUSD = {};
-    holdings.forEach((h) => {
-      const normTicker = normalizeTicker(h.ticker, targetKeys);
-      const valUSD =
-        (h as any).marketValueGlobal ||
-        (h.currency === 'MXN' ? h.currentValue / exchangeRate : h.currentValue);
-      consolidatedHoldingsUSD[normTicker] =
-        (consolidatedHoldingsUSD[normTicker] || 0) + valUSD;
-    });
-  }
-
-  const totalPortfolioValueUSD = Object.values(consolidatedHoldingsUSD).reduce(
-    (a, b) => a + b,
-    0
+  // Los cálculos (consolidación, totales, sugerencias) vienen del hook
+  // (usePortfolioCalculations) a partir de la meta guardada. Esta tabla ya
+  // no consolida, no calcula su propio total ni recalcula sugerencias: las
+  // recibe como props. Si el usuario edita una meta sin guardar, las
+  // sugerencias siguen reflejando la meta guardada y se actualizan al guardar.
+  const positionsByTicker = new Map(
+    consolidatedPositions.map((p) => [p.ticker, p])
   );
-
-  // Derive prices for rebalancing calculations
-  const derivedPrices: Record<string, number> = {};
-  holdings.forEach((h) => {
-    if (h.totalQuantity > 0) {
-      derivedPrices[h.ticker] = h.currentValue / h.totalQuantity;
-    }
-  });
-
-  // Calculate suggestions based on mode
-  const strategySuggestions = calculateRebalancing(
-    holdings,
-    allocation,
-    totalPortfolioValueUSD,
-    derivedPrices
-  );
-
-  const rebalanceItems = useMemo(() => {
-    return prepareRebalanceItems(
-      consolidatedHoldingsUSD,
-      allocation,
-      totalPortfolioValueUSD
-    );
-  }, [consolidatedHoldingsUSD, allocation, totalPortfolioValueUSD]);
-
-  const depositProposals = useMemo(() => {
-    const amount = parseFloat(depositAmount) || 0;
-    const amountUSD = amount / exchangeRate;
-    return calculateSmartDeposit(rebalanceItems, amountUSD);
-  }, [rebalanceItems, depositAmount, exchangeRate]);
-
-  const rebalanceProposals = useMemo(() => {
-    return calculateClassicRebalance(rebalanceItems);
-  }, [rebalanceItems]);
 
   // Build unified list of all tickers
   const allTickers = new Set([
-    ...Object.keys(consolidatedHoldingsUSD),
+    ...positionsByTicker.keys(),
     ...targetKeys,
   ]);
 
   const tableData = Array.from(allTickers)
     .map((ticker) => {
-      const valueBaseUSD = consolidatedHoldingsUSD[ticker] || 0;
+      const position = positionsByTicker.get(ticker);
+      const valueBaseUSD = position?.marketValueUSD || 0;
       const displayValue = valueBaseUSD * exchangeRate;
+      const quantity = position?.quantity || 0;
+      // Costo y precio en la moneda seleccionada (base USD del hook).
+      const displayCost =
+        quantity > 0
+          ? ((position?.totalInvestedUSD || 0) * exchangeRate) / quantity
+          : 0;
+      const displayPrice =
+        quantity > 0 ? (valueBaseUSD * exchangeRate) / quantity : 0;
+      const plDisplay = (position?.plUSD || 0) * exchangeRate;
+      const plPct =
+        position && position.totalInvestedUSD > 0
+          ? (position.plUSD / position.totalInvestedUSD) * 100
+          : 0;
       const strategySuggestion = strategySuggestions.find((s) => s.ticker === ticker);
       const depositProposal = depositProposals.find((p) => p.ticker === ticker);
       const rebalanceProposal = rebalanceProposals.find((p) => p.ticker === ticker);
+      // El denominador es el total del header (prop totalValue): header y
+      // tabla siempre usan el mismo total.
       const currentPct =
-        totalPortfolioValueUSD > 0
-          ? (valueBaseUSD / totalPortfolioValueUSD) * 100
-          : 0;
+        totalValue > 0 ? (displayValue / totalValue) * 100 : 0;
       const targetPct = allocation[ticker] || 0;
 
       return {
         ticker,
+        quantity,
+        displayCost,
+        displayPrice,
+        plDisplay,
+        plPct,
+        isNegative: position?.isNegative ?? false,
+        currency: position?.currency ?? 'USD',
         currentValue: displayValue,
         currentPct,
         targetPct,
@@ -307,13 +297,6 @@ export default function PortfolioManagementTable({
   const hasTargets = Object.keys(allocation).length > 0;
   const showProjectedColumn = calcMode !== 'strategy' && hasTargets;
 
-  const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
-  };
-
   const selectedMode = MODE_OPTIONS.find((m) => m.value === calcMode)!;
 
   return (
@@ -321,7 +304,7 @@ export default function PortfolioManagementTable({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <h3 className="text-base font-semibold text-foreground">
-            Gestión de Portafolio
+            Posiciones y estrategia
           </h3>
           {headerAction && <div>{headerAction}</div>}
 
@@ -373,7 +356,7 @@ export default function PortfolioManagementTable({
                   step="100"
                   className="w-28 sm:w-36 rounded-lg border border-border bg-background py-1 pr-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary pl-6"
                   value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
+                  onChange={(e) => onDepositAmountChange(e.target.value)}
                 />
               </div>
             </div>
@@ -424,7 +407,11 @@ export default function PortfolioManagementTable({
             <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm hidden md:table-header-group">
               <tr className="md:table-row">
                 <th className="px-3 sm:px-4 py-2 text-left">Activo</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Cant.</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Costo</th>
+                <th className="px-3 sm:px-4 py-2 text-right">Precio</th>
                 <th className="px-3 sm:px-4 py-2 text-right">Valor</th>
+                <th className="px-3 sm:px-4 py-2 text-right">G/P</th>
                 <th className="px-3 sm:px-4 py-2 text-right">% Actual / Meta</th>
                 {showProjectedColumn && (
                   <th className="px-3 sm:px-4 py-2 text-right">Después</th>
@@ -454,7 +441,30 @@ export default function PortfolioManagementTable({
                         <span className="md:hidden flex items-center text-muted-foreground">
                           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </span>
+                        {row.isNegative && (
+                          <div
+                            className="text-red-500"
+                            title="Error: Has vendido más de lo que compraste. Revisa tus transacciones."
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                          </div>
+                        )}
                         <span className="text-base md:text-sm">{row.ticker}</span>
+                        <CurrencyBadge currency={row.currency} />
                       </div>
                       
                       <div className="md:hidden text-right font-semibold tabular-nums text-base">
@@ -466,6 +476,33 @@ export default function PortfolioManagementTable({
                       </div>
                     </td>
 
+                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
+                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Cant.</span>
+                      <span>{row.quantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </td>
+
+                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
+                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Costo</span>
+                      <span>
+                        $
+                        {row.displayCost.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                    </td>
+
+                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
+                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Precio</span>
+                      <span>
+                        $
+                        {row.displayPrice.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                    </td>
+
                     <td className="hidden md:table-cell px-4 py-1.5 text-right text-muted-foreground text-sm tabular-nums">
                       <span>
                         $
@@ -474,6 +511,28 @@ export default function PortfolioManagementTable({
                           maximumFractionDigits: 2,
                         })}
                       </span>
+                    </td>
+
+                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
+                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">G/P</span>
+                      <div
+                        className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums whitespace-nowrap ${row.plDisplay >= 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-red-500 dark:text-red-400'
+                          }`}
+                      >
+                        <span className="text-sm">
+                          {row.plPct > 0 ? '+' : ''}
+                          {row.plPct.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                        </span>
+                        <span className="text-[11px] opacity-70 font-normal">
+                          ({row.plDisplay >= 0 ? '+' : '-'}$
+                          {Math.abs(row.plDisplay).toLocaleString('en-US', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })})
+                        </span>
+                      </div>
                     </td>
 
                     <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>

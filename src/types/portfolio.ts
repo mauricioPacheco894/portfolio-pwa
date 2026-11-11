@@ -36,6 +36,24 @@ export interface AssetPosition {
   lastUpdated?: string;
 }
 
+/** Posición consolidada por ticker normalizado (p. ej. NU + NUN:BMV → NU).
+ * Valores en USD base; la UI los convierte a la moneda seleccionada. */
+export interface ConsolidatedPosition {
+  ticker: string;
+  /** Cantidad total sumada entre las piernas (mismo activo subyacente). */
+  quantity: number;
+  /** Valor de mercado total en USD. */
+  marketValueUSD: number;
+  /** Costo total invertido en USD. */
+  totalInvestedUSD: number;
+  /** Ganancia/pérdida no realizada en USD. */
+  plUSD: number;
+  /** Cantidad negativa = se vendió más de lo comprado (sobreventa). */
+  isNegative: boolean;
+  /** Moneda de la pierna con mayor valor (para el distintivo). */
+  currency: 'USD' | 'MXN';
+}
+
 /** Rebalancing suggestion for a single asset */
 export interface RebalanceSuggestion {
   ticker: string;
@@ -59,33 +77,3 @@ export interface TransactionFormData {
   portfolio_id: string;
 }
 
-/** Aggregated portfolio totals */
-export interface PortfolioTotals {
-  totalValue: number;
-  totalInvested: number;
-  plDollars: number;
-  plPercentage: number;
-}
-
-/**
- * Calculates aggregated totals from an array of holdings.
- *
- * @param holdings - Array of asset positions
- * @returns Aggregated portfolio totals
- */
-export function calculatePortfolioTotals(
-  holdings: AssetPosition[]
-): PortfolioTotals {
-  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
-  const totalInvested = holdings.reduce((sum, h) => sum + h.totalInvested, 0);
-  const plDollars = holdings.reduce((sum, h) => sum + h.plDollars, 0);
-  const plPercentage =
-    totalInvested > 0 ? (plDollars / totalInvested) * 100 : 0;
-
-  return {
-    totalValue,
-    totalInvested,
-    plDollars,
-    plPercentage,
-  };
-}

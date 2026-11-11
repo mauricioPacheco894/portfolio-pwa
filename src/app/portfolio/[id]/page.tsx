@@ -16,7 +16,6 @@ import { createClient } from '@/lib/supabaseServer';
 import { AssetPosition } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioHistory } from '@/utils/historyCalculations';
-import { calculateRebalancing } from '@/utils/portfolioMath';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
@@ -61,7 +60,12 @@ async function getPaginatedTransactions(
   }
 
   const { data, count, error } = await query
+    // Orden determinista: sin el desempate por id, Postgres puede ordenar
+    // distinto las filas con la misma fecha entre consultas y una fila del
+    // borde entre páginas aparece duplicada o se omite (todas las
+    // transacciones de un mismo día comparten timestamp).
     .order('date', { ascending: false })
+    .order('id', { ascending: false })
     .range(from, to);
 
   if (error) {
@@ -128,9 +132,6 @@ export default async function Page({ params, searchParams }: Props) {
     totalRealizedPnlMXN += isMxn ? p.realized_pnl : (Number(p.realized_pnl_mxn) ?? p.realized_pnl * usdMxnRate);
   });
 
-  // Build price map for rebalancing calculations
-  const currentPrices: Record<string, number> = { 'USD-MXN': usdMxnRate };
-
   // Transform RPC positions to AssetPosition format
   const holdings: AssetPosition[] = positions.map(
     (pos: Database['public']['Functions']['get_portfolio_positions']['Returns'][0]) => {
@@ -143,7 +144,6 @@ export default async function Page({ params, searchParams }: Props) {
       if (pos.total_shares > 0) {
         marketPrice = pos.current_value / pos.total_shares;
       }
-      currentPrices[pos.ticker] = marketPrice;
 
       const realizedPL = pnlMap.get(pos.ticker) || 0;
 
@@ -164,6 +164,9 @@ export default async function Page({ params, searchParams }: Props) {
         plPercentage: pos.unrealized_pnl_percent ?? 0,
         realizedPL: isMxn ? realizedPLGlobal : realizedPL,
         currency,
+        // Cantidad negativa = se vendió más de lo comprado (sobreventa).
+        // La tabla de posiciones lo usa para mostrar la advertencia.
+        isNegative: Number(pos.total_shares) < 0,
         lastUpdated: undefined,
         marketValueGlobal,
         totalInvestedGlobal,
@@ -171,17 +174,6 @@ export default async function Page({ params, searchParams }: Props) {
         totalInvestedMxn: Number(pos.total_invested_mxn),
       } as AssetPosition;
     }
-  );
-
-  const activeHoldings = holdings.filter((h) => Math.abs(h.totalQuantity) > 0.000001);
-
-  const totalValueUSD = holdings.reduce((sum, h) => sum + (h.marketValueGlobal || 0), 0);
-
-  const rebalanceSuggestions = calculateRebalancing(
-    holdings,
-    portfolio.target_allocation || {},
-    totalValueUSD,
-    currentPrices
   );
 
   const uniqueTickers = Array.from(new Set(holdings.map((h) => h.ticker)));
@@ -192,10 +184,8 @@ export default async function Page({ params, searchParams }: Props) {
     <PortfolioDashboard
       portfolio={portfolio}
       holdings={holdings}
-      activeHoldings={activeHoldings}
       transactions={transactions}
       uniqueTickers={uniqueTickers}
-      rebalanceSuggestions={rebalanceSuggestions}
       usdMxnRate={usdMxnRate}
       totalRealizedPnlUSD={totalRealizedPnlUSD}
       totalRealizedPnlMXN={totalRealizedPnlMXN}

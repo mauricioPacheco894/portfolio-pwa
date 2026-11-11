@@ -144,6 +144,16 @@ export default function TransactionFormModal({
       return;
     }
 
+    // La cantidad siempre es positiva: el tipo (BUY/SELL) ya indica el
+    // sentido. Una cantidad negativa o cero netearía al revés en las
+    // posiciones (p. ej. una venta negativa sumaría títulos).
+    if (quantity === '' || Number(quantity) <= 0) {
+      setError('La cantidad debe ser mayor que 0');
+      toast.error('La cantidad debe ser mayor que 0');
+      setLoading(false);
+      return;
+    }
+
     try {
       let submitDate: string;
       if (date) {
@@ -304,6 +314,8 @@ export default function TransactionFormModal({
                 </label>
                 <input
                   type="number"
+                  min="0.01"
+                  step="any"
                   value={quantity}
                   onChange={(e) =>
                     setQuantity(
