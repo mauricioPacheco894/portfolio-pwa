@@ -150,7 +150,7 @@ export default function PortfolioDashboard({
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-background dark:to-zinc-900/50">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
           <div className="flex flex-col gap-3 sm:gap-6 border-b border-border pb-6 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
