@@ -50,6 +50,22 @@ export interface Database {
           realized_pnl_mxn: number;
         }[];
       };
+      /**
+       * Daily portfolio value and net invested amounts (time series).
+       * Source for the performance chart and the Month/YTD returns.
+       */
+      get_portfolio_history: {
+        Args: {
+          p_portfolio_id: string;
+        };
+        Returns: {
+          history_date: string;
+          value_usd: number;
+          value_mxn: number;
+          invested_usd: number;
+          invested_mxn: number;
+        }[];
+      };
     };
     Tables: {
       /** Asset price snapshots and historical data */
@@ -72,6 +88,7 @@ export interface Database {
           currency?: string | null;
           last_updated?: string;
         };
+        Relationships: [];
       };
       /** User-defined portfolio containers */
       portfolios: {
@@ -96,6 +113,32 @@ export interface Database {
           created_at?: string;
           user_id?: string;
         };
+        Relationships: [];
+      };
+      /** Stock split events (public reference data) */
+      splits: {
+        Row: {
+          id: string;
+          ticker: string;
+          split_date: string;
+          ratio: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticker: string;
+          split_date: string;
+          ratio: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticker?: string;
+          split_date?: string;
+          ratio?: number;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       /** Individual buy/sell transaction records */
       transactions: {
@@ -138,9 +181,12 @@ export interface Database {
           date?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
-    Views: {};
+    Views: {
+      [_ in never]: never;
+    };
   };
 }
 
