@@ -13,9 +13,10 @@ import { notFound } from 'next/navigation';
 
 import PortfolioDashboard from '@/app/components/PortfolioDashboard';
 import { createClient } from '@/lib/supabaseServer';
-import { AssetPosition } from '@/types/portfolio';
+import { AssetPosition, TickerHistory } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioHistory } from '@/utils/historyCalculations';
+import { buildTickerHistoryMap } from '@/utils/tickerHistory';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Portfolio = Database['public']['Tables']['portfolios']['Row'];
@@ -84,6 +85,29 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+/**
+ * All the portfolio's transactions (unpaginated), only to build the
+ * per-asset summarized history of the desktop expanded detail.
+ * About 216 rows; the page's Transactions History keeps using the
+ * paginated version above.
+ */
+async function getAllTransactions(portfolioId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('portfolio_id', portfolioId)
+    .order('date', { ascending: false })
+    .order('id', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all transactions', error);
+    return [] as Transaction[];
+  }
+
+  return (data as Transaction[]) || [];
+}
+
 export default async function Page({ params, searchParams }: Props) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
@@ -100,7 +124,7 @@ export default async function Page({ params, searchParams }: Props) {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData] = await Promise.all([
+  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData, allTransactions] = await Promise.all([
     getPaginatedTransactions(id, page, pageSize, {
       ticker: tickerFilter,
       type: typeFilter,
@@ -108,13 +132,26 @@ export default async function Page({ params, searchParams }: Props) {
     supabase.rpc('get_portfolio_positions', { p_portfolio_id: id }),
     supabase.from('asset_prices').select('price').eq('ticker', 'USD-MXN').maybeSingle(),
     supabase.rpc('get_realized_pnl', { p_portfolio_id: id }),
-    getPortfolioHistory(id)
+    getPortfolioHistory(id),
+    getAllTransactions(id)
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
   const positions = rpcResult.data || [];
   const usdMxnRate = rateResult.data?.price || 20.0;
   const pnlValues = pnlResult.data || [];
+
+  // Per-asset summarized history (desktop expanded detail): built from
+  // the transactions and the per-asset breakdown that the
+  // get_realized_pnl RPC already returns (before, only the totals were
+  // passed down).
+  const targetKeys = Object.keys(portfolio.target_allocation || {});
+  const tickerHistory: Record<string, TickerHistory> = buildTickerHistoryMap(
+    allTransactions,
+    pnlValues,
+    targetKeys,
+    usdMxnRate
+  );
 
   if (rpcResult.error) {
     console.error('Error fetching RPC positions:', rpcResult.error);
@@ -189,6 +226,7 @@ export default async function Page({ params, searchParams }: Props) {
       usdMxnRate={usdMxnRate}
       totalRealizedPnlUSD={totalRealizedPnlUSD}
       totalRealizedPnlMXN={totalRealizedPnlMXN}
+      tickerHistory={tickerHistory}
       pagination={{ page, totalPages }}
       historyData={historyData}
     />
