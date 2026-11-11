@@ -1,80 +1,80 @@
 # Portfolio PWA 📊
 
-Aplicación web progresiva para gestionar y monitorear portafolios de inversión en tiempo real.
+Progressive web app to manage and monitor investment portfolios in real time.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-green?style=flat&logo=supabase)
 
-## 🎯 Sobre el Proyecto
+## 🎯 About the Project
 
-Portfolio PWA es una aplicación web progresiva completa que demuestra la implementación de las mejores prácticas en desarrollo web moderno. El proyecto permite gestionar múltiples portafolios de inversión con seguimiento en tiempo real de precios, análisis de rendimiento y sugerencias de rebalanceo.
+Portfolio PWA is a complete progressive web app showcasing modern web development best practices. The project lets you manage multiple investment portfolios with real-time price tracking, performance analysis and rebalancing suggestions.
 
-## ✨ Características Principales
+## ✨ Key Features
 
-- 📱 **Progressive Web App** - Instalable como app nativa en cualquier dispositivo
-- 📊 **Datos en Tiempo Real** - Integración con Yahoo Finance para precios actualizados
-- 💼 **Gestión Multi-Portafolio** - Organiza múltiples portafolios simultáneamente
-- 🎯 **Rebalanceo Inteligente** - Algoritmo que sugiere operaciones basadas en tu asignación objetivo
-- 📈 **Visualización Interactiva** - Gráficos dinámicos de distribución y performance
-- 🌙 **Dark Mode** - Tema oscuro con persistencia de preferencias
-- 🔐 **Autenticación Segura** - Sistema completo de auth con Supabase
-- ⚡ **Performance Optimizada** - Caching inteligente, code splitting y lazy loading
+- 📱 **Progressive Web App** - Installable as a native app on any device
+- 📊 **Real-Time Data** - Yahoo Finance integration for up-to-date prices
+- 💼 **Multi-Portfolio Management** - Organize multiple portfolios at the same time
+- 🎯 **Smart Rebalancing** - Algorithm that suggests trades based on your target allocation
+- 📈 **Interactive Visualization** - Dynamic distribution and performance charts
+- 🌙 **Dark Mode** - Dark theme with persisted preferences
+- 🔐 **Secure Authentication** - Complete auth system with Supabase
+- ⚡ **Optimized Performance** - Smart caching, code splitting and lazy loading
 
-## �️ Stack Tecnológico
+## 🛠️ Tech Stack
 
 ### Frontend
 
 - **Next.js 16** - App Router, Server Components, Streaming
-- **TypeScript** - Type-safe con validación de schemas (Zod)
-- **Tailwind CSS** - Utility-first styling con dark mode
-- **React Query** - Server state management y caching
+- **TypeScript** - Type-safe with schema validation (Zod)
+- **Tailwind CSS** - Utility-first styling with dark mode
+- **React Query** - Server state management and caching
 
-### Backend & Infraestructura
+### Backend & Infrastructure
 
 - **Supabase** - PostgreSQL, Auth, Row Level Security
-- **Yahoo Finance API** - Datos de mercado en tiempo real
-- **Vercel** - Deployment con edge functions
+- **Yahoo Finance API** - Real-time market data
+- **Vercel** - Deployment with edge functions
 
-### Herramientas
+### Tools
 
-- **next-pwa** - Service Worker y manifest
-- **Recharts** - Visualización de datos
-- **React Hot Toast** - Sistema de notificaciones
-- **Lucide React** - Iconografía
+- **next-pwa** - Service Worker and manifest
+- **Recharts** - Data visualization
+- **React Hot Toast** - Notification system
+- **Lucide React** - Icons
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
-El proyecto implementa:
+The project implements:
 
-- ✅ **PWA completa** con Service Worker y manifest
-- ✅ **Middleware de autenticación** para protección de rutas
-- ✅ **Error Boundaries** para manejo robusto de errores
-- ✅ **React Query** para caching y sincronización de estado servidor
-- ✅ **Code Splitting** con dynamic imports y lazy loading
-- ✅ **Type-safe environment variables** con validación en build-time
-- ✅ **SEO optimizado** con metadata dinámica
+- ✅ **Full PWA** with Service Worker and manifest
+- ✅ **Auth middleware** for route protection
+- ✅ **Error Boundaries** for robust error handling
+- ✅ **React Query** for server-state caching and synchronization
+- ✅ **Code Splitting** with dynamic imports and lazy loading
+- ✅ **Type-safe environment variables** with build-time validation
+- ✅ **Optimized SEO** with dynamic metadata
 
-## 📦 Desarrollo
+## 📦 Development
 
 ```bash
-npm run dev      # Servidor de desarrollo
-npm run build    # Build de producción
-npm start        # Servidor de producción
-npm run lint     # Linter ESLint
+npm run dev      # Development server
+npm run build    # Production build
+npm start        # Production server
+npm run lint     # ESLint linter
 ```
 
-## � Deployment
+## 🚀 Deployment
 
-Desplegado en **Vercel** con integración continua desde GitHub.
+Deployed on **Vercel** with continuous integration from GitHub.
 
-## 👤 Autor
+## 👤 Author
 
 **Mauricio Jesús Pacheco Mijangos**
 
 - GitHub: [@mauricioPacheco894](https://github.com/mauricioPacheco894)
-- Proyecto: [portfolio-pwa](https://github.com/mauricioPacheco894/portfolio-pwa)
+- Project: [portfolio-pwa](https://github.com/mauricioPacheco894/portfolio-pwa)
 
-## 📄 Licencia
+## 📄 License
 
 MIT License
