@@ -64,6 +64,36 @@ export interface RebalanceSuggestion {
   quantity: number;
 }
 
+/** One operation in an asset's history (values in USD base). */
+export interface TickerHistoryOp {
+  /** Operation date (YYYY-MM-DD). */
+  date: string;
+  type: 'BUY' | 'SELL';
+  quantity: number;
+  /** Unit price in USD base (for :BMV, converted with the current exchange rate). */
+  pricePerUnitUSD: number;
+  /** Gross total (quantity × price) in USD base, excluding fees. */
+  totalUSD: number;
+  /** Market of the leg, so a consolidated asset (e.g. CEG held in MXN
+   * and USD) shows which market each operation belongs to. */
+  currency: 'MXN' | 'USD';
+}
+
+/** Summarized history of one asset, keyed by normalized ticker. */
+export interface TickerHistory {
+  buys: number;
+  sells: number;
+  /** Date of the first buy (YYYY-MM-DD), or null when there are no buys. */
+  firstBuyDate: string | null;
+  /** Date of the last operation (YYYY-MM-DD), or null when there are no operations. */
+  lastOpDate: string | null;
+  /** Realized gain/loss in USD base (sum of the asset's legs). */
+  realizedPnlUSD: number;
+  /** Latest 5 operations, most recent first. No "see more": to see more
+   * operations use the Transactions History with its filter. */
+  recent: TickerHistoryOp[];
+}
+
 /** Transaction form data for create/edit operations */
 export interface TransactionFormData {
   id?: string;

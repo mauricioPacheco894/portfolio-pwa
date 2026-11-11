@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useEffect,useState } from 'react';
 
 import { usePortfolioCalculations } from '@/hooks/usePortfolioCalculations';
-import { AssetPosition } from '@/types/portfolio';
+import { AssetPosition, TickerHistory } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioIntraday } from '@/utils/intradayCalculations';
 
@@ -38,6 +38,8 @@ interface PortfolioDashboardProps {
   usdMxnRate: number;
   totalRealizedPnlUSD: number;
   totalRealizedPnlMXN: number;
+  /** Per-asset summarized history (desktop expanded detail). */
+  tickerHistory: Record<string, TickerHistory>;
   pagination: { page: number; totalPages: number };
   historyData: any[];
 }
@@ -50,6 +52,7 @@ export default function PortfolioDashboard({
   usdMxnRate,
   totalRealizedPnlUSD,
   totalRealizedPnlMXN,
+  tickerHistory,
   pagination,
   historyData,
 }: PortfolioDashboardProps) {
@@ -243,6 +246,8 @@ export default function PortfolioDashboard({
             exchangeRate={exchangeRate}
             depositAmount={depositAmount}
             onDepositAmountChange={setDepositAmount}
+            tickerHistory={tickerHistory}
+            showValues={showValues}
             headerAction={
               <PortfolioChartModal
                 holdings={consolidatedAssetsForChart as any}

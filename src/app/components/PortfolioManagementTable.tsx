@@ -3,12 +3,17 @@
 /**
  * Portfolio Management Table Component ("Posiciones y estrategia")
  *
- * Tabla única de posiciones y estrategia: fusiona la antigua "Mis Posiciones"
- * (HoldingsTable) con "Gestión de Portafolio". Diseño compacto: 4 columnas
- * siempre visibles (Activo | Valor | G/P | % Act. / Meta con mini barra) y
- * detalle expandible por fila (Cant., Costo, Precio, G/P, % Meta editable,
- * Diferencia/Después, Acción, Monto). Se muestran TODAS las posiciones sin
- * scroll interno ni scroll horizontal: el componente crece verticalmente.
+ * Single table for positions and strategy: it merges the old "Mis Posiciones"
+ * (HoldingsTable) with "Gestión de Portafolio". On desktop it shows 11
+ * dense columns; on mobile only the 4 essential ones (Activo | Valor | G/P |
+ * % Act.), with the rest in the expanded detail (8-field grid). The desktop
+ * expanded detail is a separate summary line above one dense mini-table:
+ * the summary shares the mini-table's 5-column grid and typography
+ * (figures aligned under the columns they belong to, operation count as
+ * "N oper.") and the latest 5 operations follow, each with its market
+ * badge (MXN/USD).
+ * ALL positions are shown, with no inner scroll and no horizontal scroll:
+ * the component grows vertically.
  *
  * Los cálculos (consolidación, totales, sugerencias) viven en
  * usePortfolioCalculations a partir de la meta GUARDADA; esta tabla solo
@@ -31,7 +36,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 
 import { KNOWN_TICKERS } from '@/constants/tickers';
 import { supabase } from '@/lib/supabase';
-import { ConsolidatedPosition, RebalanceSuggestion } from '@/types/portfolio';
+import { ConsolidatedPosition, RebalanceSuggestion, TickerHistory } from '@/types/portfolio';
 import { type OrderProposal } from '@/utils/portfolioMath';
 
 import TickerAutocomplete from './TickerAutocomplete';
@@ -44,6 +49,14 @@ const MODE_OPTIONS: { value: CalcMode; label: string; description: string }[] = 
   { value: 'deposit', label: 'Aportar Dinero', description: 'Distribuir nueva inversión' },
   { value: 'rebalance', label: 'Rebalancear', description: 'Comprar/vender para equilibrar' },
 ];
+
+// Focus the % meta input only when it is visible: the editor exists in two
+// places (desktop % Meta cell and mobile detail grid) and the native
+// autoFocus was stolen by the hidden instance, so on desktop an extra click
+// on the input was needed.
+function focusIfVisible(el: HTMLInputElement | null) {
+  if (el && el.offsetParent !== null) el.focus();
+}
 
 interface PortfolioManagementTableProps {
   /** Posiciones consolidadas por ticker normalizado (del hook). */
@@ -63,6 +76,10 @@ interface PortfolioManagementTableProps {
   /** Monto de aporte del modo "Aportar Dinero" (estado del Dashboard). */
   depositAmount: string;
   onDepositAmountChange: (value: string) => void;
+  /** Per-asset summarized history (desktop expanded detail). */
+  tickerHistory: Record<string, TickerHistory>;
+  /** Hide monetary values (header eye toggle). */
+  showValues?: boolean;
   headerAction?: React.ReactNode;
 }
 
@@ -79,6 +96,8 @@ export default function PortfolioManagementTable({
   exchangeRate = 1,
   depositAmount,
   onDepositAmountChange,
+  tickerHistory,
+  showValues = true,
   headerAction,
 }: PortfolioManagementTableProps) {
   const router = useRouter();
@@ -492,9 +511,10 @@ export default function PortfolioManagementTable({
               // Badge, monto y nota de la acción sugerida (columnas de
               // escritorio y detalle móvil comparten este cálculo).
               const action = getRowAction(row, calcMode, total, exchangeRate);
-              // Editor de % meta compartido por el detalle móvil (rejilla) y
-              // el detalle de escritorio (tira de edición).
-              const metaEditor =
+              // % meta editor: it lives in the % Meta cell (desktop) and in
+              // the mobile detail grid. Only the visible instance takes
+              // focus (see focusIfVisible).
+              const renderMetaEditor = () =>
                 editingTicker === row.ticker ? (
                   <span className="flex items-center gap-1 whitespace-nowrap">
                     <input
@@ -502,14 +522,14 @@ export default function PortfolioManagementTable({
                       min="0"
                       max="100"
                       step="0.01"
-                      className="w-16 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                      className="w-14 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSaveEdit();
                         if (e.key === 'Escape') handleCancelEdit();
                       }}
-                      autoFocus
+                      ref={focusIfVisible}
                     />
                     <button
                       onClick={handleSaveEdit}
@@ -560,6 +580,18 @@ export default function PortfolioManagementTable({
                     )}
                   </span>
                 );
+              // Asset history (desktop expanded detail).
+              const history = tickerHistory[row.ticker];
+              const hasHistory = !!history && history.buys + history.sells > 0;
+              const money = (usd: number) =>
+                showValues
+                  ? `$${(usd * exchangeRate).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : '****';
+              const fmtDate = (d: string | null) =>
+                d ? new Date(d).toLocaleDateString('es-ES', { timeZone: 'UTC' }) : '—';
 
               return (
                 <Fragment key={row.ticker}>
@@ -671,36 +703,7 @@ export default function PortfolioManagementTable({
                       )}
                     </td>
                     <td className="hidden py-2 px-1 text-right sm:table-cell">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isExpanded) toggleRow(row.ticker);
-                          handleStartEdit(row.ticker, row.targetPct);
-                        }}
-                        className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold tabular-nums text-foreground transition-colors hover:bg-primary/20 hover:text-primary"
-                        title="Editar meta"
-                      >
-                        {row.targetPct > 0 ? (
-                          <>
-                            {Number(row.targetPct).toLocaleString('en-US', {
-                              maximumFractionDigits: 2,
-                            })}
-                            %
-                          </>
-                        ) : (
-                          <Edit2 size={12} className="inline text-muted-foreground/60" />
-                        )}
-                      </button>
-                      {allocation[row.ticker] !== undefined && (
-                        <button
-                          onClick={() => handleDelete(row.ticker)}
-                          className="ml-1 text-muted-foreground/30 transition-colors hover:text-red-500"
-                          title="Eliminar de estrategia"
-                          aria-label={`Eliminar meta de ${row.ticker}`}
-                        >
-                          <Trash2 size={12} className="inline" />
-                        </button>
-                      )}
+                      {renderMetaEditor()}
                     </td>
                     <td className="hidden py-2 px-1 text-right tabular-nums whitespace-nowrap sm:table-cell">
                       {showProjectedColumn ? (
@@ -789,7 +792,7 @@ export default function PortfolioManagementTable({
                               )
                             </span>
                           </DetailItem>
-                          <DetailItem label="% Meta">{metaEditor}</DetailItem>
+                          <DetailItem label="% Meta">{renderMetaEditor()}</DetailItem>
                           {showProjectedColumn ? (
                             <DetailItem label="Después">
                               {proposal && row.targetPct > 0 ? (
@@ -836,17 +839,133 @@ export default function PortfolioManagementTable({
                     <tr id={`pos-detalle-${row.ticker}-d`} className="hidden sm:table-row">
                       <td
                         colSpan={11}
-                        className="border-t border-border/40 bg-muted/30 px-3 py-2.5 sm:px-4"
+                        className="border-t border-border/40 bg-muted/30 px-3 py-2 sm:px-4"
                       >
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                              % Meta
-                            </span>
-                            {metaEditor}
-                          </div>
-                          <span className="text-xs text-muted-foreground">{action.note}</span>
-                        </div>
+                        {hasHistory && history ? (
+                          <>
+                            {/* Summary line, separate from the mini-table
+                            below: same 5-column grid and typography as the
+                            operations, so each figure stays aligned under
+                            the column it belongs to (date range under Fecha,
+                            buys/sells under Tipo, operation count under
+                            Cant., realized gain under Total). The count reads
+                            as operations ("5 oper.") so at a glance it is
+                            clear what Cant. and Total refer to. */}
+                            <div
+                              className="grid w-full border-b border-border/60 pb-2 text-xs tabular-nums"
+                              style={{ gridTemplateColumns: '20% 16% 18% 23% 23%' }}
+                            >
+                              <div className="py-1 pr-2 font-semibold text-foreground">
+                                {fmtDate(history.firstBuyDate)} – {fmtDate(history.lastOpDate)}
+                              </div>
+                              <div className="py-1 pr-2 font-semibold text-foreground">
+                                {history.buys} compras · {history.sells} ventas
+                              </div>
+                              <div className="py-1 pr-2 text-right font-semibold text-foreground">
+                                {history.buys + history.sells} oper.
+                              </div>
+                              <div className="py-1 pr-2 text-right text-muted-foreground/60">
+                                —
+                              </div>
+                              <div className="py-1 text-right font-semibold">
+                                {history.sells > 0 ? (
+                                  <span
+                                    className={
+                                      history.realizedPnlUSD >= 0
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : 'text-red-500 dark:text-red-400'
+                                    }
+                                  >
+                                    {showValues
+                                      ? `${history.realizedPnlUSD >= 0 ? '+' : '-'}$${Math.abs(
+                                          history.realizedPnlUSD * exchangeRate
+                                        ).toLocaleString('en-US', {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        })}`
+                                      : '****'}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground/60">—</span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Operations mini-table (latest 5). */}
+                            <table className="mt-2 w-full table-fixed text-xs">
+                              <colgroup>
+                                <col className="w-[20%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[18%]" />
+                                <col className="w-[23%]" />
+                                <col className="w-[23%]" />
+                              </colgroup>
+                              <thead>
+                                <tr className="border-b border-border/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  <th scope="col" className="py-1 pr-2 text-left">
+                                    Fecha
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-left">
+                                    Tipo
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-right">
+                                    Cant.
+                                  </th>
+                                  <th scope="col" className="py-1 pr-2 text-right">
+                                    Precio
+                                  </th>
+                                  <th scope="col" className="py-1 text-right">
+                                    Total
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border/40">
+                                {history.recent.map((op, i) => (
+                                  <tr
+                                    key={`${op.date}-${op.type}-${op.currency}-${i}`}
+                                    className="tabular-nums"
+                                  >
+                                    <td className="py-1 pr-2">
+                                      <span className="flex items-center gap-1.5">
+                                        <span className="text-muted-foreground">
+                                          {fmtDate(op.date)}
+                                        </span>
+                                        <CurrencyBadge currency={op.currency} />
+                                      </span>
+                                    </td>
+                                    <td className="py-1 pr-2">
+                                      <span
+                                        className={`inline-flex w-[62px] items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-bold uppercase ${
+                                          op.type === 'BUY'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                        }`}
+                                      >
+                                        {op.type === 'BUY' ? 'Compra' : 'Venta'}
+                                      </span>
+                                    </td>
+                                    <td className="py-1 pr-2 text-right text-foreground">
+                                      {op.quantity.toLocaleString('en-US', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 6,
+                                      })}{' '}
+                                      tít.
+                                    </td>
+                                    <td className="py-1 pr-2 text-right text-muted-foreground">
+                                      @ {money(op.pricePerUnitUSD)}
+                                    </td>
+                                    <td className="py-1 text-right font-semibold text-foreground">
+                                      {money(op.totalUSD)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Sin operaciones registradas.
+                          </span>
+                        )}
                       </td>
                     </tr>
                   )}
