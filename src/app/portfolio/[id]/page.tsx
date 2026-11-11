@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabaseServer';
 import { AssetPosition, TickerHistory } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
 import { getPortfolioHistory } from '@/utils/historyCalculations';
+import { reconcilePositions, SplitEvent } from '@/utils/reconciliation';
 import { buildTickerHistoryMap } from '@/utils/tickerHistory';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
@@ -41,7 +42,7 @@ async function getPaginatedTransactions(
   portfolioId: string,
   page: number,
   pageSize: number,
-  filters?: { ticker?: string; type?: string }
+  filters?: { ticker?: string; type?: 'BUY' | 'SELL' | 'ALL' }
 ) {
   const supabase = await createClient();
   const from = (page - 1) * pageSize;
@@ -115,7 +116,14 @@ export default async function Page({ params, searchParams }: Props) {
   const page = Number(resolvedSearchParams.page) || 1;
   const pageSize = 10;
   const tickerFilter = resolvedSearchParams.ticker as string | undefined;
-  const typeFilter = resolvedSearchParams.type as string | undefined;
+  // Only the values the filter UI can send are valid; anything else (a
+  // hand-edited query string) is treated as no type filter.
+  const typeFilter =
+    resolvedSearchParams.type === 'BUY' ||
+    resolvedSearchParams.type === 'SELL' ||
+    resolvedSearchParams.type === 'ALL'
+      ? resolvedSearchParams.type
+      : undefined;
 
   const portfolio = await getPortfolio(id);
   if (!portfolio) {
@@ -124,7 +132,7 @@ export default async function Page({ params, searchParams }: Props) {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData, allTransactions] = await Promise.all([
+  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData, allTransactions, splitsResult] = await Promise.all([
     getPaginatedTransactions(id, page, pageSize, {
       ticker: tickerFilter,
       type: typeFilter,
@@ -133,7 +141,11 @@ export default async function Page({ params, searchParams }: Props) {
     supabase.from('asset_prices').select('price').eq('ticker', 'USD-MXN').maybeSingle(),
     supabase.rpc('get_realized_pnl', { p_portfolio_id: id }),
     getPortfolioHistory(id),
-    getAllTransactions(id)
+    getAllTransactions(id),
+    // Split events for the positions reconciliation. The table only exists
+    // once the splits migration is applied; until then the query fails and
+    // the reconciliation runs with no splits (same as the RPCs).
+    supabase.from('splits').select('ticker, split_date, ratio'),
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
@@ -216,6 +228,34 @@ export default async function Page({ params, searchParams }: Props) {
   const uniqueTickers = Array.from(new Set(holdings.map((h) => h.ticker)));
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  // Split events for the reconciliation (empty when the migration has not
+  // been applied yet; the query then fails and the check runs with no splits).
+  const splits: SplitEvent[] = splitsResult.error
+    ? []
+    : ((splitsResult.data ?? []) as SplitEvent[]);
+  if (splitsResult.error) {
+    console.error(
+      '[splits] Could not load split events (migration may not be applied yet):',
+      splitsResult.error.message
+    );
+  }
+
+  // Independent reconciliation: the net shares from the raw transactions
+  // must match the positions the RPC reports. If they differ, the RPC (or
+  // the data) is wrong and the dashboard shows a warning instead of
+  // silently trusting the RPC numbers.
+  const reconciliationMismatches = reconcilePositions(
+    allTransactions,
+    holdings,
+    splits
+  );
+  if (reconciliationMismatches.length > 0) {
+    console.error(
+      '[reconciliation] Positions disagree with transactions:',
+      reconciliationMismatches
+    );
+  }
+
   // Calculate real Monthly and YTD returns from historyData
   return (
     <PortfolioDashboard
@@ -229,6 +269,7 @@ export default async function Page({ params, searchParams }: Props) {
       tickerHistory={tickerHistory}
       pagination={{ page, totalPages }}
       historyData={historyData}
+      reconciliationMismatches={reconciliationMismatches}
     />
   );
 }
