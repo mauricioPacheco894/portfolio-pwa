@@ -4,12 +4,11 @@
  * Portfolio Management Table Component ("Posiciones y estrategia")
  *
  * Tabla única de posiciones y estrategia: fusiona la antigua "Mis Posiciones"
- * (HoldingsTable) con "Gestión de Portafolio". Cada fila es un ticker
- * normalizado (p. ej. NU + NUN:BMV → NU) con cantidad, costo, precio, valor,
- * G/P, % actual/meta, diferencia y acción/monto según el modo:
- * - Strategy: Shows tolerance-based buy/sell/hold suggestions
- * - Deposit: Shows how to distribute new money (only buys)
- * - Rebalance: Shows classic rebalance (buy/sell to match targets)
+ * (HoldingsTable) con "Gestión de Portafolio". Diseño compacto: 4 columnas
+ * siempre visibles (Activo | Valor | G/P | % Act. / Meta con mini barra) y
+ * detalle expandible por fila (Cant., Costo, Precio, G/P, % Meta editable,
+ * Diferencia/Después, Acción, Monto). Se muestran TODAS las posiciones sin
+ * scroll interno ni scroll horizontal: el componente crece verticalmente.
  *
  * Los cálculos (consolidación, totales, sugerencias) viven en
  * usePortfolioCalculations a partir de la meta GUARDADA; esta tabla solo
@@ -21,7 +20,6 @@ import {
   ArrowUpCircle,
   Check,
   ChevronDown,
-  ChevronUp,
   Edit2,
   MinusCircle,
   PlusCircle,
@@ -29,7 +27,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 
 import { KNOWN_TICKERS } from '@/constants/tickers';
 import { supabase } from '@/lib/supabase';
@@ -101,6 +99,11 @@ export default function PortfolioManagementTable({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (t: string) => {
+    // Si se colapsa la fila cuya meta se está editando, se cancela la edición.
+    if (editingTicker === t && expandedRows.has(t)) {
+      setEditingTicker(null);
+      setEditValue('');
+    }
     setExpandedRows(prev => {
       const next = new Set(prev);
       if (next.has(t)) next.delete(t);
@@ -401,264 +404,311 @@ export default function PortfolioManagementTable({
         </div>
       )}
 
-      <div className="p-4 sm:p-6">
-        <div className="max-h-[500px] overflow-auto">
-          <table className="w-full text-sm min-w-full md:min-w-[600px] block md:table">
-            <thead className="sticky top-0 z-10 bg-muted text-xs uppercase text-foreground font-semibold shadow-sm hidden md:table-header-group">
-              <tr className="md:table-row">
-                <th className="px-3 sm:px-4 py-2 text-left">Activo</th>
-                <th className="px-3 sm:px-4 py-2 text-right">Cant.</th>
-                <th className="px-3 sm:px-4 py-2 text-right">Costo</th>
-                <th className="px-3 sm:px-4 py-2 text-right">Precio</th>
-                <th className="px-3 sm:px-4 py-2 text-right">Valor</th>
-                <th className="px-3 sm:px-4 py-2 text-right">G/P</th>
-                <th className="px-3 sm:px-4 py-2 text-right">% Actual / Meta</th>
-                {showProjectedColumn && (
-                  <th className="px-3 sm:px-4 py-2 text-right">Después</th>
-                )}
-                {!showProjectedColumn && (
-                  <th className="px-3 sm:px-4 py-2 text-right">Diferencia</th>
-                )}
-                <th className="px-3 sm:px-4 py-2 text-right">Acción</th>
-                <th className="px-3 sm:px-4 py-2 text-right">Monto</th>
-              </tr>
-            </thead>
-            <tbody className="block md:table-row-group divide-y-0 md:divide-y divide-border/40 p-2 md:p-0">
-              {tableData.map((row) => {
-                const proposal = calcMode === 'deposit' ? row.depositProposal : row.rebalanceProposal;
-                const isExpanded = expandedRows.has(row.ticker);
+      <div className="p-3 sm:p-4">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+              <th scope="col" className="py-2 pr-2 text-left font-semibold">
+                Activo
+              </th>
+              <th scope="col" className="py-2 px-1 text-right font-semibold">
+                Valor
+              </th>
+              <th scope="col" className="py-2 px-1 text-right font-semibold">
+                G/P
+              </th>
+              <th scope="col" className="py-2 pl-1 text-right font-semibold">
+                % Act. / Meta
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.map((row) => {
+              const proposal =
+                calcMode === 'deposit' ? row.depositProposal : row.rebalanceProposal;
+              const isExpanded = expandedRows.has(row.ticker);
+              const pctDiff = row.currentPct - row.targetPct;
+              const pctColorClass =
+                row.targetPct === 0
+                  ? 'text-muted-foreground'
+                  : Math.abs(pctDiff) <= 0.5
+                    ? 'text-emerald-500'
+                    : row.currentPct < row.targetPct
+                      ? 'text-primary'
+                      : 'text-orange-500';
+              const barPct =
+                row.targetPct > 0
+                  ? Math.min((row.currentPct / row.targetPct) * 100, 100)
+                  : 0;
 
-                return (
-                  <tr
-                    key={row.ticker}
-                    className="hover:bg-muted transition-colors block md:table-row mb-2 md:mb-0 rounded-xl md:rounded-none border border-border md:border-0 p-3 md:p-0 shadow-sm md:shadow-none bg-card md:bg-transparent"
-                  >
-                    <td 
-                      className={`flex justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 font-bold text-foreground text-sm cursor-pointer md:cursor-auto ${isExpanded ? 'border-b border-border/40 pb-2 mb-2 md:border-0 md:pb-1.5 md:mb-0' : ''}`}
-                      onClick={() => toggleRow(row.ticker)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="md:hidden flex items-center text-muted-foreground">
-                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                        </span>
+              return (
+                <Fragment key={row.ticker}>
+                  <tr className="border-t border-border/40 first:border-t-0 hover:bg-muted/50">
+                    <td className="py-2 pr-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleRow(row.ticker)}
+                        aria-expanded={isExpanded}
+                        aria-controls={`pos-detalle-${row.ticker}`}
+                        aria-label={`${isExpanded ? 'Ocultar' : 'Mostrar'} detalle de ${row.ticker}`}
+                        className="flex items-center gap-1 rounded-md px-1 py-0.5 -mx-1 text-left transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <ChevronDown
+                          size={15}
+                          aria-hidden="true"
+                          className={`shrink-0 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        />
                         {row.isNegative && (
-                          <div
-                            className="text-red-500"
+                          <span
+                            className="shrink-0 text-red-500"
                             title="Error: Has vendido más de lo que compraste. Revisa tus transacciones."
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
+                              width="15"
+                              height="15"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
+                              aria-hidden="true"
                             >
                               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                               <line x1="12" y1="9" x2="12" y2="13" />
                               <line x1="12" y1="17" x2="12.01" y2="17" />
                             </svg>
-                          </div>
+                          </span>
                         )}
-                        <span className="text-base md:text-sm">{row.ticker}</span>
+                        <span className="text-sm font-bold text-foreground">
+                          {row.ticker}
+                        </span>
                         <CurrencyBadge currency={row.currency} />
-                      </div>
-                      
-                      <div className="md:hidden text-right font-semibold tabular-nums text-base">
-                        $
-                        {row.currentValue.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </div>
+                      </button>
                     </td>
-
-                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
-                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Cant.</span>
-                      <span>{row.quantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <td className="py-2 px-1 text-right font-semibold tabular-nums whitespace-nowrap text-foreground">
+                      $
+                      {row.currentValue.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </td>
-
-                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
-                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Costo</span>
-                      <span>
-                        $
-                        {row.displayCost.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    </td>
-
-                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-muted-foreground tabular-nums`}>
-                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Precio</span>
-                      <span>
-                        $
-                        {row.displayPrice.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    </td>
-
-                    <td className="hidden md:table-cell px-4 py-1.5 text-right text-muted-foreground text-sm tabular-nums">
-                      <span>
-                        $
-                        {row.currentValue.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    </td>
-
-                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">G/P</span>
-                      <div
-                        className={`flex items-center justify-end gap-1.5 font-semibold tabular-nums whitespace-nowrap ${row.plDisplay >= 0
+                    <td
+                      className={`py-2 px-1 text-right font-semibold tabular-nums whitespace-nowrap ${
+                        row.plDisplay >= 0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-red-500 dark:text-red-400'
-                          }`}
-                      >
-                        <span className="text-sm">
-                          {row.plPct > 0 ? '+' : ''}
-                          {row.plPct.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                        </span>
-                        <span className="text-[11px] opacity-70 font-normal">
-                          ({row.plDisplay >= 0 ? '+' : '-'}$
-                          {Math.abs(row.plDisplay).toLocaleString('en-US', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })})
-                        </span>
-                      </div>
+                      }`}
+                    >
+                      {row.plPct > 0 ? '+' : ''}
+                      {row.plPct.toLocaleString('en-US', {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })}
+                      %
                     </td>
-
-                    <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
-                      <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">% Act/Meta</span>
-                      {editingTicker === row.ticker ? (
-                        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                          <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                            {row.currentPct.toFixed(1)}%
-                          </span>
-                          <span className="text-muted-foreground/40">/</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            className="w-14 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveEdit();
-                              if (e.key === 'Escape') handleCancelEdit();
-                            }}
-                            autoFocus
-                          />
-                          <button onClick={handleSaveEdit} className="text-emerald-600 hover:text-emerald-700 transition-colors">
-                            <Check size={14} />
-                          </button>
-                          <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-foreground transition-colors">
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                          <span
-                            className={`text-sm font-semibold tabular-nums ${row.targetPct === 0
-                              ? 'text-muted-foreground'
-                              : Math.abs(row.currentPct - row.targetPct) <= 0.5
-                                ? 'text-emerald-500'
+                    <td className="py-2 pl-1 text-right">
+                      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                        <span className={`text-sm font-semibold tabular-nums ${pctColorClass}`}>
+                          {row.currentPct.toFixed(1)}%
+                        </span>
+                        {row.targetPct > 0 ? (
+                          <>
+                            <span className="text-muted-foreground/50">/</span>
+                            <span className="text-sm font-semibold tabular-nums text-foreground">
+                              {Number(row.targetPct).toLocaleString('en-US', {
+                                maximumFractionDigits: 2,
+                              })}
+                              %
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-muted-foreground/50">—</span>
+                        )}
+                      </div>
+                      {row.targetPct > 0 && (
+                        <div
+                          className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted"
+                          aria-hidden="true"
+                        >
+                          <div
+                            className={`h-full rounded-full ${
+                              Math.abs(pctDiff) <= 0.5
+                                ? 'bg-emerald-500'
                                 : row.currentPct < row.targetPct
-                                  ? 'text-primary'
-                                  : 'text-orange-500'
-                              }`}
-                          >
-                            {row.currentPct.toFixed(1)}%
-                          </span>
-                          {row.targetPct > 0 ? (
-                            <>
-                              <span className="text-border">/</span>
-                              <button
-                                onClick={() => handleStartEdit(row.ticker, row.targetPct)}
-                                className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-foreground hover:bg-primary/20 hover:text-primary tabular-nums transition-colors"
-                                title="Editar meta"
-                              >
-                                {Number(row.targetPct).toLocaleString('en-US', { maximumFractionDigits: 2 })}%
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => handleStartEdit(row.ticker, 0)}
-                              className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
-                              title="Agregar meta"
-                            >
-                              <Edit2 size={12} />
-                            </button>
-                          )}
-                          {allocation[row.ticker] !== undefined && (
-                            <button
-                              onClick={() => handleDelete(row.ticker)}
-                              className="text-muted-foreground/30 hover:text-red-500 transition-colors"
-                              title="Eliminar de estrategia"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
+                                  ? 'bg-primary'
+                                  : 'bg-orange-500'
+                            }`}
+                            style={{ width: `${barPct}%` }}
+                          />
                         </div>
                       )}
                     </td>
-
-                    {showProjectedColumn ? (
-                      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
-                        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Después</span>
-                        {proposal && row.targetPct > 0 ? (
-                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                            <span className="text-sm font-semibold text-foreground">
-                              {proposal.projectedPct?.toFixed(1)}%
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              / {row.targetPct.toFixed(1)}%
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-medium text-muted-foreground/30">—</span>
-                        )}
-                      </td>
-                    ) : (
-                      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right whitespace-nowrap`}>
-                        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Dif.</span>
-                        {row.targetPct > 0 ? (
-                          <span
-                            className={`text-sm font-semibold ${row.targetPct - row.currentPct > 0
-                              ? 'text-primary'
-                              : row.targetPct - row.currentPct < 0
-                                ? 'text-orange-500'
-                                : 'text-muted-foreground'
-                              }`}
-                          >
-                            {row.targetPct - row.currentPct >= 0 ? '+' : ''}
-                            {(row.targetPct - row.currentPct).toFixed(2)}%
-                          </span>
-                        ) : (
-                          <span className="text-sm font-medium text-muted-foreground/30">—</span>
-                        )}
-                      </td>
-                    )}
-
-                    {calcMode === 'strategy' ? (
-                      renderStrategyAction(row, total, exchangeRate, isExpanded)
-                    ) : (
-                      renderRebalanceAction(proposal, row.targetPct, exchangeRate, isExpanded)
-                    )}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  {isExpanded && (
+                    <tr id={`pos-detalle-${row.ticker}`}>
+                      <td
+                        colSpan={4}
+                        className="border-t border-border/40 bg-muted/30 px-3 py-3"
+                      >
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+                          <DetailItem label="Cant.">
+                            {row.quantity.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </DetailItem>
+                          <DetailItem label="Costo">
+                            $
+                            {row.displayCost.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </DetailItem>
+                          <DetailItem label="Precio">
+                            $
+                            {row.displayPrice.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </DetailItem>
+                          <DetailItem label="G/P">
+                            <span
+                              className={`font-semibold tabular-nums ${
+                                row.plDisplay >= 0
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-red-500 dark:text-red-400'
+                              }`}
+                            >
+                              {row.plPct > 0 ? '+' : ''}
+                              {row.plPct.toLocaleString('en-US', {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                              })}
+                              % ({row.plDisplay >= 0 ? '+' : '-'}$
+                              {Math.abs(row.plDisplay).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                              )
+                            </span>
+                          </DetailItem>
+                          <DetailItem label="% Meta">
+                            {editingTicker === row.ticker ? (
+                              <span className="flex items-center gap-1 whitespace-nowrap">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  className="w-16 rounded border border-border px-1.5 py-0.5 text-xs text-right bg-background text-foreground focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveEdit();
+                                    if (e.key === 'Escape') handleCancelEdit();
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={handleSaveEdit}
+                                  className="text-emerald-600 hover:text-emerald-700 transition-colors"
+                                  aria-label="Guardar meta"
+                                >
+                                  <Check size={14} />
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                  aria-label="Cancelar edición"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5">
+                                {row.targetPct > 0 ? (
+                                  <button
+                                    onClick={() => handleStartEdit(row.ticker, row.targetPct)}
+                                    className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold text-foreground hover:bg-primary/20 hover:text-primary tabular-nums transition-colors"
+                                    title="Editar meta"
+                                  >
+                                    {Number(row.targetPct).toLocaleString('en-US', {
+                                      maximumFractionDigits: 2,
+                                    })}
+                                    %
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleStartEdit(row.ticker, 0)}
+                                    className="text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+                                    title="Agregar meta"
+                                  >
+                                    <Edit2 size={12} />
+                                  </button>
+                                )}
+                                {allocation[row.ticker] !== undefined && (
+                                  <button
+                                    onClick={() => handleDelete(row.ticker)}
+                                    className="text-muted-foreground/30 hover:text-red-500 transition-colors"
+                                    title="Eliminar de estrategia"
+                                    aria-label={`Eliminar meta de ${row.ticker}`}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </span>
+                            )}
+                          </DetailItem>
+                          {showProjectedColumn ? (
+                            <DetailItem label="Después">
+                              {proposal && row.targetPct > 0 ? (
+                                <span className="whitespace-nowrap">
+                                  <span className="font-semibold">
+                                    {proposal.projectedPct?.toFixed(1)}%
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {' '}
+                                    / {row.targetPct.toFixed(1)}%
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/30">—</span>
+                              )}
+                            </DetailItem>
+                          ) : (
+                            <DetailItem label="Diferencia">
+                              {row.targetPct > 0 ? (
+                                <span
+                                  className={`font-semibold ${
+                                    row.targetPct - row.currentPct > 0
+                                      ? 'text-primary'
+                                      : row.targetPct - row.currentPct < 0
+                                        ? 'text-orange-500'
+                                        : 'text-muted-foreground'
+                                  }`}
+                                >
+                                  {row.targetPct - row.currentPct >= 0 ? '+' : ''}
+                                  {(row.targetPct - row.currentPct).toFixed(2)}%
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/30">—</span>
+                              )}
+                            </DetailItem>
+                          )}
+                          {calcMode === 'strategy'
+                            ? renderStrategyAction(row, total, exchangeRate)
+                            : renderRebalanceAction(proposal, row.targetPct, exchangeRate)}
+                        </dl>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
 
         <div className="mt-4 border-t border-border pt-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -708,7 +758,27 @@ export default function PortfolioManagementTable({
   );
 }
 
-// Helper: Render strategy mode action
+// Celda de detalle reutilizable (etiqueta + valor) dentro de la fila expandida.
+function DetailItem({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-sm font-medium text-foreground tabular-nums">
+        {children}
+      </dd>
+    </div>
+  );
+}
+
+// Helper: Render strategy mode action (como items del detalle expandido)
 function renderStrategyAction(
   row: {
     ticker: string;
@@ -718,24 +788,21 @@ function renderStrategyAction(
     strategySuggestion?: RebalanceSuggestion;
   },
   total: number,
-  exchangeRate: number,
-  isExpanded: boolean
+  exchangeRate: number
 ) {
   const isIncorrectStrategy = Math.abs(total - 100) > 0.1;
 
   if (isIncorrectStrategy && row.targetPct > 0) {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-          <span className="inline-flex w-24 items-center justify-center rounded bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
+        <DetailItem label="Acción">
+          <span className="inline-flex items-center justify-center rounded bg-red-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:bg-red-900/30 dark:text-red-400">
             AJUSTAR %
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm text-muted-foreground/40 italic`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
-          Inválido
-        </td>
+        </DetailItem>
+        <DetailItem label="Monto">
+          <span className="text-sm text-muted-foreground/40 italic">Inválido</span>
+        </DetailItem>
       </>
     );
   }
@@ -743,10 +810,9 @@ function renderStrategyAction(
   if (row.strategySuggestion && row.strategySuggestion.action !== 'HOLD') {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
+        <DetailItem label="Acción">
           <span
-            className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
+            className={`inline-flex justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${row.strategySuggestion.action === 'BUY'
               ? 'bg-primary/20 text-primary'
               : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
               }`}
@@ -754,9 +820,8 @@ function renderStrategyAction(
             {row.strategySuggestion.action === 'BUY' ? <ArrowUpCircle size={10} /> : <ArrowDownCircle size={10} />}
             {row.strategySuggestion.action === 'BUY' ? 'Comprar' : 'Vender'}
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm font-medium text-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+        </DetailItem>
+        <DetailItem label="Monto">
           <span>
             $
             {(row.strategySuggestion.amount * exchangeRate).toLocaleString('en-US', {
@@ -764,7 +829,7 @@ function renderStrategyAction(
               maximumFractionDigits: 0,
             })}
           </span>
-        </td>
+        </DetailItem>
       </>
     );
   }
@@ -772,17 +837,15 @@ function renderStrategyAction(
   if (row.targetPct > 0 && row.currentValue < 0.01) {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+        <DetailItem label="Acción">
+          <span className="inline-flex justify-center items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
             <ArrowUpCircle size={10} />
             Comprar
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-1.5 text-right text-sm font-medium text-muted-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
-          ---
-        </td>
+        </DetailItem>
+        <DetailItem label="Monto">
+          <span>---</span>
+        </DetailItem>
       </>
     );
   }
@@ -790,57 +853,52 @@ function renderStrategyAction(
   if (row.targetPct > 0) {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+        <DetailItem label="Acción">
+          <span className="inline-flex justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-[11px] text-muted-foreground/60 leading-tight border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
-          En rango
-        </td>
+        </DetailItem>
+        <DetailItem label="Monto">
+          <span className="text-[11px] text-muted-foreground/60 leading-tight">
+            En rango
+          </span>
+        </DetailItem>
       </>
     );
   }
 
   return (
     <>
-      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
-        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-        <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
+      <DetailItem label="Acción">
+        <span className="inline-flex justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
           Sin meta
         </span>
-      </td>
-      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+      </DetailItem>
+      <DetailItem label="Monto">
         <span className="text-sm text-muted-foreground/30 font-medium">—</span>
-      </td>
+      </DetailItem>
     </>
   );
 }
 
-// Helper: Render deposit/rebalance mode action
+// Helper: Render deposit/rebalance mode action (como items del detalle expandido)
 function renderRebalanceAction(
   proposal: { action: 'BUY' | 'SELL' | 'HOLD'; amount: number } | undefined,
   targetPct: number,
-  exchangeRate: number,
-  isExpanded: boolean
+  exchangeRate: number
 ) {
   if (!proposal || (targetPct === 0 && (proposal.action === 'HOLD' || proposal.amount < 0.01))) {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-          <span className="inline-flex w-24 justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
+        <DetailItem label="Acción">
+          <span className="inline-flex justify-center items-center rounded border border-dashed border-border/80 bg-muted/30 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/45">
             Sin meta
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+        </DetailItem>
+        <DetailItem label="Monto">
           <span className="text-sm text-muted-foreground/30 font-medium">—</span>
-        </td>
+        </DetailItem>
       </>
     );
   }
@@ -848,17 +906,17 @@ function renderRebalanceAction(
   if (proposal.action === 'HOLD' || proposal.amount < 0.01) {
     return (
       <>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
-          <span className="inline-flex w-24 justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+        <DetailItem label="Acción">
+          <span className="inline-flex justify-center items-center gap-1 rounded bg-muted px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             <MinusCircle size={10} />
             Mantener
           </span>
-        </td>
-        <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-[11px] text-muted-foreground/60 leading-tight border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-          <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
-          En rango
-        </td>
+        </DetailItem>
+        <DetailItem label="Monto">
+          <span className="text-[11px] text-muted-foreground/60 leading-tight">
+            En rango
+          </span>
+        </DetailItem>
       </>
     );
   }
@@ -867,10 +925,9 @@ function renderRebalanceAction(
 
   return (
     <>
-      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right`}>
-        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Acción</span>
+      <DetailItem label="Acción">
         <span
-          className={`inline-flex w-24 justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
+          className={`inline-flex justify-center items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${proposal.action === 'BUY'
             ? 'bg-primary/20 text-primary'
             : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
             }`}
@@ -878,9 +935,8 @@ function renderRebalanceAction(
           {proposal.action === 'BUY' ? <ArrowUpCircle size={10} /> : <ArrowDownCircle size={10} />}
           {proposal.action === 'BUY' ? 'Comprar' : 'Vender'}
         </span>
-      </td>
-      <td className={`${isExpanded ? 'flex' : 'hidden'} justify-between items-center md:table-cell px-0 md:px-4 py-1.5 md:py-2 text-right text-sm font-medium text-foreground tabular-nums border-t md:border-0 border-border/40 pt-2 md:pt-1.5 mt-2 md:mt-0`}>
-        <span className="md:hidden text-xs font-semibold text-muted-foreground uppercase">Monto</span>
+      </DetailItem>
+      <DetailItem label="Monto">
         <span>
           $
           {amountDisplay.toLocaleString('en-US', {
@@ -888,7 +944,7 @@ function renderRebalanceAction(
             maximumFractionDigits: 0,
           })}
         </span>
-      </td>
+      </DetailItem>
     </>
   );
 }
