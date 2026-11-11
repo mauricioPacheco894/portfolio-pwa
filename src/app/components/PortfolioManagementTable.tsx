@@ -1108,7 +1108,7 @@ function getRowAction(
         note:
           s.action === 'BUY'
             ? `Comprar ${money(s.amount)} para subir de ${fmtPct(row.currentPct)} a la meta de ${fmtPct(row.targetPct)}.`
-            : `Vender ${money(s.amount)} para bajar de ${fmtPct(row.currentPct)} a la meta de ${fmtPct(row.targetPct)}.`,
+            : `Vender ${money(s.amount)} para bajar de ${fmtPct(row.currentPct)} a la meta de ${fmtPct(row.targetPct)}.` ,
       };
     }
 
@@ -1144,7 +1144,7 @@ function getRowAction(
     return {
       badge: holdBadge,
       amount: inRange,
-      note: `En rango: después quedaría en ${fmtPct(proposal.projectedPct ?? row.currentPct)}.`,
+      note: `En rango: después quedaría en ${fmtPct(proposal.projectedPct ?? row.currentPct)}.` ,
     };
   }
   return {
