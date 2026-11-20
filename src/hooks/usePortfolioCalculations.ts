@@ -23,7 +23,9 @@ export function usePortfolioCalculations(
   totalRealizedPnlUSD: number,
   totalRealizedPnlMXN: number,
   historyData: HistoryDataPoint[] = [],
-  depositAmount: string = '0'
+  depositAmount: string = '0',
+  frozenInvestedMXN: number | null = null,
+  frozenInvestedUSD: number | null = null,
 ) {
   const exchangeRate = currency === 'USD' ? 1 : usdMxnRate;
 
@@ -119,12 +121,21 @@ export function usePortfolioCalculations(
   const totalValue = totalValueUSD * exchangeRate;
 
   const totalInvested = useMemo(() => {
+    // Frozen net cash flow (see src/utils/frozenInvested.ts): the money
+    // actually put in, converted once at each transaction's FX rate. It
+    // only changes when the user trades, never with the exchange rate.
+    // Prefer it whenever the server computed it; fall back to the
+    // previous logic when it is unavailable.
+    if (frozenInvestedMXN != null && frozenInvestedUSD != null) {
+      return currency === 'MXN' ? frozenInvestedMXN : frozenInvestedUSD;
+    }
+
     // Financial Rigor: Use Net Cash Flow (Total Deposits - Total Withdrawals)
     if (historyData && historyData.length > 0) {
       const lastPoint = historyData[historyData.length - 1];
       return currency === 'MXN' ? lastPoint.investedMXN : lastPoint.investedUSD;
     }
-    
+
     // Fallback to active positions cost basis if no history
     return holdings.reduce((sum, h) => {
       if (currency === 'MXN') {
@@ -132,7 +143,7 @@ export function usePortfolioCalculations(
       }
       return sum + (h.totalInvestedGlobal || 0);
     }, 0);
-  }, [holdings, currency, exchangeRate, historyData]);
+  }, [holdings, currency, exchangeRate, historyData, frozenInvestedMXN, frozenInvestedUSD]);
 
   const realizedPL = currency === 'MXN' ? totalRealizedPnlMXN : totalRealizedPnlUSD;
   

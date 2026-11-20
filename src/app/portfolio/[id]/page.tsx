@@ -15,6 +15,7 @@ import PortfolioDashboard from '@/app/components/PortfolioDashboard';
 import { createClient } from '@/lib/supabaseServer';
 import { AssetPosition, TickerHistory } from '@/types/portfolio';
 import { Database } from '@/types/supabase';
+import { calculateFrozenInvested } from '@/utils/frozenInvested';
 import { getPortfolioHistory } from '@/utils/historyCalculations';
 import { reconcilePositions, SplitEvent } from '@/utils/reconciliation';
 import { buildTickerHistoryMap } from '@/utils/tickerHistory';
@@ -132,7 +133,7 @@ export default async function Page({ params, searchParams }: Props) {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData, allTransactions, splitsResult] = await Promise.all([
+  const [paginatedResult, rpcResult, rateResult, pnlResult, historyData, allTransactions, splitsResult, currenciesResult, fxClosesResult] = await Promise.all([
     getPaginatedTransactions(id, page, pageSize, {
       ticker: tickerFilter,
       type: typeFilter,
@@ -146,12 +147,47 @@ export default async function Page({ params, searchParams }: Props) {
     // once the splits migration is applied; until then the query fails and
     // the reconciliation runs with no splits (same as the RPCs).
     supabase.from('splits').select('ticker, split_date, ratio'),
+    // Currency per ticker, to convert each transaction at its own FX rate.
+    supabase.from('asset_prices').select('ticker, currency'),
+    // Daily USD-MXN closes, to price MXN trades in USD and to fill in
+    // USD trades whose stored fx_rate is missing (old rows stored as 1).
+    supabase.from('historical_prices').select('date, close_price').eq('ticker', 'USD-MXN').order('date', { ascending: true }),
   ]);
 
   const { data: transactions, count: totalCount } = paginatedResult;
   const positions = rpcResult.data || [];
   const usdMxnRate = rateResult.data?.price || 20.0;
   const pnlValues = pnlResult.data || [];
+
+  // Frozen net-cash-flow invested: the money actually put in, converted
+  // once at each transaction's FX rate. Unlike the history series (which
+  // revalues invested at each day's rate) and the intraday ticks (which
+  // revalue it at the live rate), this only changes when the user trades.
+  // On any fetch failure the dashboard falls back to the previous logic.
+  const currencyByTicker = new Map<string, 'USD' | 'MXN'>(
+    (currenciesResult.data || []).map(
+      (row: { ticker: string; currency: string | null }) =>
+        [row.ticker, row.currency === 'MXN' ? 'MXN' : 'USD'] as const,
+    ),
+  );
+  const usdMxnCloses = (fxClosesResult.data || []).map(
+    (row: { date: string; close_price: number }) => ({
+      date: row.date,
+      close: Number(row.close_price),
+    }),
+  );
+  let frozenInvestedMXN: number | null = null;
+  let frozenInvestedUSD: number | null = null;
+  if (!currenciesResult.error && !fxClosesResult.error) {
+    const frozen = calculateFrozenInvested(
+      allTransactions,
+      currencyByTicker,
+      usdMxnCloses,
+      usdMxnRate,
+    );
+    frozenInvestedMXN = frozen.frozenInvestedMXN;
+    frozenInvestedUSD = frozen.frozenInvestedUSD;
+  }
 
   // Per-asset summarized history (desktop expanded detail): built from
   // the transactions and the per-asset breakdown that the
@@ -270,6 +306,8 @@ export default async function Page({ params, searchParams }: Props) {
       pagination={{ page, totalPages }}
       historyData={historyData}
       reconciliationMismatches={reconciliationMismatches}
+      frozenInvestedMXN={frozenInvestedMXN}
+      frozenInvestedUSD={frozenInvestedUSD}
     />
   );
 }
