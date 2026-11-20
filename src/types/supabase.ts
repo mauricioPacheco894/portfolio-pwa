@@ -90,6 +90,31 @@ export interface Database {
         };
         Relationships: [];
       };
+      /** Daily closing prices per ticker (incl. USD-MXN FX closes) */
+      historical_prices: {
+        Row: {
+          id: string;
+          ticker: string;
+          date: string;
+          close_price: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticker: string;
+          date: string;
+          close_price: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticker?: string;
+          date?: string;
+          close_price?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       /** User-defined portfolio containers */
       portfolios: {
         Row: {

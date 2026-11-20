@@ -46,6 +46,9 @@ interface PortfolioDashboardProps {
   historyData: HistoryDataPoint[];
   /** Tickers where the positions RPC disagrees with the raw transactions. */
   reconciliationMismatches?: PositionMismatch[];
+  /** Frozen net-cash-flow invested (see src/utils/frozenInvested.ts). */
+  frozenInvestedMXN?: number | null;
+  frozenInvestedUSD?: number | null;
 }
 
 export default function PortfolioDashboard({
@@ -60,6 +63,8 @@ export default function PortfolioDashboard({
   pagination,
   historyData,
   reconciliationMismatches = [],
+  frozenInvestedMXN = null,
+  frozenInvestedUSD = null,
 }: PortfolioDashboardProps) {
   const [currency, setCurrency] = useState<'USD' | 'MXN'>('MXN');
   const [showValues, setShowValues] = useState(true);
@@ -94,17 +99,21 @@ export default function PortfolioDashboard({
     totalRealizedPnlUSD,
     totalRealizedPnlMXN,
     historyData,
-    depositAmount
+    depositAmount,
+    frozenInvestedMXN,
+    frozenInvestedUSD,
   );
 
-  // Sync with live intraday data if available (most recent Yahoo Finance 15m tick)
+  // Sync with live intraday data if available (most recent Yahoo Finance 15m tick).
+  // Intraday only refreshes the current VALUE. The invested amount is the
+  // frozen net cash flow and must not move with the exchange rate, so it
+  // is never overwritten here.
   let totalValue = dbTotalValue;
-  let totalInvested = dbTotalInvested;
-  
+  const totalInvested = dbTotalInvested;
+
   if (intradayData && intradayData.length > 0) {
     const lastTick = intradayData[intradayData.length - 1];
     totalValue = currency === 'USD' ? lastTick.valueUSD : lastTick.valueMXN;
-    totalInvested = currency === 'USD' ? lastTick.investedUSD : lastTick.investedMXN;
   }
 
   const totalProfit = totalValue - totalInvested;
