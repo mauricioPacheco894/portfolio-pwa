@@ -12,6 +12,7 @@ import {
   YAxis,
   ReferenceLine,
 } from 'recharts';
+import { calculateTimeWeightedReturn, type HistoryDataPoint } from '@/utils/timeWeightedReturn';
 
 type TimeRange = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
 
@@ -335,30 +336,87 @@ export default function PerformanceChart({ currentValue, totalInvested, currency
     }
   }
 
-  // Calculate true profit to eliminate deposit distortions
+  // Dollar change: money gained in the window, net of deposits and
+  // withdrawals — profit(end) minus profit(start). That part was right.
   const currentProfit = compareEnd.value - compareEnd.invested;
-  let initialProfit = compareStart.value - compareStart.invested;
+  const initialProfit = compareStart.value - compareStart.invested;
 
   let prevCloseValue: number | null = null;
   if (historyData && historyData.length > 0) {
     const lastDay = historyData[historyData.length - 1];
     prevCloseValue = currency === 'USD' ? lastDay.valueUSD : lastDay.valueMXN;
-    
-    if (activeRange === '1D' && !isHoldCompare && prevCloseValue !== null) {
-      const prevInv = currency === 'USD' ? lastDay.investedUSD : lastDay.investedMXN;
-      initialProfit = prevCloseValue - prevInv;
+  }
+
+  let valueChange: number;
+  let percentChange: number;
+
+  if (activeRange === '1D' && !isHoldCompare && prevCloseValue !== null) {
+    // Day view: compare values directly (tick vs previous close). The old
+    // formula compared profits, but the intraday ticks carry the positions
+    // cost basis while the previous close carries net cash flow, so ~$5,351
+    // of already-realized gains leaked in as if they were today's move.
+    // Values need no invested figure at all, so the phantom is gone.
+    valueChange = compareEnd.value - prevCloseValue;
+    percentChange = prevCloseValue > 0 ? (valueChange / prevCloseValue) * 100 : 0;
+  } else {
+    valueChange = currentProfit - initialProfit;
+
+    if (isHoldCompare) {
+      // Dragged window: single-period return net of flows over the dragged
+      // points, on the starting value as base (not the ending invested).
+      const startValue = compareStart.value;
+      const flowAdjustedGain =
+        (compareEnd.value - compareStart.value) -
+        (compareEnd.invested - compareStart.invested);
+      percentChange = startValue > 0 ? (flowAdjustedGain / startValue) * 100 : 0;
+    } else {
+      // Range views: time-weighted return from the range start to the
+      // hovered (or last) point — the same measure as the Mes/YTD header
+      // KPIs, so both numbers finally agree. The old formula divided the
+      // dollar gain by the invested amount at the END of the window, which
+      // understates the return whenever deposits were made during the
+      // window (e.g. 1Y showed -3.20% when the true TWR was +1.76%).
+      const now = new Date();
+      let rangeStartStr: string;
+      switch (activeRange) {
+        case '1W':
+          rangeStartStr = format(subDays(now, 7), 'yyyy-MM-dd');
+          break;
+        case '1M':
+          rangeStartStr = format(subMonths(now, 1), 'yyyy-MM-dd');
+          break;
+        case 'YTD':
+          rangeStartStr = format(startOfYear(now), 'yyyy-MM-dd');
+          break;
+        case '1Y':
+          rangeStartStr = format(subYears(now, 1), 'yyyy-MM-dd');
+          break;
+        case 'ALL':
+          rangeStartStr = historyData.length > 0 ? historyData[0].date : format(now, 'yyyy-MM-dd');
+          break;
+        default:
+          rangeStartStr = format(now, 'yyyy-MM-dd');
+      }
+
+      // When hovering, measure the TWR only up to the hovered date: slice
+      // the series at the last history point on or before that date. The
+      // appended "today" point maps to the last history point, so the
+      // percentage is as of the last close — exactly like the header KPIs.
+      let series: HistoryDataPoint[] = historyData;
+      if (hoverData) {
+        const hoverDateStr = format(hoverData.date, 'yyyy-MM-dd');
+        let hoverIdx = -1;
+        for (let i = 0; i < historyData.length; i++) {
+          if (historyData[i].date <= hoverDateStr) hoverIdx = i;
+          else break;
+        }
+        if (hoverIdx >= 0) series = historyData.slice(0, hoverIdx + 1);
+      }
+
+      percentChange = calculateTimeWeightedReturn(series, rangeStartStr, currency) * 100;
     }
   }
 
-  const valueChange = (activeRange === 'ALL' && !isHoldCompare)
-    ? currentProfit
-    : currentProfit - initialProfit;
-
-  const baseForPercent = (activeRange === '1D' && !isHoldCompare && prevCloseValue) 
-    ? prevCloseValue 
-    : compareEnd.invested;
-    
-  const percentChange = baseForPercent > 0 ? (valueChange / baseForPercent) * 100 : 0;
   const isPositive = valueChange >= 0;
 
   const lineColor = isPositive ? '#10b981' : '#ef4444';
